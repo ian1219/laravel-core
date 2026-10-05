@@ -4,6 +4,8 @@ A visual, hands-on Laravel learning kit that runs from PHP fundamentals to advan
 
 It's built with **plain HTML, CSS and JavaScript**. There's no build step, no framework and no server.
 
+🌐 **Live site:** https://ian1219.github.io/laravel-core/
+
 ## Open it
 
 Double-click `index.html`, or:
