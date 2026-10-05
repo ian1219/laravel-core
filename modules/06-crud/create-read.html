@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Create &amp; Read · Laravel Blueprint</title>
+  <meta name="description" content="Build the index, show and create screens of a Laravel CRUD: PostController, Blade views, @csrf, route model binding, redirects and flash messages.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="06" data-lesson="create-read">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">The "C" and "R" of CRUD are four controller actions (index, show, create, store) that list posts, display one, show a form, and save what the form sends.</p>
+    <p class="analogy"><span>📚</span><span>Think of a library. The catalogue is <code>index</code>, picking one book off the shelf is <code>show</code>, the donation form is <code>create</code>, and the librarian shelving your donated book is <code>store</code>.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>This is the backbone of most web apps</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧱</span>
+        <h3>Everything connects here</h3>
+        <p>Routes, controllers, models, validation and Blade all meet in one real feature.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔁</span>
+        <h3>A reusable pattern</h3>
+        <p>Build it once for posts and you can build it for categories, products or tickets in minutes.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">💬</span>
+        <h3>Users get feedback</h3>
+        <p>Redirects plus flash messages tell people their action worked, and stop accidental double submits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The create cycle: Post / Redirect / Get</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>GET /posts/create</strong><small><code>create()</code> shows the form</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📮</span><strong>POST /posts</strong><small><code>store()</code> validates &amp; saves</small></div>
+        <div class="flow-node"><span class="flow-icon">↪️</span><strong>302 redirect</strong><small>+ flash "Post created!"</small></div>
+        <div class="flow-node"><span class="flow-icon">👀</span><strong>GET /posts/{post}</strong><small><code>show()</code> displays it</small></div>
+      </div>
+      <figcaption>Redirecting after a POST means refreshing the page won't resubmit the form. This pattern is called <strong>Post/Redirect/Get</strong>.</figcaption>
+    </figure>
+    <pre class="tree"><span class="dir">resources/views/</span>
+├── <span class="dir">layouts/</span>
+│   └── app.blade.php     <span class="note">← shared shell + flash message</span>
+└── <span class="dir">posts/</span>
+    ├── index.blade.php   <span class="note">← list (this lesson)</span>
+    ├── show.blade.php    <span class="note">← one post (this lesson)</span>
+    ├── create.blade.php  <span class="note">← new form (this lesson)</span>
+    └── edit.blade.php    <span class="note">← next lesson</span></pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build the read and create screens</h2>
+      <p>We start from the <code>PostController</code> and <code>Route::resource('posts', ...)</code> from <a href="resource-controllers.html">Resource Controllers</a>, and the <code>StorePostRequest</code> from <a href="forms-validation.html">Forms &amp; Validation</a>.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>A layout that shows flash messages</h3>
+        <p>A <strong>flash message</strong> is a value stored in the session for exactly one request. We'll set it after saving and read it here with <code>session('status')</code>, so every page can show it.</p>
+        <pre><code class="lang-blade" data-file="resources/views/layouts/app.blade.php" data-hl="8-10">
+          &lt;!doctype html&gt;
+          &lt;html lang="en"&gt;
+          &lt;head&gt;
+              &lt;meta charset="utf-8"&gt;
+              &lt;title&gt;@yield('title', 'My Blog')&lt;/title&gt;
+          &lt;/head&gt;
+          &lt;body&gt;
+              @if (session('status'))
+                  &lt;div class="alert"&gt;{{ session('status') }}&lt;/div&gt;
+              @endif
+
+              @yield('content')
+          &lt;/body&gt;
+          &lt;/html&gt;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>index</code>: list posts with pagination</h3>
+        <p>Fetch the newest posts, a page at a time. <code>with('user')</code> loads each post's author in one extra query instead of one per post.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function index()
+          {
+              $posts = Post::with('user')-&gt;latest()-&gt;paginate(10);
+
+              return view('posts.index', compact('posts'));
+          }
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          @extends('layouts.app')
+
+          @section('content')
+              &lt;h1&gt;Posts&lt;/h1&gt;
+              &lt;a href="{{ route('posts.create') }}"&gt;New post&lt;/a&gt;
+
+              @forelse ($posts as $post)
+                  &lt;article&gt;
+                      &lt;h2&gt;&lt;a href="{{ route('posts.show', $post) }}"&gt;{{ $post-&gt;title }}&lt;/a&gt;&lt;/h2&gt;
+                      &lt;p&gt;by {{ $post-&gt;user-&gt;name }} · {{ $post-&gt;created_at-&gt;diffForHumans() }}&lt;/p&gt;
+                  &lt;/article&gt;
+              @empty
+                  &lt;p&gt;No posts yet. Write the first one!&lt;/p&gt;
+              @endforelse
+
+              {{ $posts-&gt;links() }}
+          @endsection
+        </code></pre>
+        <p>Passing the whole <code>$post</code> to <code>route('posts.show', $post)</code> is fine: Laravel pulls out its id (or slug, if you changed the route key) automatically.</p>
+      </li>
+
+      <li class="step">
+        <h3><code>show</code>: one post via route model binding</h3>
+        <p>The <code>{post}</code> URL segment becomes a <code>Post</code> object before your method runs. A bad id gives a 404, so there's no <code>if</code> needed.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function show(Post $post)
+          {
+              $post-&gt;load('user', 'category', 'comments.user');
+
+              return view('posts.show', compact('post'));
+          }
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          @extends('layouts.app')
+
+          @section('title', $post-&gt;title)
+
+          @section('content')
+              &lt;h1&gt;{{ $post-&gt;title }}&lt;/h1&gt;
+              &lt;p&gt;by {{ $post-&gt;user-&gt;name }} in {{ $post-&gt;category?-&gt;name ?? 'Uncategorised' }}&lt;/p&gt;
+
+              &lt;div&gt;{{ $post-&gt;body }}&lt;/div&gt;
+
+              &lt;h2&gt;Comments ({{ $post-&gt;comments-&gt;count() }})&lt;/h2&gt;
+              @foreach ($post-&gt;comments as $comment)
+                  &lt;p&gt;&lt;strong&gt;{{ $comment-&gt;user-&gt;name }}:&lt;/strong&gt; {{ $comment-&gt;body }}&lt;/p&gt;
+              @endforeach
+
+              &lt;a href="{{ route('posts.index') }}"&gt;← All posts&lt;/a&gt;
+          @endsection
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>create</code>: show the form</h3>
+        <p>The form needs the categories for a dropdown. Note <code>@csrf</code>, <code>old()</code> and <code>@error</code>, all from the previous lesson.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function create()
+          {
+              $categories = Category::orderBy('name')-&gt;get();
+
+              return view('posts.create', compact('categories'));
+          }
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/create.blade.php" data-hl="5,7-8">
+          @extends('layouts.app')
+
+          @section('content')
+              &lt;form method="POST" action="{{ route('posts.store') }}"&gt;
+                  @csrf
+
+                  &lt;label&gt;Title &lt;input name="title" value="{{ old('title') }}"&gt;&lt;/label&gt;
+                  @error('title') &lt;p class="error"&gt;{{ $message }}&lt;/p&gt; @enderror
+
+                  &lt;label&gt;Category
+                      &lt;select name="category_id"&gt;
+                          &lt;option value=""&gt;None&lt;/option&gt;
+                          @foreach ($categories as $category)
+                              &lt;option value="{{ $category-&gt;id }}" @selected(old('category_id') == $category-&gt;id)&gt;
+                                  {{ $category-&gt;name }}
+                              &lt;/option&gt;
+                          @endforeach
+                      &lt;/select&gt;
+                  &lt;/label&gt;
+
+                  &lt;label&gt;Body &lt;textarea name="body"&gt;{{ old('body') }}&lt;/textarea&gt;&lt;/label&gt;
+                  @error('body') &lt;p class="error"&gt;{{ $message }}&lt;/p&gt; @enderror
+
+                  &lt;button type="submit"&gt;Publish&lt;/button&gt;
+              &lt;/form&gt;
+          @endsection
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>store</code>: validate, save, redirect with a flash</h3>
+        <p>The Form Request validates first. We build the slug from the title, create the post through the logged-in user, then redirect with <code>-&gt;with('status', ...)</code>, which flashes the message for the next page. (Since we generate the slug here, remove the <code>slug</code> rule from <code>StorePostRequest</code>.)</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="6-9,11-13">
+          use App\Http\Requests\StorePostRequest;
+          use Illuminate\Support\Str;
+
+          public function store(StorePostRequest $request)
+          {
+              $post = $request-&gt;user()-&gt;posts()-&gt;create([
+                  ...$request-&gt;validated(),
+                  'slug' =&gt; Str::slug($request-&gt;title) . '-' . Str::lower(Str::random(5)),
+              ]);
+
+              return redirect()
+                  -&gt;route('posts.show', $post)
+                  -&gt;with('status', 'Post created!');
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Who is <code>$request-&gt;user()</code>?</div>
+          <p>The logged-in user. Protect the create and store routes with the <code>auth</code> middleware so it's never <code>null</code>. Authentication arrives in <a href="../07-authentication/sessions-guards.html">Guards &amp; Protecting Routes</a>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $post = Post::create(...);
+          return view('posts.show', compact('post'));
+        </code></pre>
+        <p>Returning a view from a POST means pressing refresh resubmits the form and creates a duplicate post.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          return redirect()-&gt;route('posts.show', $post)
+              -&gt;with('status', 'Post created!');
+        </code></pre>
+        <p>Always redirect after a successful POST (Post/Redirect/Get).</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;div&gt;{!! $post-&gt;body !!}&lt;/div&gt;
+        </code></pre>
+        <p><code>{!! !!}</code> prints raw HTML, so a post containing a <code>&lt;script&gt;</code> tag runs in every reader's browser.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;div&gt;{{ $post-&gt;body }}&lt;/div&gt;
+        </code></pre>
+        <p><code>{{ }}</code> escapes output. Use it for anything a user typed.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: keep line breaks safely</div>
+      <p><code>{!! nl2br(e($post-&gt;body)) !!}</code> escapes the text first with <code>e()</code>, <em>then</em> turns newlines into <code>&lt;br&gt;</code>. Safe, and paragraphs survive.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build the layout and the three views, then visit <code>/posts</code>, <code>/posts/create</code> and a single post.</li>
+        <li>Create a post and confirm the "Post created!" message appears once and disappears on refresh.</li>
+        <li>Show each post's category name on the index page, and add <code>category</code> to the <code>with()</code> call.</li>
+        <li>Visit <code>/posts/999999</code> and confirm you get a 404.</li>
+        <li>Bonus: let readers filter the index by category with <code>?category=3</code> using <code>$request-&gt;integer('category')</code> and <code>when()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>index</code> lists (paginate + eager load), <code>show</code> displays one, <code>create</code> shows a form, <code>store</code> saves.</li>
+      <li>Route model binding turns <code>{post}</code> into a <code>Post</code>, with a free 404.</li>
+      <li>Every form that changes data includes <code>@csrf</code>.</li>
+      <li>Redirect after POST, and flash feedback with <code>-&gt;with('status', '...')</code>.</li>
+      <li>Read flash messages in the layout with <code>session('status')</code>.</li>
+      <li>Print user content with <code>{{ }}</code>, never raw <code>{!! !!}</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Why should `store()` redirect instead of returning a view?",
+          "options": ["Views can't be returned from POST routes", "Redirects are faster", "So refreshing the page doesn't resubmit the form", "It's required for validation"],
+          "answer": 2,
+          "explain": "Post/Redirect/Get: after the redirect, a refresh just repeats the harmless GET."
+        },
+        {
+          "q": "How do you read a flash message set with `->with('status', 'Saved!')`?",
+          "options": ["`session('status')`", "`old('status')`", "`$request->status`", "`flash('status')`"],
+          "answer": 0,
+          "explain": "`with()` on a redirect flashes the value to the session for exactly the next request."
+        },
+        {
+          "q": "In `public function show(Post $post)`, what fills in `$post`?",
+          "options": ["You must call `Post::find()` yourself", "The form's hidden fields", "The session", "Route model binding, using the `{post}` URL segment"],
+          "answer": 3,
+          "explain": "Laravel matches the `{post}` parameter to the `Post` type-hint and looks the record up for you."
+        },
+        {
+          "q": "What does `Post::with('user')->latest()->paginate(10)` avoid?",
+          "options": ["CSRF errors", "One extra query per post to load its author (N+1)", "Validation errors", "Needing a `posts.index` route"],
+          "answer": 1,
+          "explain": "Eager loading fetches all the authors in a single extra query."
+        },
+        {
+          "q": "Which Blade output is safe for a post body that users typed?",
+          "options": ["`{!! $post->body !!}`", "`<?= $post->body ?>`", "`{{ $post->body }}`", "`@raw($post->body)`"],
+          "answer": 2,
+          "explain": "`{{ }}` escapes HTML, preventing stored XSS."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

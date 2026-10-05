@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Project 4 · Mini Shop · Laravel Blueprint</title>
+  <meta name="description" content="Build a mini Laravel e-commerce shop with products, a cart, orders, queued emails, caching, events and clean architecture with actions and DTOs.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="P" data-lesson="e-commerce-mini">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- What you'll build -->
+  <div class="one-liner">
+    <span class="one-liner-label">What you'll build</span>
+    <p class="big">A small online shop with a product catalog, a session cart, a checkout that creates orders and reduces stock, and queued confirmation emails, all organised with actions, DTOs, events and caching.</p>
+    <p class="analogy"><span>🛒</span><span>This is the “final exam” project. Like a real shop, lots of things happen when someone pays: stock changes, an email goes out, the admin is told. Your architecture decides whether that stays tidy or turns into one 300-line controller method.</span></p>
+  </div>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>What the finished shop does</h2>
+      <p>Combines everything so far, plus Module 10 events, Module 13 queues and caching, and Module 14 architecture.</p>
+    </div>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">🛍️</span><h3>Catalog</h3><p>Browse products by category, with a cached “featured” list on the home page.</p></div>
+      <div class="mini-card"><span class="mini-icon">🛒</span><h3>Cart</h3><p>Add, update and remove items; the cart lives in the session.</p></div>
+      <div class="mini-card"><span class="mini-icon">💳</span><h3>Checkout</h3><p>Turns a cart into an order inside a database transaction, checking stock first.</p></div>
+      <div class="mini-card"><span class="mini-icon">📧</span><h3>Queued emails</h3><p>Order confirmations are sent in the background so checkout stays fast.</p></div>
+      <div class="mini-card"><span class="mini-icon">📣</span><h3>Events</h3><p><code>OrderPlaced</code> triggers emails, stock alerts and cache clearing.</p></div>
+      <div class="mini-card"><span class="mini-icon">🧑‍💼</span><h3>Admin area</h3><p>Admins manage products and order statuses, protected by policies.</p></div>
+    </div>
+  </section>
+
+  <!-- Data model -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Data model</span>
+      <h2>Tables and folder layout</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model</th><th>Key columns</th><th>Relationships</th></tr></thead>
+        <tbody>
+          <tr><td><code>User</code></td><td>name, email, <code>is_admin</code></td><td>hasMany Order</td></tr>
+          <tr><td><code>Category</code></td><td>name, slug</td><td>hasMany Product</td></tr>
+          <tr><td><code>Product</code></td><td>category_id, name, slug, price (cents), stock, image_path, is_featured</td><td>belongsTo Category</td></tr>
+          <tr><td><code>Order</code></td><td>user_id, status, total (cents), placed_at</td><td>belongsTo User, hasMany OrderItem</td></tr>
+          <tr><td><code>OrderItem</code></td><td>order_id, product_id, quantity, unit_price (cents)</td><td>belongsTo Order &amp; Product</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Store money as integers</div>
+      <p>Save prices in cents (<code>1999</code> = $19.99) to avoid floating-point rounding errors. Copy <code>unit_price</code> onto each order item so old orders keep their price if a product changes later.</p>
+    </div>
+    <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Actions/</span>
+│   ├── <span class="dir">Cart/</span>AddToCart.php
+│   └── <span class="dir">Orders/</span>PlaceOrder.php   <span class="note">← the heart of checkout</span>
+├── <span class="dir">Data/</span>
+│   ├── CartItemData.php
+│   └── CheckoutData.php
+├── <span class="dir">Events/</span>OrderPlaced.php
+├── <span class="dir">Listeners/</span>
+│   ├── SendOrderConfirmation.php  <span class="note">← implements ShouldQueue</span>
+│   └── ForgetCatalogCache.php
+├── <span class="dir">Services/</span>CartService.php     <span class="note">← session cart operations</span>
+├── <span class="dir">Http/Controllers/</span>        <span class="note">← thin: validate, delegate, respond</span>
+├── <span class="dir">Mail/</span>OrderConfirmation.php
+├── <span class="dir">Models/</span>
+└── <span class="dir">Policies/</span></pre>
+  </section>
+
+  <!-- Milestones -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Build it</span>
+      <h2>Build it milestone by milestone</h2>
+      <p>This is the largest project. Commit after every milestone and keep your tests green as you go.</p>
+    </div>
+
+    <ol class="milestones">
+      <li>
+        <h3>Set up the project, auth and schema</h3>
+        <p>Create the app with a starter kit, then write migrations and models for categories, products, orders and order items, with relationships and factories.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../07-authentication/starter-kits.html">🧰 Starter Kits</a>
+          <a class="chip-link" href="../05-database/migrations.html">🗄️ Migrations</a>
+          <a class="chip-link" href="../05-database/relationships.html">🔗 Relationships</a>
+          <a class="chip-link" href="../11-testing/factories-seeders.html">🌱 Factories &amp; Seeders</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Admin product management</h3>
+        <p>Build a product CRUD with image upload under an <code>/admin</code> prefix. Protect it with a gate or policy that only allows admins.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/resource-controllers.html">🛠️ Resource Controllers</a>
+          <a class="chip-link" href="../06-crud/forms-validation.html">🚦 Forms &amp; Validation</a>
+          <a class="chip-link" href="../08-authorization/gates.html">🚪 Gates</a>
+          <a class="chip-link" href="../08-authorization/policies.html">🛡️ Policies</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Catalog pages with caching</h3>
+        <p>List products by category with eager loading. Cache the featured-products query on the home page, since it changes rarely but is read on every visit.</p>
+        <pre><code class="lang-php">
+          $featured = Cache::remember('catalog.featured', now()-&gt;addHour(), fn () =&gt;
+              Product::where('is_featured', true)-&gt;with('category')-&gt;take(8)-&gt;get()
+          );
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../13-performance/caching.html">🗃️ Caching</a>
+          <a class="chip-link" href="../13-performance/eager-loading.html">⚡ Eager Loading &amp; N+1</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>A session cart behind a service class</h3>
+        <p>Wrap all cart logic in a <code>CartService</code> (add, update quantity, remove, total) so controllers never touch the session directly.</p>
+        <pre><code class="lang-php" data-file="app/Services/CartService.php">
+          public function add(Product $product, int $quantity = 1): void
+          {
+              $items = session('cart', []);
+              $items[$product-&gt;id] = ($items[$product-&gt;id] ?? 0) + $quantity;
+              session(['cart' =&gt; $items]);
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../14-architecture/service-classes.html">🧠 Service Classes</a>
+          <a class="chip-link" href="../10-laravel-core/service-container.html">📦 The Service Container</a>
+          <a class="chip-link" href="../07-authentication/auth-concepts.html">🍪 Sessions (How Authentication Works)</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Checkout with an action and a DTO</h3>
+        <p>Build a readonly <code>CheckoutData</code> DTO and a <code>PlaceOrder</code> action. Inside a transaction, lock the products, check stock, create the order and items, reduce stock, then fire an event.</p>
+        <pre><code class="lang-php" data-file="app/Actions/Orders/PlaceOrder.php">
+          public function handle(User $user, CheckoutData $data): Order
+          {
+              $order = DB::transaction(function () use ($user, $data) {
+                  $products = Product::whereKey(array_keys($data-&gt;items))
+                      -&gt;lockForUpdate()-&gt;get();
+
+                  // check stock, create order + items, decrement stock ...
+              });
+
+              OrderPlaced::dispatch($order);
+
+              return $order;
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../14-architecture/actions-dtos.html">⚡ Actions &amp; DTOs</a>
+          <a class="chip-link" href="../05-database/eloquent.html">🔎 Eloquent Queries</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Events and listeners</h3>
+        <p>Create an <code>OrderPlaced</code> event with listeners for the confirmation email, a low-stock alert to admins, and forgetting the <code>catalog.featured</code> cache key.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../10-laravel-core/events.html">📣 Events &amp; Listeners</a>
+          <a class="chip-link" href="../10-laravel-core/service-providers.html">🔧 Service Providers</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Queue the slow work</h3>
+        <p>Make the email listener implement <code>ShouldQueue</code>, switch <code>QUEUE_CONNECTION</code> to <code>database</code>, and run a worker. Checkout should now respond instantly.</p>
+        <pre><code class="lang-bash">
+          php artisan make:queue-table   # skip if the jobs table already exists
+          php artisan migrate
+          php artisan queue:work
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../13-performance/queues-jobs.html">🧵 Queues &amp; Jobs</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Customer orders and admin statuses</h3>
+        <p>Customers see only their own orders (an <code>OrderPolicy</code>); admins can move an order through <code>pending → paid → shipped</code>. Use a PHP enum cast for the status.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../08-authorization/policies.html">🛡️ Policies</a>
+          <a class="chip-link" href="../08-authorization/roles-permissions.html">👑 Roles &amp; Permissions</a>
+          <a class="chip-link" href="../05-database/models.html">🧱 Models (casts)</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Test checkout end to end</h3>
+        <p>Feature-test the checkout route with <code>Queue::fake()</code> or <code>Event::fake()</code>, and unit-test <code>PlaceOrder</code> for the “not enough stock” case.</p>
+        <pre><code class="lang-php">
+          Event::fake([OrderPlaced::class]);
+
+          $order = app(PlaceOrder::class)-&gt;handle($user, $data);
+
+          $this-&gt;assertSame(8, $product-&gt;fresh()-&gt;stock);
+          Event::assertDispatched(OrderPlaced::class);
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../11-testing/feature-tests.html">🧪 Feature Tests</a>
+          <a class="chip-link" href="../11-testing/unit-tests.html">🔬 Unit Tests</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Organise and prepare for production</h3>
+        <p>Review your folders against the decision table and decide whether to group actions by area. Then run the production checklist: cache config, routes and views, and supervise the queue worker.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../14-architecture/folder-strategies.html">🏛️ Structuring Large Apps</a>
+          <a class="chip-link" href="../14-architecture/repository-pattern.html">📚 Repository Pattern (when not to)</a>
+          <a class="chip-link" href="../13-performance/optimization-commands.html">🚀 Production Optimisation</a>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Stretch goals -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Stretch goals</div>
+      <ol>
+        <li>Integrate a payment provider in test mode (for example Stripe via Laravel Cashier) and mark orders paid from a webhook.</li>
+        <li>Add discount codes as an <code>ApplyCoupon</code> action with its own DTO and tests.</li>
+        <li>Expose a read-only products API, reusing what you built in Project 3.</li>
+        <li>Schedule a nightly job that emails admins a sales summary.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Definition of done -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Definition of done</span>
+      <h2>You're finished when…</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A customer can browse, fill a cart, check out and see their order history.</li>
+      <li>Checkout runs in a transaction, never oversells stock, and stores prices as integer cents.</li>
+      <li>Controllers stay thin; cart and checkout logic live in a service, actions and readonly DTOs.</li>
+      <li>Confirmation emails are queued and sent by a worker, triggered by an <code>OrderPlaced</code> event.</li>
+      <li>Featured products are cached and the cache is cleared when it goes stale.</li>
+      <li>Tests cover checkout success, out-of-stock failures and authorization, and they all pass.</li>
+    </ul>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

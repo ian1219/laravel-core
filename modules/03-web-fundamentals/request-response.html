@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Request &amp; Response · Laravel Blueprint</title>
+  <meta name="description" content="Follow a request from the browser through public/index.php and your Laravel code, and back out as a response.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="03" data-lesson="request-response">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Every web app is one loop: read the incoming request, decide what to do, and send back exactly one response.</p>
+    <p class="analogy"><span>☕</span><span>It's like ordering at a coffee shop. You place an order (the request), the barista reads it, makes the drink (your code), and hands you a cup (the response). Then they forget you and serve the next person.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Everything you build fits this loop</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔄</span>
+        <h3>One mental model</h3>
+        <p>Pages, forms, APIs and file downloads are all “request in, response out”. Learn the loop once and every feature makes sense.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📥</span>
+        <h3>Read user input safely</h3>
+        <p>Laravel wraps the request in an object, so you can ask for form fields and query strings in one tidy place.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📤</span>
+        <h3>Control the answer</h3>
+        <p>Return a view, JSON, a redirect or a download, each with the right status code and headers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The journey of one request</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow vertical">
+        <div class="flow-node"><span class="flow-icon">🌐</span><strong>Browser</strong><small>sends GET /posts/42</small></div>
+        <div class="flow-node"><span class="flow-icon">🖥️</span><strong>Web server</strong><small>Nginx, Apache or <code>php artisan serve</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🚪</span><strong>public/index.php</strong><small>the single entry point that boots Laravel</small></div>
+        <div class="flow-node"><span class="flow-icon">🛡️</span><strong>Middleware</strong><small>sessions, CSRF, auth checks</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧭</span><strong>Router → your code</strong><small>closure or controller builds the answer</small></div>
+        <div class="flow-node"><span class="flow-icon">📬</span><strong>Response</strong><small>travels back out through middleware to the browser</small></div>
+      </div>
+      <figcaption>Every request, no matter the URL, enters through <code>public/index.php</code>. That's called a <strong>front controller</strong>.</figcaption>
+    </figure>
+    <p>In plain PHP you might have one file per page (<code>about.php</code>, <code>contact.php</code>). Laravel sends <em>every</em> URL to one file instead, and lets the router decide what runs. That way, shared jobs like sessions and security only need to be set up once.</p>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Work with requests and responses</h2>
+      <p>These snippets use simple routes. You'll move this logic into controllers in Module 04.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>The simplest loop</h3>
+        <p>A route receives the request and whatever it <strong>returns</strong> becomes the response. Return a string and Laravel wraps it in a <code>200 OK</code> HTML response for you.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/ping', function () {
+              return 'pong';   // → 200 OK, Content-Type: text/html
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Read the request</h3>
+        <p>Type-hint <code>Request $request</code> in your function and Laravel hands you the <strong>request object</strong>. It knows the URL, method, headers and every input field.</p>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="5-8">
+          use Illuminate\Http\Request;
+
+          // Visit /search?q=laravel&amp;page=2
+          Route::get('/search', function (Request $request) {
+              $term = $request-&gt;input('q');            // 'laravel'
+              $page = $request-&gt;integer('page', 1);    // 2 (default 1)
+              $method = $request-&gt;method();           // 'GET'
+              $path = $request-&gt;path();               // 'search'
+
+              return "Searching for {$term} on page {$page}";
+          });
+        </code></pre>
+        <p><code>input()</code> reads from the query string <em>and</em> the form body, so the same code works for <code>GET</code> and <code>POST</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Handle a form submission</h3>
+        <p>A form <code>POST</code>s its fields in the request body. You can grab one field, a few, or check whether something was sent at all.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::post('/posts', function (Request $request) {
+              $data = $request-&gt;only(['title', 'body']);
+
+              if ($request-&gt;has('publish_now')) {
+                  // ...
+              }
+
+              // Save the post (Module 05), then redirect
+              return redirect('/posts');
+          });
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Never trust input</div>
+          <p>Anything in the request came from the user and could be anything. You'll learn to validate it properly in <a href="../06-crud/forms-validation.html">Forms &amp; Validation</a>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Choose the kind of response</h3>
+        <p>Laravel has a helper for every common answer. Each one sets the right status code and <code>Content-Type</code> header for you.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          return view('posts.show', ['title' =&gt; 'Hello']);   // HTML page, 200
+          return response()-&gt;json(['id' =&gt; 42]);             // JSON, 200
+          return redirect()-&gt;route('posts.index');           // 302 + Location header
+          return response()-&gt;download($pathToFile);          // file download
+          abort(404);                                        // stop with a 404 page
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Set status codes and headers yourself</h3>
+        <p>When you need full control, build the response explicitly and chain on extra details.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::post('/api/posts', function () {
+              return response()
+                  -&gt;json(['message' =&gt; 'Created'], 201)
+                  -&gt;header('X-Blog-Version', '1.0');
+          });
+        </code></pre>
+        <pre><code class="lang-text" data-file="Response">
+          HTTP/1.1 201 Created
+          Content-Type: application/json
+          X-Blog-Version: 1.0
+
+          {"message":"Created"}
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $title = $_POST['title'];
+          echo "Saved {$title}";
+        </code></pre>
+        <p>Superglobals and <code>echo</code> bypass Laravel's request and response objects, along with their helpers and tests.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $title = $request-&gt;input('title');
+          return "Saved {$title}";
+        </code></pre>
+        <p>Read from <code>$request</code> and <strong>return</strong> your response so Laravel can send it properly.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::post('/posts', function () {
+              // save...
+              return view('posts.index');
+          });
+        </code></pre>
+        <p>Refreshing this page re-sends the <code>POST</code> and creates a duplicate post.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::post('/posts', function () {
+              // save...
+              return redirect('/posts');
+          });
+        </code></pre>
+        <p>Redirect after a successful POST (the <strong>Post/Redirect/Get</strong> pattern), so a refresh just re-loads a safe GET.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: dump the request</div>
+      <p>Not sure what arrived? Dump it and stop: <code>dd($request-&gt;all());</code> shows every input field in a readable format.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>GET /hello</code> that reads <code>?name=</code> from the query string and returns “Hello, NAME”, defaulting to “stranger”.</li>
+        <li>Create <code>GET /api/status</code> that returns <code>{"ok": true}</code> as JSON.</li>
+        <li>Create <code>GET /old-page</code> that redirects to <code>/hello</code>, and confirm the 302 in DevTools.</li>
+        <li>Create <code>GET /secret</code> that calls <code>abort(403)</code>, and look at the page Laravel shows.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Every request enters through <code>public/index.php</code>, Laravel's front controller.</li>
+      <li>Middleware runs on the way in and out; the router picks the code to run.</li>
+      <li>Type-hint <code>Request $request</code> to read input, the method, the path and headers.</li>
+      <li>Whatever you <strong>return</strong> becomes the response: a string, view, JSON, redirect or download.</li>
+      <li>Redirect after a successful POST to avoid duplicate submissions.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which file does every request to a Laravel app enter through?",
+          "options": ["`routes/web.php`", "`bootstrap/app.php`", "`public/index.php`", "`app/Http/Kernel.php`"],
+          "answer": 2,
+          "explain": "`public/index.php` is the front controller. It boots Laravel and hands the request to the router."
+        },
+        {
+          "q": "How do you read the `q` value from `/search?q=php`?",
+          "options": ["`$request->input('q')`", "`$request->q()`", "`request('search')`", "`$_SERVER['q']`"],
+          "answer": 0,
+          "explain": "`input()` reads from both the query string and the request body."
+        },
+        {
+          "q": "What does `return redirect('/posts');` send to the browser?",
+          "options": ["A 200 with the posts page HTML", "A 302 status with a `Location: /posts` header", "A 404", "JSON with a `url` key"],
+          "answer": 1,
+          "explain": "A redirect is a 3xx response; the browser then makes a new `GET` to the `Location` URL."
+        },
+        {
+          "q": "Why should you redirect after a successful form POST?",
+          "options": ["It's faster", "Laravel requires it", "So a page refresh doesn't resubmit the form", "To clear the cookies"],
+          "answer": 2,
+          "explain": "Post/Redirect/Get means refreshing re-loads a safe GET page instead of repeating the POST."
+        },
+        {
+          "q": "Which line returns JSON with a `201 Created` status?",
+          "options": ["`return json(201);`", "`return view('json', 201);`", "`abort(201);`", "`return response()->json($data, 201);`"],
+          "answer": 3,
+          "explain": "`response()->json()` takes the data and an optional status code."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

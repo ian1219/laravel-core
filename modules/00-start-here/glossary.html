@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Laravel Words in Plain English · Laravel Blueprint</title>
+  <meta name="description" content="Flip cards for the Laravel words you'll hear every day, from route and model to middleware, facade and CSRF, each turned into one friendly sentence.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="glossary">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. Opening chat -->
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Every Laravel tutorial throws words at me. Facade? Eloquent? Middleware? I feel like I need a dictionary.</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">You do, and here it is. Most of these words describe very ordinary ideas. They just have fancy names.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Do I have to memorise all of them before I start?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Not at all. Tap a card when a word confuses you, read one sentence, then get back to building. Bookmark this page. It's your <b>pocket translator</b>.</div></div>
+    </div>
+
+    <div class="memory"><div class="memory-title">How to use this page</div><p>Read the word on the front, guess what it means, <b>then</b> tap to flip. Guessing first makes it stick far better than just reading.</p></div>
+  </section>
+
+  <!-- 2. The basics -->
+  <section class="section">
+    <div class="topic-banner" id="basics" style="--tc1:#a855f7;--tc2:#6366f1">
+      <span class="tb-icon">🧰</span>
+      <div><h2>The basics</h2><p>The tools you meet on day one.</p></div>
+    </div>
+
+    <div class="flip-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🐘</span><strong>PHP</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The language</b>The programming language Laravel is written in, running on the server. <code>echo "Hi!";</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🎼</span><strong>Composer</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The package delivery service</b>It downloads PHP libraries your project needs and keeps them up to date. <code>composer require laravel/sanctum</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🪄</span><strong>Artisan</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Your helpful assistant</b>Laravel's command-line helper that creates files and runs chores for you. <code>php artisan make:model Post</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🔑</span><strong>.env</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The secret settings note</b>A private file of passwords and settings that change per computer, never shared publicly. <code>DB_DATABASE=blog</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🏗️</span><strong>Laravel</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A ready-built house frame</b>A PHP framework that gives you login, databases, routing and more, so you only build what's unique to your app.</span>
+        </span>
+      </button>
+    </div>
+    <p>Full lessons: <a href="../01-php-foundations/variables.html">PHP Foundations</a> and <a href="../04-laravel-basics/installation.html">Installation &amp; Setup</a>.</p>
+  </section>
+
+  <!-- 3. Pages & URLs -->
+  <section class="section">
+    <div class="topic-banner" id="pages" style="--tc1:#22d3ee;--tc2:#3b82f6">
+      <span class="tb-icon">🧭</span>
+      <div><h2>Pages &amp; URLs</h2><p>How a click becomes a page.</p></div>
+    </div>
+
+    <div class="flip-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🪧</span><strong>Route</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A signpost</b>“Visit /about → run this code.” <code>Route::get('/about', …)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🤵</span><strong>Controller</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The waiter</b>A class that takes the request, fetches what's needed and decides what to send back. <code>PostController</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🎨</span><strong>View / Blade</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A fill-in-the-blanks page</b>An HTML template where Laravel fills in the gaps with your data. <code>{{ $post-&gt;title }}</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🛡️</span><strong>Middleware</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The security checkpoint</b>Code that checks every request on its way in, like “are you logged in?”. <code>-&gt;middleware('auth')</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📨</span><strong>Request</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The order slip</b>Everything the browser sent: the URL, the method, form fields and cookies. <code>$request-&gt;input('title')</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📬</span><strong>Response</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The delivered order</b>What your app sends back: a page, some JSON or a redirect, plus a status code. <code>return redirect('/posts');</code></span>
+        </span>
+      </button>
+    </div>
+    <p>Full lessons: <a href="../04-laravel-basics/routing.html">Routing</a>, <a href="../04-laravel-basics/controllers.html">Controllers</a>, <a href="../04-laravel-basics/blade.html">Blade Templates</a>, <a href="../10-laravel-core/middleware.html">Middleware</a> and <a href="../03-web-fundamentals/request-response.html">Request &amp; Response</a>.</p>
+  </section>
+
+  <!-- 4. Data -->
+  <section class="section">
+    <div class="topic-banner" id="data" style="--tc1:#10b981;--tc2:#22d3ee">
+      <span class="tb-icon">🗄️</span>
+      <div><h2>Data</h2><p>Where your app keeps things, and how it finds them again.</p></div>
+    </div>
+
+    <div class="flip-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🗃️</span><strong>Database</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A giant filing cabinet</b>Where your app stores data in tables, like spreadsheets with rows and columns.</span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📐</span><strong>Migration</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Building instructions for a table</b>A PHP file that creates or changes a table, so every teammate gets the same setup. <code>php artisan migrate</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🎮</span><strong>Model</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A remote control for one table</b>A class that reads and writes one table: <code>Post</code> controls <code>posts</code>.</span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🗣️</span><strong>Eloquent</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Talking to the database in PHP</b>Laravel's way of querying data with readable PHP instead of raw SQL. <code>Post::where('published', true)-&gt;get()</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🌱</span><strong>Seeder</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Stocking the shelves</b>A class that fills your database with starting data in one go. <code>php artisan db:seed</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🏭</span><strong>Factory</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A fake-data machine</b>A recipe for making realistic pretend records, great for tests. <code>User::factory(50)-&gt;create()</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🔗</span><strong>Relationship</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Family ties between tables</b>A link like “a user has many posts” that lets you hop from one to the other. <code>$user-&gt;posts</code></span>
+        </span>
+      </button>
+    </div>
+    <p>Full lessons: <a href="../05-database/migrations.html">Migrations</a>, <a href="../05-database/models.html">Models</a>, <a href="../05-database/eloquent.html">Eloquent Queries</a>, <a href="../05-database/relationships.html">Relationships</a> and <a href="../11-testing/factories-seeders.html">Factories &amp; Seeders</a>.</p>
+  </section>
+
+  <!-- 5. Behind the scenes -->
+  <section class="section">
+    <div class="topic-banner" id="behind" style="--tc1:#f59e0b;--tc2:#ef4444">
+      <span class="tb-icon">⚙️</span>
+      <div><h2>Behind the scenes</h2><p>The machinery that makes Laravel feel like magic.</p></div>
+    </div>
+
+    <div class="flip-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🏪</span><strong>Service Container</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A smart vending machine</b>Ask for a class and Laravel builds it, plus everything it needs, for you. <code>app(PostService::class)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📋</span><strong>Service Provider</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The opening checklist</b>A class that sets things up when the app starts, before any request is handled. <code>AppServiceProvider</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🔘</span><strong>Facade</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A shortcut button</b>Looks like a simple static call, but finds the real object in the container for you. <code>Cache::get('key')</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🔌</span><strong>Dependency Injection</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>Hand it the tools</b>Instead of a class building its own tools, it asks for them and Laravel plugs them in. <code>__construct(Mailer $mailer)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📣</span><strong>Event</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>An announcement</b>“Something just happened!” Any listener that cares can react on its own. <code>OrderPlaced::dispatch($order)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">📥</span><strong>Queue / Job</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A to-do list for later</b>A job is a task; the queue holds it so a background worker can do it while the user moves on. <code>SendWelcomeEmail::dispatch($user)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">⚡</span><strong>Cache</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A sticky note of answers</b>Save the result of slow work so next time you just read the note. <code>Cache::remember('stats', 60, fn () =&gt; …)</code></span>
+        </span>
+      </button>
+    </div>
+    <p>Full lessons: <a href="../10-laravel-core/service-container.html">The Service Container</a>, <a href="../10-laravel-core/service-providers.html">Service Providers</a>, <a href="../10-laravel-core/facades.html">Facades</a>, <a href="dependency-injection.html">Dependency Injection</a>, <a href="../10-laravel-core/events.html">Events &amp; Listeners</a>, <a href="../13-performance/queues-jobs.html">Queues &amp; Jobs</a> and <a href="../13-performance/caching.html">Caching</a>.</p>
+  </section>
+
+  <!-- 6. Safety -->
+  <section class="section">
+    <div class="topic-banner" id="safety" style="--tc1:#f472b6;--tc2:#a855f7">
+      <span class="tb-icon">🔒</span>
+      <div><h2>Safety</h2><p>Who you are, what you're allowed to do, and keeping the bad guys out.</p></div>
+    </div>
+
+    <div class="flip-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🪪</span><strong>Authentication</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>“Who are you?”</b>Checking someone's identity, usually by logging in with email and password. <code>auth()-&gt;user()</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🎟️</span><strong>Authorization</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>“Are you allowed?”</b>Deciding what a logged-in person may do, like editing only their own posts. <code>Gate::allows('update', $post)</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🎫</span><strong>CSRF</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A secret form ticket</b>A hidden token in your forms that proves the form came from your site, not a stranger's. <code>@csrf</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">✅</span><strong>Validation</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>The form bouncer</b>Rules that check user input before you trust it. <code>'email' =&gt; 'required|email'</code></span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-inner">
+          <span class="flip-front"><span class="f-icon">🥤</span><strong>Hashing</strong><small>tap to flip</small></span>
+          <span class="flip-back"><b>A one-way blender</b>Scrambles a password so it can be checked but never un-scrambled. <code>Hash::make('secret')</code></span>
+        </span>
+      </button>
+    </div>
+    <p>Full lessons: <a href="../07-authentication/auth-concepts.html">How Authentication Works</a>, <a href="../08-authorization/gates.html">Gates</a>, <a href="../12-security/csrf-xss.html">CSRF &amp; XSS</a>, <a href="../06-crud/forms-validation.html">Forms &amp; Validation</a> and <a href="../12-security/hashing-encryption.html">Hashing &amp; Encryption</a>.</p>
+  </section>
+
+  <!-- 7. Common mix-ups -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Words people mix up</span>
+      <h2>Authentication vs authorization</h2>
+    </div>
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🏨</div><p>At a hotel, the front desk checks your ID (<b>authentication</b>). Your key card then opens only <i>your</i> room (<b>authorization</b>).</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php">
+        // Who are you? (must be logged in)
+        Route::get('/posts/{post}/edit', [PostController::class, 'edit'])
+            -&gt;middleware('auth')
+            // Are you allowed? (must own the post)
+            -&gt;can('update', 'post');
+      </code></pre></div>
+    </div>
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>Authenti<b>cation</b> = <b>who</b> you are. Authori<b>zation</b> = what you're <b>allowed</b>. One checks your face, the other checks your key.</p></div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <span class="compare-label">❌ Avoid</span>
+        <pre><code class="lang-php">
+          $user-&gt;password = $request-&gt;password;
+        </code></pre>
+        <p>Storing a password as plain text means a single leak exposes every account.</p>
+      </div>
+      <div class="compare-card good">
+        <span class="compare-label">✅ Do</span>
+        <pre><code class="lang-php">
+          $user-&gt;password = Hash::make($request-&gt;password);
+        </code></pre>
+        <p>Hash it, so even you can't read it. (Laravel's default <code>User</code> model does this for you with a <code>'hashed'</code> cast.)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Go through each group <b>without flipping</b>, say your guess out loud, then flip to check. Count how many you got right.</li>
+        <li>Pick five cards and rewrite each back in your own words, using a different analogy.</li>
+        <li>Run <code>php artisan list</code> in a Laravel project and find three commands that match words on this page (hint: look for <code>make:</code>).</li>
+        <li>Explain authentication vs authorization to a friend using something from your daily life (a gym, an office, a concert).</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 9. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Key takeaways</span>
+      <h2>Big words, small ideas</h2>
+    </div>
+    <ul class="takeaways">
+      <li><b>Route → Controller → Model → View</b> is the path almost every page takes.</li>
+      <li><b>Migrations</b> build tables, <b>models</b> use them and <b>seeders/factories</b> fill them.</li>
+      <li>The <b>service container</b> builds objects for you, and <b>dependency injection</b> is how you ask for them.</li>
+      <li><b>Authentication</b> is who you are; <b>authorization</b> is what you may do.</li>
+      <li>You don't need to memorise this page. Come back whenever a word feels scary.</li>
+    </ul>
+    <p>Want to see these words working together? Follow the pizza order in <a href="how-laravel-works.html">How Laravel Works: The Story</a>.</p>
+  </section>
+
+  <!-- 10. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Mini quiz</span>
+      <h2>Name that word</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which word means **a PHP file that creates or changes a database table**?",
+          "options": ["Seeder", "Migration", "Model", "Facade"],
+          "answer": 1,
+          "explain": "A migration is the building instructions for a table. Run them all with `php artisan migrate`."
+        },
+        {
+          "q": "Which word means **a checkpoint every request passes through, like “are you logged in?”**?",
+          "options": ["Controller", "Event", "Middleware", "Cache"],
+          "answer": 2,
+          "explain": "Middleware sits between the request and your controller, and can stop the request early."
+        },
+        {
+          "q": "Which word means **a hidden token that proves a form came from your own site**?",
+          "options": ["CSRF token", "Hash", "Session", "Route"],
+          "answer": 0,
+          "explain": "Add `@csrf` inside every Blade form and Laravel checks the token for you."
+        },
+        {
+          "q": "Which word means **a background to-do list, so the user doesn't wait for slow tasks like emails**?",
+          "options": ["Cache", "Service Provider", "Factory", "Queue"],
+          "answer": 3,
+          "explain": "Jobs go on the queue, and a worker (`php artisan queue:work`) does them in the background."
+        },
+        {
+          "q": "Which word means **deciding what a logged-in user is allowed to do**?",
+          "options": ["Authentication", "Authorization", "Validation", "Hashing"],
+          "answer": 1,
+          "explain": "Authentication asks “who are you?”. Authorization asks “are you allowed?”, using gates and policies."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Variables &amp; Data Types · Laravel Blueprint</title>
+  <meta name="description" content="Learn PHP variables and data types: strings, integers, floats, booleans, null, string interpolation, constants and strict types.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="01" data-lesson="variables">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A variable is a named box that holds one piece of data, and its data type tells PHP what kind of thing is inside.</p>
+    <p class="analogy"><span>📦</span><span>Picture a moving box with a label written on the side. The label is the variable name (<code>$title</code>), and the contents are the value (<code>"My first post"</code>). You can open the box later, look inside, or swap what's in it.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Every program is data being moved around</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧠</span>
+        <h3>Programs need memory</h3>
+        <p>A user's name, a post's title, a cart total: your code has to remember things while it runs. Variables are how it remembers.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏷️</span>
+        <h3>Types prevent surprises</h3>
+        <p>Knowing whether something is text, a number or "nothing" (<code>null</code>) stops a whole class of bugs before they happen.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🐘</span>
+        <h3>Laravel is just PHP</h3>
+        <p>Every controller, model and view you'll write is built from these basics. Get them solid now and Laravel reads like plain English later.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>PHP's everyday data types</h2>
+    </div>
+    <p>PHP has a handful of <strong>scalar types</strong> (types that hold one single value) plus a special "empty" value. These are the ones you'll use every day:</p>
+    <figure class="diagram">
+      <div class="card-grid">
+        <div class="mini-card">
+          <span class="mini-icon">🔤</span>
+          <h3>string</h3>
+          <p>Text, in quotes. <code>"Hello"</code>, <code>'laravel'</code></p>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🔢</span>
+          <h3>int</h3>
+          <p>Whole numbers. <code>42</code>, <code>-7</code>, <code>1_000_000</code></p>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">➗</span>
+          <h3>float</h3>
+          <p>Numbers with a decimal point. <code>19.99</code>, <code>0.5</code></p>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🔘</span>
+          <h3>bool</h3>
+          <p>Yes or no. Only <code>true</code> or <code>false</code></p>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🕳️</span>
+          <h3>null</h3>
+          <p>"No value at all." The box exists but it's empty.</p>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🗂️</span>
+          <h3>array &amp; object</h3>
+          <p>Containers for many values. Covered in the next lessons.</p>
+        </div>
+      </div>
+      <figcaption>Use <code>var_dump($x)</code> or <code>gettype($x)</code> any time you're unsure what type a variable holds.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build your variable skills</h2>
+      <p>Save each snippet as a <code>.php</code> file and run it with <code>php filename.php</code>, or paste it into an online PHP sandbox.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Create and change a variable</h3>
+        <p>Every variable starts with a <strong>dollar sign</strong> <code>$</code>. You create one by <strong>assigning</strong> a value with <code>=</code>. Assign again and the old value is replaced.</p>
+        <pre><code class="lang-php" data-file="hello.php" data-hl="3,7">
+          &lt;?php
+
+          $title = 'My first post';
+          echo $title;          // My first post
+          echo PHP_EOL;         // a line break
+
+          $title = 'An even better post';
+          echo $title;          // An even better post
+        </code></pre>
+        <p>Names are <strong>case-sensitive</strong> (<code>$title</code> and <code>$Title</code> are different boxes). By convention PHP and Laravel use <strong>camelCase</strong>: <code>$postTitle</code>, <code>$isPublished</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Meet the core types</h3>
+        <p>PHP figures out the type from the value you assign. That's called <strong>dynamic typing</strong>: you don't declare the type up front.</p>
+        <pre><code class="lang-php" data-file="types.php">
+          &lt;?php
+
+          $title       = 'Hello Laravel';   // string
+          $views       = 1_250;             // int (underscores are just for readability)
+          $rating      = 4.5;               // float
+          $isPublished = true;              // bool
+          $deletedAt   = null;              // null: nothing here yet
+
+          var_dump($views);        // int(1250)
+          echo gettype($rating);   // double (PHP's old name for float)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Build strings: quotes, joining and interpolation</h3>
+        <p><strong>Single quotes</strong> print text exactly as written. <strong>Double quotes</strong> also replace variables inside them with their values. That's called <strong>interpolation</strong>. The dot <code>.</code> joins (concatenates) strings.</p>
+        <pre><code class="lang-php" data-file="strings.php" data-hl="5,6">
+          &lt;?php
+
+          $name = 'Ada';
+
+          echo 'Hi, $name';            // Hi, $name   (single quotes: literal)
+          echo "Hi, {$name}!";         // Hi, Ada!    (double quotes: interpolated)
+          echo 'Hi, ' . $name . '!';   // Hi, Ada!    (concatenation)
+
+          $greeting = 'Hello';
+          $greeting .= ', world';      // append: "Hello, world"
+
+          echo strlen($greeting);      // 12
+          echo strtoupper($name);      // ADA
+        </code></pre>
+        <div class="callout tip">
+          <div class="callout-title">💡 Wrap variables in braces</div>
+          <p>Writing <code>"{$name}"</code> instead of <code>"$name"</code> is clearer and works for complex things later, like <code>"{$post-&gt;title}"</code>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Do maths and compare values</h3>
+        <p>Numbers support the usual operators. Comparisons give you a <code>bool</code>. Always prefer <strong>strict comparison</strong> <code>===</code>, which checks both the value <em>and</em> the type.</p>
+        <pre><code class="lang-php" data-file="math.php">
+          &lt;?php
+
+          $price = 20;
+          $qty   = 3;
+
+          $total = $price * $qty;     // 60
+          $total += 5;                // 65 (shipping)
+          echo $total % 2;            // 1  (remainder)
+          echo 2 ** 3;                // 8  (power)
+
+          var_dump(5 == '5');         // bool(true)  loose: converts types first
+          var_dump(5 === '5');        // bool(false) strict: int is not string
+          var_dump($total &gt;= 50 &amp;&amp; $qty &lt; 10);  // bool(true)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Handle "maybe null" with <code>??</code></h3>
+        <p>Real data is often missing. The <strong>null coalescing operator</strong> <code>??</code> means "use the left side, unless it's null or doesn't exist, then use the right side". <code>??=</code> assigns only if the variable is still null.</p>
+        <pre><code class="lang-php" data-file="null.php">
+          &lt;?php
+
+          $nickname = null;
+
+          echo $nickname ?? 'Guest';     // Guest
+
+          $theme = null;
+          $theme ??= 'dark';             // only set if still null
+          echo $theme;                   // dark
+
+          var_dump(is_null($nickname));  // bool(true)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Lock values with constants and turn on strict types</h3>
+        <p>A <strong>constant</strong> is a value that never changes. It has no <code>$</code> and is written in UPPER_CASE. Adding <code>declare(strict_types=1);</code> at the very top of a file tells PHP to stop silently converting types when you call typed functions, so mistakes fail loudly.</p>
+        <pre><code class="lang-php" data-file="config.php" data-hl="3">
+          &lt;?php
+
+          declare(strict_types=1);
+
+          const SITE_NAME = 'Laravel Blueprint';
+          const MAX_POSTS_PER_PAGE = 15;
+
+          echo SITE_NAME;
+
+          // Converting on purpose ("casting"):
+          $pageFromUrl = '3';
+          $page = (int) $pageFromUrl;    // 3 as an int
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Where types really shine</div>
+          <p>You'll add types to function parameters in <a href="functions.html">Functions</a> and to class properties in <a href="classes-objects.html">Classes &amp; Objects</a>. That's where <code>strict_types</code> starts catching bugs for you.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          if ($status == 0) {
+              // '0', false, null and '' can all sneak in
+          }
+        </code></pre>
+        <p>Loose <code>==</code> converts types before comparing, which leads to strange matches.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          if ($status === 0) {
+              // only the integer 0 gets in
+          }
+        </code></pre>
+        <p>Strict <code>===</code> checks value and type, so you get exactly what you asked for.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $x = 'Ada';
+          $d = 3;
+          echo 'Hello $x, you have $d posts';
+        </code></pre>
+        <p>Vague names, and single quotes print <code>$x</code> literally instead of its value.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $authorName = 'Ada';
+          $postCount  = 3;
+          echo "Hello {$authorName}, you have {$postCount} posts";
+        </code></pre>
+        <p>Descriptive camelCase names plus double quotes with braces read clearly and work.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: dump and die</div>
+      <p>In plain PHP, <code>var_dump($x); exit;</code> shows a value and stops. In Laravel you'll use the shortcut <code>dd($x)</code> ("dump and die") constantly while debugging.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>Create <code>profile.php</code> and:</p>
+      <ol>
+        <li>Store a name (string), age (int), height in metres (float) and <code>$isAdmin</code> (bool).</li>
+        <li>Print one sentence using double-quote interpolation: “Ada is 36 and 1.7m tall.”</li>
+        <li>Create <code>$nickname = null;</code> and print it with a fallback of “No nickname” using <code>??</code>.</li>
+        <li>Use <code>var_dump()</code> to compare <code>36 == '36'</code> and <code>36 === '36'</code>. Explain the difference in a comment.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li>Your <code>.env</code> file is a list of named settings like <code>APP_NAME</code>, and Laravel reads them as strings, ints and bools.</li>
+        <li>Route parameters such as <code>{id}</code> arrive as strings (see <a href="../04-laravel-basics/routing.html">Routing</a>).</li>
+        <li><code>??</code> is everywhere: <code>$request-&gt;input('page') ?? 1</code>, <code>$post-&gt;subtitle ?? 'Untitled'</code>.</li>
+        <li>A model's nullable column, like <code>published_at</code>, comes back as <code>null</code> when it's empty (see <a href="../05-database/models.html">Models</a>).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Variables start with <code>$</code>, use camelCase, and are case-sensitive.</li>
+      <li>The core types are <code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code> and <code>null</code>.</li>
+      <li>Double quotes interpolate (<code>"{$name}"</code>); single quotes don't; <code>.</code> joins strings.</li>
+      <li>Use strict comparison <code>===</code> almost always.</li>
+      <li><code>??</code> and <code>??=</code> give clean fallbacks for missing values.</li>
+      <li>Constants never change; <code>declare(strict_types=1);</code> makes type mistakes fail loudly.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Given `$name = 'Ada';`, what does `echo 'Hi, $name';` print?",
+          "options": ["Hi, Ada", "Hi, $name", "Hi, ", "An error"],
+          "answer": 1,
+          "explain": "Single quotes print text literally. Use double quotes, like `\"Hi, {$name}\"`, to interpolate."
+        },
+        {
+          "q": "What is the result of `5 === '5'`?",
+          "options": ["`true`", "`null`", "`false`", "It throws an error"],
+          "answer": 2,
+          "explain": "`===` compares value **and** type. An int is never identical to a string."
+        },
+        {
+          "q": "What does `$nickname ?? 'Guest'` return when `$nickname` is `null`?",
+          "options": ["`'Guest'`", "`null`", "`false`", "An empty string"],
+          "answer": 0,
+          "explain": "The null coalescing operator `??` falls back to the right side when the left side is null or undefined."
+        },
+        {
+          "q": "Which value is a `float`?",
+          "options": ["`'19.99'`", "`1_999`", "`true`", "`19.99`"],
+          "answer": 3,
+          "explain": "`19.99` is a float. `'19.99'` in quotes is a string, and `1_999` is an int with a readability underscore."
+        },
+        {
+          "q": "What does `declare(strict_types=1);` do?",
+          "options": ["Makes all variables constants", "Stops PHP silently converting types when calling typed functions", "Requires every variable to be declared first", "Turns off error messages"],
+          "answer": 1,
+          "explain": "With strict types, passing `'3'` to a function expecting `int` throws a `TypeError` instead of quietly converting it."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Service Classes · Laravel Blueprint</title>
+  <meta name="description" content="Keep Laravel controllers thin by moving business logic into service classes that the service container injects for you.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="14" data-lesson="service-classes">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A service class is a plain PHP class that holds your business logic, so controllers only receive the request, hand the work off and return a response.</p>
+    <p class="analogy"><span>🍽️</span><span>A restaurant waiter takes your order and brings the plate, but doesn't cook. The kitchen (the service) does the real work. If the waiter also cooked, washed dishes and did the accounts, every table would wait, and nobody else could reuse the recipes.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Fat controllers get painful fast</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">♻️</span>
+        <h3>Reuse the same logic</h3>
+        <p>Publishing a post from a web form, an API endpoint and an Artisan command should run the <em>same</em> code, not three copies of it.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>Easier to test</h3>
+        <p>You can test a service by calling one method. You don't need to fake an HTTP request just to check a calculation.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📖</span>
+        <h3>Controllers you can read</h3>
+        <p>A five-line controller method tells you the whole story at a glance: validate, delegate, respond.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Who does what in a request</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Form Request</strong><small>validates input</small></div>
+        <div class="flow-node"><span class="flow-icon">🎛️</span><strong>Controller</strong><small>delegates, responds</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧠</span><strong>Service</strong><small>business rules</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Models</strong><small>Eloquent + DB</small></div>
+      </div>
+      <figcaption>The controller speaks HTTP. The service speaks your business (“publish a post”). Models speak to the database.</figcaption>
+    </figure>
+    <p>A <strong>service class</strong> isn't a special Laravel feature. It's just a class you write, usually in <code>app/Services</code>. Laravel's <a href="../10-laravel-core/service-container.html">service container</a> can build it for you and inject it anywhere, with no registration needed.</p>
+    <dl class="terms">
+      <div><dt>Business logic</dt><dd>The rules that make your app <em>your</em> app: “a post gets a slug”, “authors are notified”, “prices include tax”.</dd></div>
+      <div><dt>Fat controller</dt><dd>A controller method that validates, calculates, saves, emails and formats, all in one place.</dd></div>
+      <div><dt>Thin controller</dt><dd>A controller that only translates HTTP in and out, and delegates the real work.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Refactor a fat controller</h2>
+      <p>We'll start from a real-looking “publish a post” controller and slim it down one move at a time.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Spot the fat controller</h3>
+        <p>This method works, but it does five jobs: validation, slug creation, saving, tagging and notifying. None of it can be reused from an API or a command.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="9-22">
+          public function store(Request $request)
+          {
+              $data = $request-&gt;validate([
+                  'title' =&gt; ['required', 'max:255'],
+                  'body'  =&gt; ['required'],
+                  'tags'  =&gt; ['array'],
+              ]);
+
+              $slug = Str::slug($data['title']);
+              if (Post::where('slug', $slug)-&gt;exists()) {
+                  $slug .= '-' . Str::random(5);
+              }
+
+              $post = $request-&gt;user()-&gt;posts()-&gt;create([
+                  ...$data, 'slug' =&gt; $slug, 'published_at' =&gt; now(),
+              ]);
+              $post-&gt;tags()-&gt;sync($data['tags'] ?? []);
+
+              foreach ($request-&gt;user()-&gt;followers as $follower) {
+                  $follower-&gt;notify(new PostPublished($post));
+              }
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Create the service class</h3>
+        <p>There's no Artisan generator required. Make a folder and a class. (Laravel 11+ has <code>php artisan make:class</code> if you like generators.)</p>
+        <pre><code class="lang-bash">
+          php artisan make:class Services/PostService
+        </code></pre>
+        <p>Move the business steps into a method named after what the business calls it: <code>publish</code>.</p>
+        <pre><code class="lang-php" data-file="app/Services/PostService.php">
+          &lt;?php
+
+          namespace App\Services;
+
+          use App\Models\Post;
+          use App\Models\User;
+          use App\Notifications\PostPublished;
+          use Illuminate\Support\Str;
+
+          class PostService
+          {
+              public function publish(User $author, array $data): Post
+              {
+                  $post = $author-&gt;posts()-&gt;create([
+                      ...$data,
+                      'slug' =&gt; $this-&gt;uniqueSlug($data['title']),
+                      'published_at' =&gt; now(),
+                  ]);
+                  $post-&gt;tags()-&gt;sync($data['tags'] ?? []);
+
+                  $author-&gt;followers-&gt;each-&gt;notify(new PostPublished($post));
+
+                  return $post;
+              }
+
+              private function uniqueSlug(string $title): string
+              {
+                  $slug = Str::slug($title);
+                  return Post::where('slug', $slug)-&gt;exists()
+                      ? $slug . '-' . Str::random(5)
+                      : $slug;
+              }
+          }
+        </code></pre>
+        <p>Notice the service knows nothing about <code>Request</code> or redirects. It takes plain data and returns a <code>Post</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Move validation into a Form Request</h3>
+        <p>Validation is HTTP's job, so it belongs in a <a href="../06-crud/forms-validation.html">Form Request</a>, not in the service.</p>
+        <pre><code class="lang-php" data-file="app/Http/Requests/StorePostRequest.php">
+          public function rules(): array
+          {
+              return [
+                  'title' =&gt; ['required', 'max:255'],
+                  'body'  =&gt; ['required'],
+                  'tags'  =&gt; ['array'],
+              ];
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Inject the service and slim the controller</h3>
+        <p>Type-hint the service in the method (or the constructor). The container builds it automatically.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3-6">
+          public function store(StorePostRequest $request, PostService $posts)
+          {
+              $post = $posts-&gt;publish($request-&gt;user(), $request-&gt;validated());
+
+              return redirect()-&gt;route('posts.show', $post)
+                  -&gt;with('status', 'Post published!');
+          }
+        </code></pre>
+        <p>From 22 lines to 4. The controller now reads like a sentence: “validate, publish, redirect”.</p>
+      </li>
+
+      <li class="step">
+        <h3>Reuse it everywhere</h3>
+        <p>The same service now powers an API controller and an Artisan command with no duplication.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/Api/PostController.php">
+          public function store(StorePostRequest $request, PostService $posts)
+          {
+              $post = $posts-&gt;publish($request-&gt;user(), $request-&gt;validated());
+
+              return new PostResource($post);
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/console.php">
+          Artisan::command('posts:publish-draft {user} {title}', function (PostService $posts) {
+              $posts-&gt;publish(User::findOrFail($this-&gt;argument('user')), [
+                  'title' =&gt; $this-&gt;argument('title'), 'body' =&gt; 'Draft',
+              ]);
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Test the service directly</h3>
+        <p>A feature test can call the service without touching HTTP. Here it is with PHPUnit (Pest works the same way with <code>it()</code>).</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostServiceTest.php">
+          public function test_publishing_creates_a_unique_slug(): void
+          {
+              Notification::fake();
+              $author = User::factory()-&gt;create();
+              Post::factory()-&gt;create(['slug' =&gt; 'hello-world']);
+
+              $post = app(PostService::class)-&gt;publish($author, [
+                  'title' =&gt; 'Hello World', 'body' =&gt; 'Hi',
+              ]);
+
+              $this-&gt;assertNotSame('hello-world', $post-&gt;slug);
+              $this-&gt;assertStringStartsWith('hello-world-', $post-&gt;slug);
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Service vs action</div>
+          <p>A service usually groups several related methods (<code>publish</code>, <code>unpublish</code>, <code>schedule</code>). If you prefer one class per operation, see <a href="actions-dtos.html">Actions &amp; DTOs</a>. Both are fine; pick one style per project.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function publish(Request $request)
+          {
+              $data = $request-&gt;validate([...]);
+              // ...
+              return redirect('/posts');
+          }
+        </code></pre>
+        <p>A service that reads <code>Request</code> and returns redirects is just a controller in disguise; it can't be reused from a job or command.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function publish(User $author, array $data): Post
+          {
+              // business rules only
+          }
+        </code></pre>
+        <p>Accept plain data, return domain objects, and leave HTTP to the controller.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          class PostService
+          {
+              public function all() { return Post::all(); }
+              public function find($id) { return Post::find($id); }
+          }
+        </code></pre>
+        <p>Wrapping one-line Eloquent calls adds a layer with no benefit. That's not business logic.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // Simple reads stay in the controller
+          $posts = Post::latest()-&gt;paginate(10);
+        </code></pre>
+        <p>Extract a service when there are real rules or side effects, not for every query.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: watch out for the “God service”</div>
+      <p>If <code>PostService</code> grows past a handful of methods or a few hundred lines, split it by job (<code>PostPublisher</code>, <code>PostScheduler</code>) or switch to action classes. A bloated service is just a fat controller that moved house.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Find the longest controller method in one of your projects and list every “job” it does.</li>
+        <li>Create <code>app/Services/CommentService.php</code> with a <code>post(User $user, Post $post, string $body): Comment</code> method that saves the comment and notifies the post author.</li>
+        <li>Inject it into <code>CommentController@store</code> so the method is 5 lines or fewer.</li>
+        <li>Write one test that calls the service directly and asserts the notification was sent with <code>Notification::assertSentTo()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A service class is a plain PHP class for business logic, usually in <code>app/Services</code>.</li>
+      <li>Controllers should validate (via Form Requests), delegate to a service, and return a response.</li>
+      <li>Services take plain data and return models or values. They never touch <code>Request</code> or redirects.</li>
+      <li>The service container injects services automatically. Just type-hint them.</li>
+      <li>Extract a service when logic is reused or has side effects, not for one-line queries.</li>
+      <li>Split services that grow too big, or switch to single-purpose action classes.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What belongs in a service class?",
+          "options": ["Redirects and flash messages", "Business rules like creating a unique slug and notifying followers", "Validation rules for the form", "Blade markup"],
+          "answer": 1,
+          "explain": "Services hold business logic. HTTP concerns (validation, redirects) stay with Form Requests and controllers."
+        },
+        {
+          "q": "How does a controller usually get an instance of `PostService`?",
+          "options": ["`new PostService()` in every method", "Register it in `config/app.php` first", "Type-hint it and let the service container inject it", "Use a global helper"],
+          "answer": 2,
+          "explain": "The container auto-resolves concrete classes, so type-hinting `PostService $posts` is enough."
+        },
+        {
+          "q": "Why shouldn't a service method accept the `Request` object?",
+          "options": ["It ties the logic to HTTP, so commands and jobs can't reuse it", "Requests can't be passed as arguments", "It's slower", "Laravel forbids it"],
+          "answer": 0,
+          "explain": "Passing plain data (`$request->validated()`) keeps the service usable from anywhere."
+        },
+        {
+          "q": "Your `PostService` only has `all()` and `find()` wrapping `Post::all()` and `Post::find()`. What's the honest verdict?",
+          "options": ["Perfect separation of concerns", "It's required for testing", "It's an extra layer with no real benefit", "It improves performance"],
+          "answer": 2,
+          "explain": "Wrapping one-line Eloquent calls adds indirection without adding rules. Keep simple reads in the controller."
+        },
+        {
+          "q": "A service has grown to 40 methods and 900 lines. What's a good next step?",
+          "options": ["Move it all back into the controller", "Split it by job, or switch to action classes", "Make every method static", "Add more comments"],
+          "answer": 1,
+          "explain": "A \"God service\" is a fat controller in a new place. Smaller, focused classes are easier to read and test."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

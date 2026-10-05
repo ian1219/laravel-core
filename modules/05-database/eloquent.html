@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Eloquent Queries · Laravel Blueprint</title>
+  <meta name="description" content="Learn Eloquent queries in Laravel: find, where, orderBy, latest, paginate, create, update, delete and query scopes, with the SQL each one generates.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="05" data-lesson="eloquent">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Eloquent lets you build database queries by chaining readable PHP methods, then turns them into safe SQL for you.</p>
+    <p class="analogy"><span>🍔</span><span>It's like ordering at a burger counter: "a burger, no onions, extra cheese, to go". You list what you want step by step, and the kitchen (the database) gets one precise order slip (the SQL).</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Most of your app is reading and writing data</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📖</span>
+        <h3>Readable code</h3>
+        <p><code>Post::where('views', '&gt;', 100)-&gt;latest()-&gt;get()</code> reads almost like English.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔒</span>
+        <h3>Safe by default</h3>
+        <p>Values are sent as bound parameters, which protects you from SQL injection without extra effort.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">♻️</span>
+        <h3>Reusable filters</h3>
+        <p>Query scopes give common conditions a name, like <code>Post::published()</code>, so you write them once.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Build up, then fetch</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🧱</span><strong>Post::query()</strong><small>start a builder</small></div>
+        <div class="flow-node"><span class="flow-icon">🔎</span><strong>where / orderBy</strong><small>add conditions</small></div>
+        <div class="flow-node accent"><span class="flow-icon">⚡</span><strong>get / first / paginate</strong><small>runs the SQL now</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>Result</strong><small>model or Collection</small></div>
+      </div>
+      <figcaption>Methods like <code>where()</code> only describe the query. Nothing touches the database until a "finisher" such as <code>get()</code> runs.</figcaption>
+    </figure>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">1️⃣</span><h3>One model</h3><p><code>find()</code>, <code>first()</code>, <code>findOrFail()</code> return a single <code>Post</code> (or <code>null</code>).</p></div>
+      <div class="mini-card"><span class="mini-icon">📚</span><h3>Many models</h3><p><code>all()</code> and <code>get()</code> return a <strong>Collection</strong>, a supercharged array of <code>Post</code> objects.</p></div>
+      <div class="mini-card"><span class="mini-icon">📄</span><h3>A page of models</h3><p><code>paginate(10)</code> returns 10 posts plus everything needed for page links.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Query the blog's posts</h2>
+      <p>Each step shows the PHP and the SQL it generates. Try them in <code>php artisan tinker</code>.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Fetch everything, or one by id</h3>
+        <p><code>all()</code> grabs every row. <code>find()</code> looks up a primary key and returns <code>null</code> if it's missing. <code>findOrFail()</code> throws an exception instead, which Laravel turns into a <strong>404 page</strong>.</p>
+        <pre><code class="lang-php">
+          $posts = Post::all();          // Collection of every post
+          $post  = Post::find(7);        // Post or null
+          $post  = Post::findOrFail(7);  // Post, or 404 page
+        </code></pre>
+        <pre><code class="lang-sql">
+          select * from `posts`;
+          select * from `posts` where `posts`.`id` = 7 limit 1;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Filter with <code>where</code></h3>
+        <p>Pass a column, an optional operator and a value. Chain several <code>where</code> calls and they're joined with <code>AND</code>. Finish with <code>get()</code> for many rows or <code>first()</code> for one.</p>
+        <pre><code class="lang-php">
+          $popular = Post::where('views', '&gt;', 100)
+              -&gt;where('category_id', 3)
+              -&gt;get();
+
+          $hello = Post::where('slug', 'hello-world')-&gt;first();
+
+          $drafts = Post::whereNull('published_at')-&gt;get();
+        </code></pre>
+        <pre><code class="lang-sql">
+          select * from `posts` where `views` &gt; 100 and `category_id` = 3;
+          select * from `posts` where `slug` = 'hello-world' limit 1;
+          select * from `posts` where `published_at` is null;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Sort, limit and paginate</h3>
+        <p><code>orderBy()</code> sorts by any column. <code>latest()</code> is shorthand for "newest <code>created_at</code> first". <code>paginate()</code> runs a count query plus a limited query, and reads the current page from <code>?page=</code> in the URL.</p>
+        <pre><code class="lang-php">
+          $titles = Post::orderBy('title')-&gt;take(5)-&gt;get();
+          $newest = Post::latest()-&gt;first();
+          $page   = Post::latest()-&gt;paginate(10);   // in a controller
+        </code></pre>
+        <pre><code class="lang-sql">
+          select * from `posts` order by `title` asc limit 5;
+          select * from `posts` order by `created_at` desc limit 1;
+          select count(*) as aggregate from `posts`;
+          select * from `posts` order by `created_at` desc limit 10 offset 0;
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          @foreach ($page as $post)
+              &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+          @endforeach
+
+          {{ $page-&gt;links() }}  {{-- Previous / 1 2 3 / Next --}}
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Create, update and delete</h3>
+        <p><code>create()</code> inserts a row and returns the new model (the columns must be in <code>$fillable</code>). To change a row, either set properties and <code>save()</code>, or pass an array to <code>update()</code>.</p>
+        <pre><code class="lang-php" data-hl="1,8,10-11">
+          $post = Post::create([
+              'title' =&gt; 'Hello World',
+              'slug'  =&gt; 'hello-world',
+              'body'  =&gt; 'My first post.',
+          ]);
+
+          $post-&gt;title = 'Hello, World!';
+          $post-&gt;save();
+
+          $post-&gt;update(['views' =&gt; 42]);
+          $post-&gt;delete();
+        </code></pre>
+        <pre><code class="lang-sql">
+          insert into `posts` (`title`, `slug`, `body`, `updated_at`, `created_at`) values (?, ?, ?, ?, ?);
+          update `posts` set `title` = ?, `updated_at` = ? where `id` = 1;
+          update `posts` set `views` = ?, `updated_at` = ? where `id` = 1;
+          delete from `posts` where `id` = 1;
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ What are those <code>?</code> marks?</div>
+          <p>They're <strong>bindings</strong>. Eloquent sends your values separately from the SQL text, so a title like <code>'; DROP TABLE posts; --</code> is stored as plain text, never executed.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Name common filters with query scopes</h3>
+        <p>A <strong>local scope</strong> is a model method that adds conditions to a query. The classic way is to prefix the method name with <code>scope</code>, then call it without the prefix.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use Illuminate\Database\Eloquent\Builder;
+
+          // Classic style, works in every Laravel version
+          public function scopePublished(Builder $query): void
+          {
+              $query-&gt;whereNotNull('published_at')
+                    -&gt;where('published_at', '&lt;=', now());
+          }
+
+          public function scopeInCategory(Builder $query, int $categoryId): void
+          {
+              $query-&gt;where('category_id', $categoryId);
+          }
+        </code></pre>
+        <pre><code class="lang-php">
+          $posts = Post::published()-&gt;inCategory(3)-&gt;latest()-&gt;paginate(10);
+        </code></pre>
+        <pre><code class="lang-sql">
+          select * from `posts`
+          where `published_at` is not null and `published_at` &lt;= ? and `category_id` = ?
+          order by `created_at` desc limit 10 offset 0;
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Laravel 12 alternative</div>
+          <p>Newer Laravel 12 releases also accept a <code>#[Scope]</code> attribute on a <code>protected function published(Builder $query)</code> method, with no prefix. Both styles are called the same way: <code>Post::published()</code>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Peek at the SQL yourself</h3>
+        <p>When a query misbehaves, look at what Eloquent actually built. <code>toRawSql()</code> returns the SQL with the bindings filled in, and <code>dd()</code> dumps it and stops.</p>
+        <pre><code class="lang-php">
+          echo Post::published()-&gt;where('views', '&gt;', 100)-&gt;toRawSql();
+          Post::where('slug', 'hello-world')-&gt;dd();   // dump SQL + bindings, then stop
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $posts = Post::all()
+              -&gt;where('category_id', 3)
+              -&gt;take(5);
+        </code></pre>
+        <p><code>all()</code> loads <em>every</em> post into memory first, then filters in PHP. Slow once you have thousands of rows.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $posts = Post::where('category_id', 3)
+              -&gt;take(5)
+              -&gt;get();
+        </code></pre>
+        <p>Build the query first and call <code>get()</code> last, so the database does the filtering.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $post = Post::find($id);
+          return view('posts.show', ['post' =&gt; $post]);
+        </code></pre>
+        <p>If the id doesn't exist, <code>$post</code> is <code>null</code> and the view crashes with a confusing error.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $post = Post::findOrFail($id);
+          return view('posts.show', ['post' =&gt; $post]);
+        </code></pre>
+        <p>A missing post becomes a clean 404 page automatically.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: catch accidental heavy queries early</div>
+      <p>Install <a href="https://github.com/barryvdh/laravel-debugbar">Laravel Debugbar</a> or use Laravel Telescope locally. They list every query a page ran, so you'll spot slow or repeated queries before your users do.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>In Tinker, with a few posts seeded:</p>
+      <ol>
+        <li>Fetch the 3 most-viewed posts using <code>orderByDesc('views')</code> and <code>take(3)</code>.</li>
+        <li>Find the post with slug <code>hello-world</code>, change its title, and save it.</li>
+        <li>Add a <code>scopePopular()</code> scope (views over 100) to <code>Post</code> and combine it with <code>published()</code>.</li>
+        <li>Print the SQL of your combined query with <code>toRawSql()</code>.</li>
+        <li>Call <code>Post::findOrFail(99999)</code> and read the exception name.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Chain <code>where</code>, <code>orderBy</code> and <code>latest</code>; nothing runs until <code>get</code>, <code>first</code> or <code>paginate</code>.</li>
+      <li><code>findOrFail()</code> gives you a free 404 when a record is missing.</li>
+      <li><code>create()</code>, <code>update()</code> and <code>delete()</code> handle writes; timestamps update automatically.</li>
+      <li>Values become bindings, protecting you from SQL injection.</li>
+      <li>Scopes like <code>Post::published()</code> turn repeated conditions into named, reusable pieces.</li>
+      <li>Use <code>toRawSql()</code> or <code>dd()</code> to see the SQL Eloquent generates.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `Post::where('views', '>', 100)` return before you call anything else?",
+          "options": ["A query builder that hasn't run yet", "A Collection of posts", "An array of SQL strings", "The first matching post"],
+          "answer": 0,
+          "explain": "`where` only describes the query. A finisher like `get()` or `first()` actually runs it."
+        },
+        {
+          "q": "What happens when `Post::findOrFail(999)` can't find the post during a web request?",
+          "options": ["It returns `null`", "It creates an empty post", "Laravel shows a 404 page", "It returns the last post"],
+          "answer": 2,
+          "explain": "It throws a `ModelNotFoundException`, which Laravel converts into a 404 response."
+        },
+        {
+          "q": "Which call is shorthand for ordering by `created_at` descending?",
+          "options": ["`newest()`", "`orderBy('id')`", "`recent()`", "`latest()`"],
+          "answer": 3,
+          "explain": "`latest()` orders by `created_at desc`; `oldest()` does the opposite."
+        },
+        {
+          "q": "You defined `scopePublished()` on the Post model. How do you call it?",
+          "options": ["`Post::scopePublished()`", "`Post::published()`", "`Post::where('published')`", "`Post::scope('published')`"],
+          "answer": 1,
+          "explain": "Drop the `scope` prefix and lowercase the first letter: `Post::published()`."
+        },
+        {
+          "q": "Why is `Post::all()->where('category_id', 3)` a bad idea on a big table?",
+          "options": ["It throws an error", "It loads every post into memory, then filters in PHP", "It deletes other categories", "It ignores the condition entirely"],
+          "answer": 1,
+          "explain": "`all()` runs `select *` immediately. Use `Post::where(...)->get()` so the database filters."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

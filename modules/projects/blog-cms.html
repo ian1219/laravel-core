@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Project 2 · Blog CMS · Laravel Blueprint</title>
+  <meta name="description" content="Build a multi-author Laravel blog CMS with authentication, policies, relationships, categories, comments and image uploads.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="P" data-lesson="blog-cms">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- What you'll build -->
+  <div class="one-liner">
+    <span class="one-liner-label">What you'll build</span>
+    <p class="big">A multi-author blog where users register, write posts with cover images, file them under categories and comment, while policies make sure nobody can edit someone else's work.</p>
+    <p class="analogy"><span>📰</span><span>Think of a small newsroom: reporters write their own stories, editors can fix anyone's, and readers can only comment. Your job is to build the building <em>and</em> the security desk.</span></p>
+  </div>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>What the finished app does</h2>
+      <p>Builds on Project 1 and adds Modules 07–08, relationships from Module 05, and file uploads.</p>
+    </div>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">🔐</span><h3>Accounts</h3><p>Register, log in, verify email and reset passwords via a starter kit.</p></div>
+      <div class="mini-card"><span class="mini-icon">✍️</span><h3>Author dashboard</h3><p>Authors manage their own posts: drafts, publish, edit, delete.</p></div>
+      <div class="mini-card"><span class="mini-icon">🏷️</span><h3>Categories &amp; tags</h3><p>Each post has one category and many tags.</p></div>
+      <div class="mini-card"><span class="mini-icon">🖼️</span><h3>Cover images</h3><p>Upload, validate, store and replace an image per post.</p></div>
+      <div class="mini-card"><span class="mini-icon">💬</span><h3>Comments</h3><p>Logged-in readers comment; authors can delete comments on their posts.</p></div>
+      <div class="mini-card"><span class="mini-icon">🛡️</span><h3>Roles</h3><p>Admins can edit anything; authors only their own posts.</p></div>
+    </div>
+  </section>
+
+  <!-- Data model -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Data model</span>
+      <h2>Five tables, four relationships</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model</th><th>Key columns</th><th>Relationships</th></tr></thead>
+        <tbody>
+          <tr><td><code>User</code></td><td>name, email, password, <code>is_admin</code></td><td>hasMany Post, hasMany Comment</td></tr>
+          <tr><td><code>Category</code></td><td>name, slug</td><td>hasMany Post</td></tr>
+          <tr><td><code>Post</code></td><td>user_id, category_id, title, slug, body, cover_path, published_at</td><td>belongsTo User &amp; Category, hasMany Comment, belongsToMany Tag</td></tr>
+          <tr><td><code>Comment</code></td><td>post_id, user_id, body</td><td>belongsTo Post &amp; User</td></tr>
+          <tr><td><code>Tag</code> (+ <code>post_tag</code> pivot)</td><td>name, slug</td><td>belongsToMany Post</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">👤</span><strong>User</strong><small>writes many</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📝</span><strong>Post</strong><small>in 1 category, many tags</small></div>
+        <div class="flow-node"><span class="flow-icon">💬</span><strong>Comment</strong><small>by a user, on a post</small></div>
+      </div>
+      <figcaption>Post is the centre of the model: almost every feature touches it.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Milestones -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Build it</span>
+      <h2>Build it milestone by milestone</h2>
+      <p>Each milestone should leave the app working. Commit after each one.</p>
+    </div>
+
+    <ol class="milestones">
+      <li>
+        <h3>Start with a starter kit</h3>
+        <p>Create the project and pick a starter kit so registration, login, email verification and password reset work on day one. Breeze is the classic, minimal option.</p>
+        <pre><code class="lang-bash">
+          laravel new blog-cms   # choose a starter kit when prompted
+          php artisan migrate
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../07-authentication/auth-concepts.html">🔐 How Authentication Works</a>
+          <a class="chip-link" href="../07-authentication/starter-kits.html">🧰 Starter Kits</a>
+          <a class="chip-link" href="../07-authentication/password-reset.html">📧 Email Verification &amp; Password Reset</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Migrations and relationships</h3>
+        <p>Create the categories, posts, comments, tags and pivot tables with foreign keys. Define every relationship on the models and test them in Tinker.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          public function author(): BelongsTo
+          {
+              return $this-&gt;belongsTo(User::class, 'user_id');
+          }
+
+          public function tags(): BelongsToMany
+          {
+              return $this-&gt;belongsToMany(Tag::class);
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/migrations.html">🗄️ Migrations</a>
+          <a class="chip-link" href="../05-database/relationships.html">🔗 Relationships</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Seed realistic data</h3>
+        <p>Write factories for each model and a seeder that creates 5 categories, 10 users and 50 posts with comments, so you can design pages with real-looking content.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../11-testing/factories-seeders.html">🌱 Factories &amp; Seeders</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Public pages: list and read posts</h3>
+        <p>Build a paginated home page of published posts and a post page found by slug. Eager load the author and category to avoid N+1 queries.</p>
+        <pre><code class="lang-php">
+          Post::published()-&gt;with(['author', 'category'])-&gt;latest('published_at')-&gt;paginate(10);
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/create-read.html">📋 Create &amp; Read</a>
+          <a class="chip-link" href="../05-database/eloquent.html">🔎 Eloquent Queries</a>
+          <a class="chip-link" href="../13-performance/eager-loading.html">⚡ Eager Loading &amp; N+1</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Protect the author dashboard</h3>
+        <p>Put the post-management routes behind <code>auth</code> and <code>verified</code> middleware under a <code>/dashboard</code> prefix. Create posts with <code>$request-&gt;user()-&gt;posts()-&gt;create(...)</code>.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::middleware(['auth', 'verified'])-&gt;prefix('dashboard')-&gt;name('dashboard.')
+              -&gt;group(function () {
+                  Route::resource('posts', Dashboard\PostController::class);
+              });
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../07-authentication/sessions-guards.html">🚧 Guards &amp; Protecting Routes</a>
+          <a class="chip-link" href="../06-crud/resource-controllers.html">🛠️ Resource Controllers</a>
+          <a class="chip-link" href="../06-crud/forms-validation.html">🚦 Forms &amp; Validation</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Write a PostPolicy</h3>
+        <p>Authors may update and delete only their own posts; admins may do anything (use <code>before()</code>). Call <code>Gate::authorize()</code> in the controller and <code>@can</code> in Blade to hide buttons.</p>
+        <pre><code class="lang-php" data-file="app/Policies/PostPolicy.php">
+          public function before(User $user): ?bool
+          {
+              return $user-&gt;is_admin ? true : null;
+          }
+
+          public function update(User $user, Post $post): bool
+          {
+              return $user-&gt;id === $post-&gt;user_id;
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../08-authorization/gates.html">🚪 Gates</a>
+          <a class="chip-link" href="../08-authorization/policies.html">🛡️ Policies</a>
+          <a class="chip-link" href="../08-authorization/roles-permissions.html">👑 Roles &amp; Permissions</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Upload cover images</h3>
+        <p>Add a file input (remember <code>enctype="multipart/form-data"</code>), validate it as an image, store it on the <code>public</code> disk, and delete the old file when replacing it. Run <code>php artisan storage:link</code> once.</p>
+        <pre><code class="lang-php">
+          $request-&gt;validate(['cover' =&gt; ['nullable', 'image', 'max:2048']]);
+
+          if ($request-&gt;hasFile('cover')) {
+              $post-&gt;cover_path &amp;&amp; Storage::disk('public')-&gt;delete($post-&gt;cover_path);
+              $post-&gt;cover_path = $request-&gt;file('cover')-&gt;store('covers', 'public');
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/forms-validation.html">🚦 Forms &amp; Validation</a>
+          <a class="chip-link" href="../06-crud/update-delete.html">✏️ Update &amp; Delete</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Categories, tags and comments</h3>
+        <p>Add a category filter page, sync tags with <code>$post-&gt;tags()-&gt;sync($ids)</code>, and a comment form for logged-in users. Add a <code>CommentPolicy</code> so post authors can delete comments on their posts.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/relationships.html">🔗 Relationships</a>
+          <a class="chip-link" href="../08-authorization/policies.html">🛡️ Policies</a>
+          <a class="chip-link" href="../04-laravel-basics/blade.html">🖌️ Blade Templates</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Lock down security basics</h3>
+        <p>Check every form has <code>@csrf</code>, post bodies are shown with <code>{{ }}</code> (never <code>{!! !!}</code> on user input), and models use <code>$fillable</code> so <code>is_admin</code> can't be mass-assigned.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../12-security/csrf-xss.html">🔒 CSRF &amp; XSS</a>
+          <a class="chip-link" href="../12-security/sql-injection-mass-assignment.html">💉 SQL Injection &amp; Mass Assignment</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Test the rules that matter</h3>
+        <p>Write feature tests proving a guest is redirected to login, an author can't edit another author's post (403), and an upload stores a file (use <code>Storage::fake('public')</code>).</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../11-testing/testing-basics.html">🧪 Testing Basics</a>
+          <a class="chip-link" href="../11-testing/feature-tests.html">🧪 Feature Tests</a>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Stretch goals -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Stretch goals</div>
+      <ol>
+        <li>Schedule posts: a future <code>published_at</code> keeps a post hidden until that time.</li>
+        <li>Add an “editor” role that can edit any post but not delete users.</li>
+        <li>Generate a resized thumbnail for each cover in a queued job.</li>
+        <li>Add an RSS feed at <code>/feed</code> returning the 20 latest posts as XML.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Definition of done -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Definition of done</span>
+      <h2>You're finished when…</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Users can register, verify email, log in, and reset a forgotten password.</li>
+      <li>Authors manage only their own posts; admins can manage everything, enforced by policies (not just hidden buttons).</li>
+      <li>Posts have a category, tags, comments and an optional cover image that's validated and cleaned up on replace.</li>
+      <li>Listing pages run a fixed number of queries thanks to eager loading.</li>
+      <li><code>php artisan migrate:fresh --seed</code> produces a realistic demo blog.</li>
+      <li>Feature tests cover authentication, authorization and uploads, and they all pass.</li>
+    </ul>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Guards &amp; Protecting Routes · Laravel Blueprint</title>
+  <meta name="description" content="Protect routes with the auth and guest middleware, read the logged-in user, use @auth and @guest in Blade, log out safely and understand guards.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="07" data-lesson="sessions-guards">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">The <code>auth</code> middleware locks a route so only logged-in users get through, and a guard is the rulebook that decides how Laravel recognises those users.</p>
+    <p class="analogy"><span>💂</span><span>Picture a club. The bouncer at the door is the <code>auth</code> middleware: no wristband, no entry. The guard is the club's policy on <em>what counts</em> as a valid wristband. For the main room that's a paper wristband (a session), and for the VIP API lounge it's a scanned QR code (a token).</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Logging in is only useful if pages check for it</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🚧</span>
+        <h3>Private pages stay private</h3>
+        <p>One word, <code>auth</code>, keeps strangers out of dashboards, settings and drafts.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🙋</span>
+        <h3>Personalise everything</h3>
+        <p>Once you can read the current user, you can show their name, their posts and their settings.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Smooth redirects</h3>
+        <p>Guests get sent to login, and logged-in users skip the login page. Both are configured in one place.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>What the <code>auth</code> middleware does</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🌐</span><strong>Request</strong><small>GET /dashboard + cookie</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💂</span><strong>auth middleware</strong><small>asks the guard: who is this?</small></div>
+        <div class="flow-node"><span class="flow-icon">✅</span><strong>Known user</strong><small>controller runs</small></div>
+        <div class="flow-node"><span class="flow-icon">↩️</span><strong>Guest</strong><small>redirect to /login</small></div>
+      </div>
+      <figcaption>Middleware runs before your controller (see <a href="../10-laravel-core/middleware.html">Middleware</a>). If there's no logged-in user, the controller never runs at all.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Middleware</th><th>Lets through</th><th>Otherwise</th><th>Typical routes</th></tr></thead>
+        <tbody>
+          <tr><td><code>auth</code></td><td>Logged-in users</td><td>Redirects to <code>/login</code></td><td>Dashboard, settings, “new post”</td></tr>
+          <tr><td><code>guest</code></td><td>Visitors who are <em>not</em> logged in</td><td>Redirects to the home/dashboard</td><td>Login, register, forgot password</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Lock pages down and use the current user</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Protect routes with <code>auth</code> (and <code>guest</code>)</h3>
+        <p>Add the middleware to a single route, or wrap a whole group so you can't forget one.</p>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="4,8">
+          use App\Http\Controllers\PostController;
+
+          Route::get('/dashboard', fn () =&gt; view('dashboard'))
+              -&gt;middleware('auth')-&gt;name('dashboard');
+
+          Route::view('/login', 'auth.login')-&gt;middleware('guest')-&gt;name('login');
+
+          Route::middleware('auth')-&gt;group(function () {
+              Route::resource('posts', PostController::class)-&gt;except(['index', 'show']);
+          });
+        </code></pre>
+        <p>Here anyone can read posts, but only logged-in users can create, edit or delete them.</p>
+      </li>
+
+      <li class="step">
+        <h3>Read the logged-in user</h3>
+        <p>There are three common ways to get the current user. They all return the same <code>User</code> model, or <code>null</code> for a guest.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/DashboardController.php">
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\Auth;
+
+          public function index(Request $request)
+          {
+              $user = $request-&gt;user();   // from the request (great in controllers)
+              $user = Auth::user();        // facade
+              $user = auth()-&gt;user();      // helper
+
+              $id = Auth::id();             // just the ID
+              $loggedIn = Auth::check();    // true / false
+
+              $posts = $request-&gt;user()-&gt;posts()-&gt;latest()-&gt;get();
+
+              return view('dashboard', compact('posts'));
+          }
+        </code></pre>
+        <p>The <code>posts()</code> relationship comes from <a href="../05-database/relationships.html">Relationships</a>. Using it means each user only ever sees their own posts.</p>
+      </li>
+
+      <li class="step">
+        <h3>Show and hide things in Blade</h3>
+        <p>Use <code>@auth</code> and <code>@guest</code> to switch parts of a layout. Inside a view, <code>auth()-&gt;user()</code> works too.</p>
+        <pre><code class="lang-blade" data-file="resources/views/layouts/nav.blade.php">
+          &lt;nav&gt;
+              @auth
+                  Hi, {{ auth()-&gt;user()-&gt;name }}!
+                  &lt;a href="{{ route('dashboard') }}"&gt;Dashboard&lt;/a&gt;
+                  &lt;form method="POST" action="{{ route('logout') }}"&gt;
+                      @csrf
+                      &lt;button&gt;Log out&lt;/button&gt;
+                  &lt;/form&gt;
+              @endauth
+
+              @guest
+                  &lt;a href="{{ route('login') }}"&gt;Log in&lt;/a&gt;
+                  &lt;a href="{{ route('register') }}"&gt;Register&lt;/a&gt;
+              @endguest
+          &lt;/nav&gt;
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Hiding a link isn't protection</div>
+          <p><code>@auth</code> only changes what's <em>displayed</em>. Anyone can still type the URL directly, so the route itself must use the <code>auth</code> middleware.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Log out properly</h3>
+        <p>Logging out takes three lines: forget the user, destroy the session and issue a new CSRF token. Always use a <strong>POST</strong> form, never a plain link. Otherwise another site could log your users out with a simple <code>&lt;img&gt;</code> tag.</p>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="5-7">
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\Auth;
+
+          Route::post('/logout', function (Request $request) {
+              Auth::logout();
+              $request-&gt;session()-&gt;invalidate();
+              $request-&gt;session()-&gt;regenerateToken();
+
+              return redirect('/');
+          })-&gt;middleware('auth')-&gt;name('logout');
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Meet guards in <code>config/auth.php</code></h3>
+        <p>A <strong>guard</strong> defines <em>how</em> users are recognised on each request. A <strong>provider</strong> defines <em>where</em> they're loaded from. The default <code>web</code> guard uses the session plus the <code>users</code> table.</p>
+        <pre><code class="lang-php" data-file="config/auth.php">
+          'defaults' =&gt; [
+              'guard' =&gt; env('AUTH_GUARD', 'web'),
+              'passwords' =&gt; env('AUTH_PASSWORD_BROKER', 'users'),
+          ],
+
+          'guards' =&gt; [
+              'web' =&gt; [
+                  'driver' =&gt; 'session',     // remember users with a session cookie
+                  'provider' =&gt; 'users',
+              ],
+          ],
+
+          'providers' =&gt; [
+              'users' =&gt; [
+                  'driver' =&gt; 'eloquent',
+                  'model' =&gt; env('AUTH_MODEL', App\Models\User::class),
+              ],
+          ],
+        </code></pre>
+        <p>Most apps only ever use <code>web</code>. APIs add a token-based guard, like <code>auth:sanctum</code> (see <a href="../09-api-development/sanctum.html">Sanctum</a>). You can pick a guard explicitly with <code>Auth::guard('web')-&gt;user()</code> or <code>-&gt;middleware('auth:sanctum')</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Change where people get redirected</h3>
+        <p>In Laravel 11+, you configure redirects in <code>bootstrap/app.php</code>. There's no <code>Http/Kernel.php</code> any more.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php" data-hl="3-4">
+          -&gt;withMiddleware(function (Middleware $middleware) {
+              // where `auth` sends guests, and where `guest` sends logged-in users
+              $middleware-&gt;redirectGuestsTo('/login');
+              $middleware-&gt;redirectUsersTo('/dashboard');
+          })
+        </code></pre>
+        <p>By default, guests are sent to the route named <code>login</code>. If your login page has a different name, this is the place to fix it.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function index()
+          {
+              if (! Auth::check()) {
+                  return redirect('/login');
+              }
+              // ...
+          }
+        </code></pre>
+        <p>Repeating the check in every method is easy to forget, and one missed method means a leaked page.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::middleware('auth')-&gt;group(function () {
+              Route::get('/dashboard', ...);
+              Route::get('/settings', ...);
+          });
+        </code></pre>
+        <p>Declare protection once, at the route level, where it's visible in <code>route:list</code>.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;a href="/logout"&gt;Log out&lt;/a&gt;
+        </code></pre>
+        <p>A GET logout can be triggered by any page on the internet, and it skips CSRF protection.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;form method="POST" action="{{ route('logout') }}"&gt;
+              @csrf &lt;button&gt;Log out&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>A POST form with <code>@csrf</code> can only be submitted from your own site.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: null-safe user access</div>
+      <p>On pages guests can see, <code>auth()-&gt;user()</code> may be <code>null</code>. Use the null-safe operator: <code>auth()-&gt;user()?-&gt;name</code>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>/secret</code> route protected by <code>auth</code>, and visit it while logged out. Where do you end up?</li>
+        <li>Visit <code>/login</code> while logged in and check that the <code>guest</code> middleware redirects you.</li>
+        <li>Add a nav bar that shows the user's name with <code>@auth</code> and login/register links with <code>@guest</code>.</li>
+        <li>Change <code>redirectUsersTo</code> in <code>bootstrap/app.php</code> to <code>/posts</code> and test it.</li>
+        <li>Open <code>config/auth.php</code> and find the <code>web</code> guard and the <code>users</code> provider.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>auth</code> middleware = members only; <code>guest</code> middleware = visitors only.</li>
+      <li>Get the user with <code>$request-&gt;user()</code>, <code>Auth::user()</code> or <code>auth()-&gt;user()</code>.</li>
+      <li><code>@auth</code>/<code>@guest</code> change what's shown, but routes still need middleware.</li>
+      <li>Log out with POST: <code>Auth::logout()</code>, <code>invalidate()</code>, <code>regenerateToken()</code>.</li>
+      <li>A <strong>guard</strong> decides how users are recognised (session, token), and it's configured in <code>config/auth.php</code>.</li>
+      <li>Redirects for guests and users live in <code>bootstrap/app.php</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "A guest visits a route with `->middleware('auth')`. What happens by default?",
+          "options": ["They see the page with an empty user", "They're redirected to the login route", "Laravel throws a 500 error", "They're logged in automatically"],
+          "answer": 1,
+          "explain": "The `auth` middleware stops the request and redirects guests to `login`, or wherever `redirectGuestsTo` says."
+        },
+        {
+          "q": "Which middleware belongs on the login and register routes?",
+          "options": ["`auth`", "`verified`", "`throttle`", "`guest`"],
+          "answer": 3,
+          "explain": "`guest` lets only logged-out visitors in, so logged-in users skip the login page."
+        },
+        {
+          "q": "Is wrapping a link in `@auth` enough to protect the page it points to?",
+          "options": ["No, the route itself needs the `auth` middleware", "Yes, Blade blocks the URL", "Yes, if you also use `@csrf`", "Only in production"],
+          "answer": 0,
+          "explain": "Blade directives only control what's displayed. Anyone can still type the URL."
+        },
+        {
+          "q": "In `config/auth.php`, what does the `web` guard's `'driver' => 'session'` mean?",
+          "options": ["Users log in with API tokens", "Passwords are stored in the session", "Users are recognised using the session cookie", "Sessions are disabled"],
+          "answer": 2,
+          "explain": "The session driver remembers the logged-in user ID in the session. API guards use tokens instead."
+        },
+        {
+          "q": "Where do you change where `auth` sends guests in Laravel 11/12?",
+          "options": ["`app/Http/Kernel.php`", "`bootstrap/app.php` with `redirectGuestsTo()`", "`.env` with `AUTH_REDIRECT`", "`routes/auth.php`"],
+          "answer": 1,
+          "explain": "The slim skeleton has no HTTP Kernel. Middleware config lives in `bootstrap/app.php`."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

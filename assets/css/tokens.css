@@ -1,0 +1,170 @@
+/* ==========================================================================
+   Laravel Blueprint — design tokens
+   Dark is the default; light mirrors every token.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Brand */
+  --brand: #a855f7;
+  --brand-2: #22d3ee;
+  --brand-3: #f472b6;
+  --brand-soft: rgba(168, 85, 247, 0.16);
+  --neon-grad: linear-gradient(100deg, #a855f7, #f472b6 50%, #22d3ee);
+
+  /* Surfaces (glassy) */
+  --bg: #07051a;
+  --bg-2: #0d0a2680;
+  --surface: rgba(24, 17, 58, 0.66);
+  --surface-2: rgba(42, 31, 92, 0.5);
+  --surface-3: rgba(64, 48, 128, 0.55);
+  --border: rgba(168, 85, 247, 0.2);
+  --border-strong: rgba(168, 85, 247, 0.38);
+  --glass-blur: blur(14px) saturate(140%);
+  --grid-line: rgba(168, 85, 247, 0.07);
+
+  /* Text */
+  --text: #f3efff;
+  --text-muted: #b9b0dd;
+  --text-faint: #8077ab;
+
+  /* Semantic */
+  --ok: #22c55e;
+  --ok-soft: rgba(34, 197, 94, 0.13);
+  --bad: #f43f5e;
+  --bad-soft: rgba(244, 63, 94, 0.13);
+  --warn: #f59e0b;
+  --warn-soft: rgba(245, 158, 11, 0.13);
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.13);
+  --tip: #a78bfa;
+  --tip-soft: rgba(167, 139, 250, 0.14);
+
+  /* Code */
+  --code-bg: #0a0720;
+  --code-head: #140f33;
+  --code-text: #d6dcf5;
+  --tok-comment: #6b7599;
+  --tok-keyword: #ff6b9d;
+  --tok-string: #a5e075;
+  --tok-number: #ffb86c;
+  --tok-variable: #7dd3fc;
+  --tok-class: #fcd34d;
+  --tok-function: #82aaff;
+  --tok-tag: #ff7a6b;
+  --tok-attr: #c4b5fd;
+  --tok-directive: #f472b6;
+  --tok-operator: #89ddff;
+  --tok-builtin: #5eead4;
+  --inline-code-bg: rgba(244, 114, 182, 0.13);
+  --inline-code-text: #f9a8d4;
+
+  /* Module accent (overridden per page by layout.js) */
+  --mod: #a855f7;
+  --mod-2: #22d3ee;
+  --neon-glow: 0 0 24px color-mix(in srgb, var(--mod) 45%, transparent);
+
+  /* Type */
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --fs-xs: 0.78rem;
+  --fs-sm: 0.9rem;
+  --fs-md: 1.02rem;
+  --fs-lg: 1.2rem;
+  --fs-xl: 1.55rem;
+  --fs-2xl: 2.1rem;
+  --fs-3xl: clamp(2.2rem, 5vw, 3.4rem);
+  --fs-hero: clamp(2.6rem, 7vw, 5rem);
+
+  /* Space & shape */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 72px;
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+  --glow: 0 0 0 1px var(--border), 0 18px 40px -18px color-mix(in srgb, var(--mod) 55%, transparent);
+
+  --topbar-h: 64px;
+  --sidebar-w: 18.75rem;
+  --toc-w: 15rem;
+  --content-w: 54rem;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light theme — explicit choice */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f5ff;
+  --bg-2: #eef0f780;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-2: #f3f0ff;
+  --surface-3: #e9e3ff;
+  --border: #e4ddf7;
+  --border-strong: #cfc3f0;
+  --text: #151a2e;
+  --text-muted: #4d5675;
+  --text-faint: #8a92ad;
+  --ok: #16a34a;
+  --ok-soft: rgba(22, 163, 74, 0.1);
+  --bad: #e11d48;
+  --bad-soft: rgba(225, 29, 72, 0.08);
+  --warn: #d97706;
+  --warn-soft: rgba(217, 119, 6, 0.1);
+  --info: #0284c7;
+  --info-soft: rgba(2, 132, 199, 0.08);
+  --tip: #7c3aed;
+  --tip-soft: rgba(124, 58, 237, 0.08);
+  --brand-soft: rgba(168, 85, 247, 0.1);
+  --inline-code-bg: rgba(168, 85, 247, 0.09);
+  --inline-code-text: #9333ea;
+  --grid-line: rgba(124, 58, 237, 0.06);
+  --neon-glow: none;
+  --shadow: 0 10px 30px -14px rgba(30, 40, 80, 0.22);
+  --shadow-lg: 0 30px 60px -24px rgba(30, 40, 80, 0.3);
+  /* Code blocks stay dark in light mode for contrast */
+}
+
+/* Light theme — OS preference when no explicit choice */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f7f5ff;
+    --bg-2: #eef0f780;
+    --surface: rgba(255, 255, 255, 0.82);
+    --surface-2: #f3f0ff;
+    --surface-3: #e9e3ff;
+    --border: #e4ddf7;
+    --border-strong: #cfc3f0;
+    --text: #151a2e;
+    --text-muted: #4d5675;
+    --text-faint: #8a92ad;
+    --ok: #16a34a;
+    --ok-soft: rgba(22, 163, 74, 0.1);
+    --bad: #e11d48;
+    --bad-soft: rgba(225, 29, 72, 0.08);
+    --warn: #d97706;
+    --warn-soft: rgba(217, 119, 6, 0.1);
+    --info: #0284c7;
+    --info-soft: rgba(2, 132, 199, 0.08);
+    --tip: #7c3aed;
+    --tip-soft: rgba(124, 58, 237, 0.08);
+    --brand-soft: rgba(168, 85, 247, 0.1);
+    --inline-code-bg: rgba(168, 85, 247, 0.09);
+    --inline-code-text: #9333ea;
+    --grid-line: rgba(124, 58, 237, 0.06);
+    --neon-glow: none;
+    --shadow: 0 10px 30px -14px rgba(30, 40, 80, 0.22);
+    --shadow-lg: 0 30px 60px -24px rgba(30, 40, 80, 0.3);
+  }
+}

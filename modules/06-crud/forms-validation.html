@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Forms &amp; Validation · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel form validation: $request-&gt;validate, Form Request classes, common rules, and showing errors with @error and old() in Blade.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="06" data-lesson="forms-validation">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Validation checks every piece of submitted form data against rules you define, and if anything fails, Laravel sends the user back to the form with friendly error messages.</p>
+    <p class="analogy"><span>🛂</span><span>Validation is passport control. Every traveller (input) is checked against the rules before entering the country (your database). If something's wrong, they're turned back with a note explaining exactly what to fix.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Never trust user input</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧹</span>
+        <h3>Clean data</h3>
+        <p>A post without a title or a slug with spaces would break pages later. Catch it at the door.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Security</h3>
+        <p>Browsers can be bypassed. HTML <code>required</code> attributes are a convenience; server-side rules are the real guard.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">😊</span>
+        <h3>Kinder UX</h3>
+        <p>Users see what went wrong next to the right field, and what they typed is still there.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The validation round trip</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>Form submit</strong><small>POST /posts</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🛂</span><strong>validate()</strong><small>checks every rule</small></div>
+        <div class="flow-node"><span class="flow-icon">❌</span><strong>A rule fails</strong><small>controller stops here</small></div>
+        <div class="flow-node"><span class="flow-icon">↩️</span><strong>Redirect back</strong><small>errors + old input in session</small></div>
+        <div class="flow-node"><span class="flow-icon">🖍️</span><strong>@error / old()</strong><small>form shows messages</small></div>
+      </div>
+      <figcaption>The failure path. If every rule passes, <code>validate()</code> simply returns the clean data and your controller carries on to save and redirect.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Validate the "new post" form</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Build a form that posts to <code>store</code></h3>
+        <p>Every form that changes data needs <code>@csrf</code>, which adds a hidden token proving the request came from your own site. Without it Laravel replies with a <strong>419</strong> error. (Learn why in <a href="../12-security/csrf-xss.html">CSRF &amp; XSS</a>.)</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/create.blade.php" data-hl="2">
+          &lt;form method="POST" action="{{ route('posts.store') }}"&gt;
+              @csrf
+
+              &lt;label for="title"&gt;Title&lt;/label&gt;
+              &lt;input id="title" name="title" type="text"&gt;
+
+              &lt;label for="body"&gt;Body&lt;/label&gt;
+              &lt;textarea id="body" name="body"&gt;&lt;/textarea&gt;
+
+              &lt;button type="submit"&gt;Publish&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Validate in the controller with <code>$request-&gt;validate()</code></h3>
+        <p>Pass an array of <strong>field ⇒ rules</strong>. If every rule passes, you get back an array containing <em>only</em> the validated fields, which is safe to hand to <code>create()</code>.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3-7">
+          public function store(Request $request)
+          {
+              $validated = $request-&gt;validate([
+                  'title'       =&gt; ['required', 'string', 'max:255'],
+                  'body'        =&gt; ['required', 'string', 'min:20'],
+                  'category_id' =&gt; ['nullable', 'exists:categories,id'],
+              ]);
+
+              $request-&gt;user()-&gt;posts()-&gt;create($validated);
+
+              return redirect()-&gt;route('posts.index');
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Learn the rules you'll use daily</h3>
+        <p>Rules can be written as an array (recommended) or a pipe string like <code>'required|max:255'</code>.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Rule</th><th>Passes when…</th><th>Blog use</th></tr></thead>
+            <tbody>
+              <tr><td><code>required</code></td><td>present and not empty</td><td>title, body</td></tr>
+              <tr><td><code>nullable</code></td><td>may be empty (other rules skip if so)</td><td>category_id</td></tr>
+              <tr><td><code>string</code> / <code>integer</code> / <code>boolean</code></td><td>correct type</td><td>views, is_featured</td></tr>
+              <tr><td><code>min:3</code> / <code>max:255</code></td><td>length (strings) or size (numbers)</td><td>title</td></tr>
+              <tr><td><code>email</code></td><td>looks like an email</td><td>newsletter signup</td></tr>
+              <tr><td><code>unique:posts,slug</code></td><td>no other row has this value</td><td>slug</td></tr>
+              <tr><td><code>exists:categories,id</code></td><td>a matching row exists</td><td>category_id</td></tr>
+              <tr><td><code>in:draft,published</code></td><td>one of the listed values</td><td>status</td></tr>
+              <tr><td><code>date</code> / <code>after:today</code></td><td>valid date / in the future</td><td>published_at</td></tr>
+              <tr><td><code>confirmed</code></td><td>matches <code>field_confirmation</code></td><td>password</td></tr>
+              <tr><td><code>array</code></td><td>an array (check items with <code>tags.*</code>)</td><td>tags</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Show errors and keep old input</h3>
+        <p>After a failed submit, <code>$errors</code> is available in every view. <strong><code>@error('field')</code></strong> shows a block only when that field failed, with <code>$message</code> inside. <strong><code>old('field')</code></strong> refills what the user typed.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/create.blade.php" data-hl="3,4-6,9,10-12">
+          &lt;label for="title"&gt;Title&lt;/label&gt;
+          &lt;input id="title" name="title" type="text"
+                 value="{{ old('title') }}"&gt;
+          @error('title')
+              &lt;p class="error"&gt;{{ $message }}&lt;/p&gt;
+          @enderror
+
+          &lt;label for="body"&gt;Body&lt;/label&gt;
+          &lt;textarea id="body" name="body"&gt;{{ old('body') }}&lt;/textarea&gt;
+          @error('body')
+              &lt;p class="error"&gt;{{ $message }}&lt;/p&gt;
+          @enderror
+        </code></pre>
+        <p>Want a summary at the top of the form too?</p>
+        <pre><code class="lang-blade">
+          @if ($errors-&gt;any())
+              &lt;ul&gt;
+                  @foreach ($errors-&gt;all() as $error)
+                      &lt;li&gt;{{ $error }}&lt;/li&gt;
+                  @endforeach
+              &lt;/ul&gt;
+          @endif
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Move rules into a Form Request class</h3>
+        <p>When rules grow, or are shared between <code>store</code> and <code>update</code>, move them into a <strong>Form Request</strong>: a dedicated class that validates (and can authorize) before your controller method even starts.</p>
+        <pre><code class="lang-bash">
+          php artisan make:request StorePostRequest
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Requests/StorePostRequest.php">
+          &lt;?php
+
+          namespace App\Http\Requests;
+
+          use Illuminate\Foundation\Http\FormRequest;
+
+          class StorePostRequest extends FormRequest
+          {
+              public function authorize(): bool
+              {
+                  return $this-&gt;user() !== null;   // only logged-in users
+              }
+
+              public function rules(): array
+              {
+                  return [
+                      'title'       =&gt; ['required', 'string', 'max:255'],
+                      'slug'        =&gt; ['required', 'alpha_dash', 'unique:posts,slug'],
+                      'body'        =&gt; ['required', 'string', 'min:20'],
+                      'category_id' =&gt; ['nullable', 'exists:categories,id'],
+                      'tags'        =&gt; ['array'],
+                      'tags.*'      =&gt; ['exists:tags,id'],
+                  ];
+              }
+
+              public function messages(): array
+              {
+                  return ['slug.unique' =&gt; 'That URL is already taken. Try another slug.'];
+              }
+          }
+        </code></pre>
+        <p>Now just type-hint it. If validation fails, the method never runs.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          use App\Http\Requests\StorePostRequest;
+
+          public function store(StorePostRequest $request)
+          {
+              $request-&gt;user()-&gt;posts()-&gt;create($request-&gt;validated());
+
+              return redirect()-&gt;route('posts.index');
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ <code>authorize()</code> returning <code>false</code></div>
+          <p>Laravel responds with <strong>403 Forbidden</strong>. For anything beyond "is logged in", use a policy instead. See <a href="../08-authorization/policies.html">Policies</a>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $request-&gt;validate(['title' =&gt; 'required']);
+          Post::create($request-&gt;all());
+        </code></pre>
+        <p><code>all()</code> includes fields you never validated, so the rules protect nothing extra.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $data = $request-&gt;validate(['title' =&gt; 'required']);
+          Post::create($data);
+        </code></pre>
+        <p>Use the array that <code>validate()</code> (or <code>validated()</code>) returns: only checked fields get through.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;input name="title" value=""&gt;
+        </code></pre>
+        <p>One typo elsewhere wipes everything the user wrote. They will not come back.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;input name="title" value="{{ old('title') }}"&gt;
+        </code></pre>
+        <p><code>old()</code> restores the previous input after a failed validation.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: build rules with the <code>Rule</code> class</div>
+      <p>For updates, the slug must be unique <em>except</em> for the current post. <code>Rule::unique('posts', 'slug')-&gt;ignore($this-&gt;post)</code> handles that cleanly. You'll use it in <a href="update-delete.html">Update &amp; Delete</a>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build the create form above and submit it empty. Confirm both errors appear next to their fields.</li>
+        <li>Add <code>old()</code> to every input, type a short body, and check the title survives the redirect.</li>
+        <li>Create <code>StorePostRequest</code> and move the rules into it.</li>
+        <li>Add a <code>status</code> select that must be <code>in:draft,published</code>.</li>
+        <li>Write a custom message for <code>body.min</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Every data-changing form needs <code>@csrf</code>.</li>
+      <li><code>$request-&gt;validate([...])</code> returns only validated data, or redirects back with errors.</li>
+      <li><code>@error('field')</code> + <code>$message</code> shows per-field errors; <code>old('field')</code> refills inputs.</li>
+      <li>Form Request classes keep rules, messages and authorization out of the controller.</li>
+      <li>Save with <code>validated()</code> data, never <code>all()</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What happens when `$request->validate()` fails in a normal web form submission?",
+          "options": ["It returns `false`", "The user is redirected back with errors and old input", "A 500 error is shown", "The invalid fields are saved as `null`"],
+          "answer": 1,
+          "explain": "Laravel throws a validation exception and turns it into a redirect back, flashing errors and input to the session."
+        },
+        {
+          "q": "Which Blade helper refills an input with what the user typed before a failed submit?",
+          "options": ["`@error('title')`", "`request('title')`", "`session('title')`", "`old('title')`"],
+          "answer": 3,
+          "explain": "`old('title')` reads the flashed input from the previous request."
+        },
+        {
+          "q": "Which rule checks that `category_id` points at a real category?",
+          "options": ["`exists:categories,id`", "`unique:categories,id`", "`in:categories`", "`required`"],
+          "answer": 0,
+          "explain": "`exists` checks a matching row is present; `unique` checks the opposite."
+        },
+        {
+          "q": "Why prefer `$request->validated()` over `$request->all()` when saving?",
+          "options": ["It's faster", "It also hashes passwords", "It only includes fields that passed validation", "`all()` doesn't work in Form Requests"],
+          "answer": 2,
+          "explain": "Unvalidated extra fields never reach your model."
+        },
+        {
+          "q": "A form without `@csrf` is submitted. What response do you get?",
+          "options": ["404 Not Found", "419 Page Expired", "403 Forbidden", "The form saves normally"],
+          "answer": 1,
+          "explain": "Laravel's CSRF protection rejects the request with a 419 status."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Arrays · Laravel Blueprint</title>
+  <meta name="description" content="Learn PHP arrays: indexed lists, associative key-value maps, nested arrays, foreach loops, destructuring and the most useful array functions.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="01" data-lesson="arrays">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">An array is one variable that holds many values, each stored under a key: either a number (a list) or a name (a map).</p>
+    <p class="analogy"><span>🗄️</span><span>Think of a filing cabinet. In a numbered cabinet you grab "drawer 0, drawer 1, drawer 2". In a labelled cabinet you grab "the drawer marked <em>title</em>". Same cabinet, two ways of finding things.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Arrays are PHP's Swiss Army knife</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📋</span>
+        <h3>Real data comes in groups</h3>
+        <p>A list of posts, a user's roles, the fields in a form. You rarely deal with just one value.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔑</span>
+        <h3>Key-value is everywhere</h3>
+        <p>Config files, form input, JSON from an API and database rows all arrive as "name =&gt; value" pairs.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔁</span>
+        <h3>Loops do the heavy lifting</h3>
+        <p>Once data is in an array, one <code>foreach</code> can process ten items or ten thousand with the same code.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Two shapes, one data type</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 210" role="img" aria-label="An indexed array with keys 0 to 2 and an associative array with keys title, views and published" style="width:100%;max-width:640px;height:auto">
+        <text x="20" y="24" fill="currentColor" font-size="15" font-weight="600">Indexed array (a list)</text>
+        <g font-size="13">
+          <rect x="20" y="40" width="90" height="44" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="65" y="67" text-anchor="middle" fill="currentColor">'php'</text>
+          <rect x="120" y="40" width="90" height="44" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="165" y="67" text-anchor="middle" fill="currentColor">'laravel'</text>
+          <rect x="220" y="40" width="90" height="44" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="265" y="67" text-anchor="middle" fill="currentColor">'tips'</text>
+          <text x="65" y="104" text-anchor="middle" fill="var(--text-muted)">[0]</text>
+          <text x="165" y="104" text-anchor="middle" fill="var(--text-muted)">[1]</text>
+          <text x="265" y="104" text-anchor="middle" fill="var(--text-muted)">[2]</text>
+        </g>
+        <text x="350" y="24" fill="currentColor" font-size="15" font-weight="600">Associative array (a map)</text>
+        <g font-size="13">
+          <rect x="350" y="40" width="110" height="34" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+          <text x="405" y="62" text-anchor="middle" fill="var(--text-muted)">'title'</text>
+          <rect x="470" y="40" width="150" height="34" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="545" y="62" text-anchor="middle" fill="currentColor">'Hello Laravel'</text>
+          <rect x="350" y="84" width="110" height="34" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+          <text x="405" y="106" text-anchor="middle" fill="var(--text-muted)">'views'</text>
+          <rect x="470" y="84" width="150" height="34" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="545" y="106" text-anchor="middle" fill="currentColor">1250</text>
+          <rect x="350" y="128" width="110" height="34" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+          <text x="405" y="150" text-anchor="middle" fill="var(--text-muted)">'published'</text>
+          <rect x="470" y="128" width="150" height="34" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <text x="545" y="150" text-anchor="middle" fill="currentColor">true</text>
+          <text x="485" y="190" text-anchor="middle" fill="var(--text-muted)">key  =&gt;  value</text>
+        </g>
+      </svg>
+      <figcaption>Left: PHP numbers the keys for you, starting at 0. Right: you choose the keys yourself, usually as strings.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build your array skills</h2>
+      <p>We'll model a tiny blog as we go. Run each snippet with <code>php arrays.php</code>.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Make a list (indexed array)</h3>
+        <p>Square brackets <code>[]</code> create an array. Items get numeric keys automatically, <strong>starting at 0</strong>. Use <code>$array[]</code> to push a new item onto the end.</p>
+        <pre><code class="lang-php" data-file="arrays.php" data-hl="3,7">
+          &lt;?php
+
+          $tags = ['php', 'laravel', 'tips'];
+
+          echo $tags[0];          // php
+          echo $tags[2];          // tips
+          $tags[] = 'beginners';  // add to the end
+          echo count($tags);      // 4
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Name your keys (associative array)</h3>
+        <p>An <strong>associative array</strong> uses keys you choose. The <code>=&gt;</code> arrow ("double arrow") links each <strong>key</strong> to its <strong>value</strong>. This is perfect for describing one thing with several properties.</p>
+        <pre><code class="lang-php" data-file="arrays.php">
+          $post = [
+              'title'     =&gt; 'Hello Laravel',
+              'views'     =&gt; 1250,
+              'published' =&gt; true,
+          ];
+
+          echo $post['title'];           // Hello Laravel
+          $post['views']++;              // 1251
+          $post['author'] = 'Ada';       // add a new key
+          unset($post['published']);     // remove a key
+
+          echo $post['subtitle'] ?? 'No subtitle';  // safe read of a missing key
+        </code></pre>
+        <p>That trailing comma after the last item is allowed and recommended. It keeps future diffs clean.</p>
+      </li>
+
+      <li class="step">
+        <h3>Nest arrays inside arrays</h3>
+        <p>Values can be arrays too. A <strong>list of maps</strong> is how you'll usually represent "many records", just like rows from a database.</p>
+        <pre><code class="lang-php" data-file="arrays.php">
+          $posts = [
+              ['title' =&gt; 'Hello Laravel', 'tags' =&gt; ['php', 'laravel']],
+              ['title' =&gt; 'Arrays 101',    'tags' =&gt; ['php']],
+          ];
+
+          echo $posts[1]['title'];       // Arrays 101
+          echo $posts[0]['tags'][1];     // laravel
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Loop with <code>foreach</code></h3>
+        <p><code>foreach</code> visits each item in turn. Ask for just the value, or for the <strong>key and value</strong> together.</p>
+        <pre><code class="lang-php" data-file="arrays.php" data-hl="1,5">
+          foreach ($posts as $post) {
+              echo "📝 {$post['title']}" . PHP_EOL;
+          }
+
+          foreach ($post as $key =&gt; $value) {
+              echo "{$key}: " . (is_array($value) ? implode(', ', $value) : $value) . PHP_EOL;
+          }
+        </code></pre>
+        <pre><code class="lang-text">
+          📝 Hello Laravel
+          📝 Arrays 101
+          title: Arrays 101
+          tags: php
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Use the built-in array functions</h3>
+        <p>PHP ships with dozens of array helpers. These few cover most day-to-day work. Each one returns a <strong>new</strong> array and leaves the original untouched.</p>
+        <pre><code class="lang-php" data-file="arrays.php">
+          $prices = [10, 25, 40];
+
+          in_array(25, $prices, true);                        // true (strict check)
+          array_sum($prices);                                 // 75
+          array_map(fn ($p) =&gt; $p * 2, $prices);              // [20, 50, 80]
+          array_filter($prices, fn ($p) =&gt; $p &gt; 20);          // [1 =&gt; 25, 2 =&gt; 40]
+          array_keys($post);                                  // ['title', 'tags']
+          array_key_exists('title', $post);                   // true
+          implode(', ', ['php', 'laravel']);                  // "php, laravel"
+          explode(',', 'a,b,c');                              // ['a', 'b', 'c']
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ What's <code>fn ($p) =&gt; ...</code>?</div>
+          <p>That's an <strong>arrow function</strong>: a tiny unnamed function. You'll learn it properly in <a href="functions.html">Functions</a>. For now read it as "for each <code>$p</code>, give back <code>$p * 2</code>".</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Unpack and merge: destructuring and spread</h3>
+        <p><strong>Destructuring</strong> pulls values out of an array into variables in one line. The <strong>spread operator</strong> <code>...</code> copies one array's items into another.</p>
+        <pre><code class="lang-php" data-file="arrays.php">
+          [$first, $second] = ['php', 'laravel'];
+          ['title' =&gt; $title, 'views' =&gt; $views] = ['title' =&gt; 'Hi', 'views' =&gt; 3];
+
+          $defaults = ['theme' =&gt; 'light', 'perPage' =&gt; 10];
+          $settings = [...$defaults, 'theme' =&gt; 'dark'];
+          // ['theme' =&gt; 'dark', 'perPage' =&gt; 10]  (later keys win)
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $tags = ['php', 'laravel'];
+          echo $tags[2];   // Warning: undefined key
+          echo $tags[count($tags)];
+        </code></pre>
+        <p>Keys start at 0, so the last item is at <code>count - 1</code>, not <code>count</code>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          echo $tags[array_key_last($tags)];
+          echo $tags[5] ?? 'none';
+        </code></pre>
+        <p>Use <code>array_key_last()</code> for the last item, and <code>??</code> when a key might be missing.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $user = ['Ada', 'ada@example.com', true];
+          echo $user[1];   // which one was email?
+        </code></pre>
+        <p>A list of mixed meanings forces you to remember what each position means.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $user = ['name' =&gt; 'Ada', 'email' =&gt; 'ada@example.com', 'isAdmin' =&gt; true];
+          echo $user['email'];
+        </code></pre>
+        <p>When values describe one thing, name the keys. The code documents itself.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: <code>print_r</code> for a quick look</div>
+      <p><code>print_r($posts);</code> prints a readable tree of any array. Wrap it as <code>echo '&lt;pre&gt;' . print_r($posts, true) . '&lt;/pre&gt;';</code> when viewing in a browser.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>Create <code>shop.php</code> and:</p>
+      <ol>
+        <li>Build <code>$products</code>: a list of 3 associative arrays, each with <code>name</code>, <code>price</code> and <code>inStock</code>.</li>
+        <li>Loop with <code>foreach</code> and print “Name — $price” for each product.</li>
+        <li>Use <code>array_filter</code> to keep only products that are in stock, then print how many remain with <code>count()</code>.</li>
+        <li>Use <code>array_map</code> plus <code>array_sum</code> to print the total price of all products.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Config files</strong>: every file in <code>config/</code> simply <code>return</code>s an associative array (see <a href="../04-laravel-basics/directory-structure.html">Directory Structure</a>).</li>
+        <li><strong>Validation rules</strong>: <code>['title' =&gt; ['required', 'max:255']]</code> is a map of lists (see <a href="../06-crud/forms-validation.html">Forms &amp; Validation</a>).</li>
+        <li><strong>Passing data to views</strong>: <code>view('posts.show', ['post' =&gt; $post])</code>.</li>
+        <li><strong>Collections</strong>: Laravel wraps arrays in a <code>Collection</code> object with friendlier <code>map</code>, <code>filter</code> and <code>sum</code> methods (see <a href="../05-database/eloquent.html">Eloquent Queries</a>).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Arrays use <code>[]</code>; indexed arrays start counting at 0.</li>
+      <li>Associative arrays map named keys to values with <code>=&gt;</code>.</li>
+      <li>Nest arrays to model lists of records.</li>
+      <li><code>foreach ($items as $key =&gt; $value)</code> walks through every item.</li>
+      <li><code>array_map</code>, <code>array_filter</code>, <code>in_array</code>, <code>count</code> and <code>implode</code> cover most needs.</li>
+      <li>Destructuring <code>[$a, $b] = ...</code> and spread <code>[...$a]</code> unpack and merge arrays.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Given `$tags = ['php', 'laravel', 'tips'];`, what is `$tags[1]`?",
+          "options": ["`'php'`", "`'laravel'`", "`'tips'`", "An undefined key warning"],
+          "answer": 1,
+          "explain": "Indexed arrays start at 0, so index 1 is the second item."
+        },
+        {
+          "q": "Which line creates an associative array?",
+          "options": ["`['a', 'b', 'c']`", "`array(1, 2, 3)`", "`['title' => 'Hi', 'views' => 3]`", "`'title' . 'Hi'`"],
+          "answer": 2,
+          "explain": "The `=>` operator pairs a named key with a value."
+        },
+        {
+          "q": "How do you add an item to the end of `$tags`?",
+          "options": ["`$tags[] = 'new';`", "`$tags + 'new';`", "`$tags = 'new';`", "`$tags.push('new');`"],
+          "answer": 0,
+          "explain": "Empty brackets `$tags[] = ...` append with the next numeric key. `.push()` is JavaScript, not PHP."
+        },
+        {
+          "q": "What does `array_filter([10, 25, 40], fn ($p) => $p > 20)` keep?",
+          "options": ["`[10]`", "`[10, 25]`", "Nothing", "25 and 40"],
+          "answer": 3,
+          "explain": "`array_filter` keeps items where the callback returns `true`. Note it preserves the original keys (1 and 2)."
+        },
+        {
+          "q": "In Laravel, what does a file in `config/` return?",
+          "options": ["A class", "An associative array", "A JSON string", "A database row"],
+          "answer": 1,
+          "explain": "Config files `return [...]` an associative array, which you read with helpers like `config('app.name')`."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

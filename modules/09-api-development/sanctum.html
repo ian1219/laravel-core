@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sanctum Authentication · Laravel Blueprint</title>
+  <meta name="description" content="Protect a Laravel API with Sanctum: issue tokens with createToken, guard routes with auth:sanctum, limit access with abilities, and use cookie auth for SPAs.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="09" data-lesson="sanctum">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Sanctum gives each API client a secret token to send with every request, so Laravel knows who is calling without sessions or cookies.</p>
+    <p class="analogy"><span>🎟️</span><span>It's a festival wristband. You show your ID once at the gate (log in), get a wristband (the token), and from then on staff just check the band instead of asking for ID at every stage.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>APIs can't rely on browser sessions</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📱</span>
+        <h3>Works for mobile apps</h3>
+        <p>Phones and scripts don't keep Laravel session cookies. A token in a header works everywhere.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎚️</span>
+        <h3>Fine-grained access</h3>
+        <p><strong>Abilities</strong> let one token read posts while another can also delete them.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧯</span>
+        <h3>Easy to revoke</h3>
+        <p>Lost a phone? Delete that one token and the others keep working.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The token flow</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🔑</span><strong>Log in</strong><small>POST /api/login</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎟️</span><strong>Token issued</strong><small>plainTextToken</small></div>
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Every request</strong><small>Authorization: Bearer …</small></div>
+        <div class="flow-node"><span class="flow-icon">🛡️</span><strong>auth:sanctum</strong><small>finds the user</small></div>
+      </div>
+      <figcaption>The client stores the token once and sends it as a Bearer header on every protected request.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Best for</th><th>How it identifies the user</th></tr></thead>
+        <tbody>
+          <tr><td><strong>API tokens</strong></td><td>Mobile apps, CLI tools, other servers</td><td><code>Authorization: Bearer &lt;token&gt;</code> header</td></tr>
+          <tr><td><strong>SPA cookie auth</strong></td><td>A JS frontend on the same top-level domain</td><td>Normal Laravel session cookie + CSRF</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Protect the blog API</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Install Sanctum and prepare the User model</h3>
+        <p>If you ran <code>php artisan install:api</code> in the last lesson, Sanctum is already installed and its <code>personal_access_tokens</code> table migrated. Add the <code>HasApiTokens</code> trait to <code>User</code>.</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php" data-hl="3,9">
+          namespace App\Models;
+
+          use Laravel\Sanctum\HasApiTokens;
+          use Illuminate\Foundation\Auth\User as Authenticatable;
+          use Illuminate\Notifications\Notifiable;
+
+          class User extends Authenticatable
+          {
+              use HasApiTokens, Notifiable;
+              // ...
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Issue a token at login</h3>
+        <p>Check the email and password, then call <code>createToken()</code>. The <strong><code>plainTextToken</code></strong> is shown <em>only once</em>; the database stores just a hash of it.</p>
+        <pre><code class="lang-php" data-file="routes/api.php" data-hl="19-21">
+          use App\Models\User;
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\Hash;
+          use Illuminate\Validation\ValidationException;
+
+          Route::post('/login', function (Request $request) {
+              $request-&gt;validate([
+                  'email'       =&gt; ['required', 'email'],
+                  'password'    =&gt; ['required'],
+                  'device_name' =&gt; ['required'],
+              ]);
+
+              $user = User::where('email', $request-&gt;email)-&gt;first();
+
+              if (! $user || ! Hash::check($request-&gt;password, $user-&gt;password)) {
+                  throw ValidationException::withMessages(['email' =&gt; 'The credentials are incorrect.']);
+              }
+
+              $token = $user-&gt;createToken($request-&gt;device_name);
+
+              return response()-&gt;json(['token' =&gt; $token-&gt;plainTextToken], 201);
+          });
+        </code></pre>
+        <pre><code class="lang-bash">
+          curl -X POST http://127.0.0.1:8000/api/login \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            -d '{"email":"ada@example.com","password":"password","device_name":"ada-iphone"}'
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response · 201 Created">
+          { "token": "3|kR8vXq2bL0yH7nTzP4mWc9sJdA1fEuG6iOoV5rBx" }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Guard routes with <code>auth:sanctum</code></h3>
+        <p>The <code>auth:sanctum</code> <strong>middleware</strong> rejects any request without a valid token with <code>401 Unauthorized</code>. Inside, <code>$request-&gt;user()</code> is the token's owner.</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          use App\Http\Controllers\Api\PostController;
+
+          Route::get('/posts', [PostController::class, 'index']);          // public
+
+          Route::middleware('auth:sanctum')-&gt;group(function () {
+              Route::get('/user', fn (Request $request) =&gt; $request-&gt;user());
+              Route::apiResource('posts', PostController::class)-&gt;except('index');
+          });
+        </code></pre>
+        <pre><code class="lang-bash">
+          curl http://127.0.0.1:8000/api/user \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer 3|kR8vXq2bL0yH7nTzP4mWc9sJdA1fEuG6iOoV5rBx"
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response without a token · 401">
+          { "message": "Unauthenticated." }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Limit what a token can do with abilities</h3>
+        <p><strong>Abilities</strong> (sometimes called scopes) are labels you attach when creating the token. Check them with <code>tokenCan()</code>.</p>
+        <pre><code class="lang-php">
+          // A read-only token for a reporting script
+          $token = $user-&gt;createToken('reports', ['posts:read']);
+
+          // In a controller
+          if (! $request-&gt;user()-&gt;tokenCan('posts:delete')) {
+              abort(403, 'This token cannot delete posts.');
+          }
+        </code></pre>
+        <p>Abilities limit the <em>token</em>. You still need <a href="../08-authorization/policies.html">policies</a> to decide whether the <em>user</em> may touch a particular post.</p>
+      </li>
+
+      <li class="step">
+        <h3>Log out by revoking tokens</h3>
+        <p>A token works until you delete it (or it expires, if you set <code>expiration</code> in <code>config/sanctum.php</code>).</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          Route::post('/logout', function (Request $request) {
+              $request-&gt;user()-&gt;currentAccessToken()-&gt;delete();   // this device only
+              // $request-&gt;user()-&gt;tokens()-&gt;delete();          // every device
+              return response()-&gt;noContent();
+          })-&gt;middleware('auth:sanctum');
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>In brief: SPA cookie authentication</h3>
+        <p>If your Vue or React frontend lives on the same top-level domain as the API, skip tokens entirely. Sanctum can use Laravel's normal <strong>session cookie</strong>, which is safer in a browser because JavaScript never holds a secret.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php">
+          -&gt;withMiddleware(function (Middleware $middleware) {
+              $middleware-&gt;statefulApi();
+          })
+        </code></pre>
+        <pre><code class="lang-js" data-file="SPA login (axios)">
+          axios.defaults.withCredentials = true;
+          axios.defaults.withXSRFToken = true;
+
+          await axios.get('/sanctum/csrf-cookie');            // 1. get CSRF cookie
+          await axios.post('/login', { email, password });    // 2. normal session login
+          const { data } = await axios.get('/api/user');      // 3. auth:sanctum just works
+        </code></pre>
+        <p>Also list your frontend's domain in <code>SANCTUM_STATEFUL_DOMAINS</code> in <code>.env</code>.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          return ['token' =&gt; $token-&gt;accessToken-&gt;token];
+        </code></pre>
+        <p>That's the stored <em>hash</em>. It won't authenticate anything.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          return ['token' =&gt; $token-&gt;plainTextToken];
+        </code></pre>
+        <p>Return <code>plainTextToken</code> once; the client must store it safely.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+        </code></pre>
+        <p>Without middleware, anyone on the internet can delete posts.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::delete('/posts/{post}', [PostController::class, 'destroy'])
+              -&gt;middleware('auth:sanctum');
+        </code></pre>
+        <p>Guard every write route, then authorise ownership with a policy.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: always use HTTPS</div>
+      <p>A Bearer token is as good as a password. Send it only over HTTPS, never put it in a URL query string, and never commit it to Git.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Add a <code>/api/login</code> route that returns a token, and test it with curl.</li>
+        <li>Call <code>/api/user</code> once without the token (expect 401) and once with it.</li>
+        <li>Create a token with only <code>['posts:read']</code> and make <code>destroy</code> return 403 for it.</li>
+        <li>Add <code>/api/logout</code> and confirm the same token now gets 401.</li>
+        <li>Open the <code>personal_access_tokens</code> table and notice the token column is hashed.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Sanctum comes with <code>php artisan install:api</code>; add <code>HasApiTokens</code> to <code>User</code>.</li>
+      <li><code>$user-&gt;createToken('name', $abilities)-&gt;plainTextToken</code> is shown once and sent as <code>Authorization: Bearer …</code>.</li>
+      <li><code>auth:sanctum</code> protects routes and returns <code>401</code> when the token is missing or invalid.</li>
+      <li>Abilities plus <code>tokenCan()</code> limit what a token may do; policies still govern the user.</li>
+      <li>For a same-domain SPA, prefer Sanctum's cookie (session) auth over storing tokens in JavaScript.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which property gives you the token string to send back to the client?",
+          "options": ["`$token->hash`", "`$token->id`", "`$token->plainTextToken`", "`$user->api_token`"],
+          "answer": 2,
+          "explain": "`plainTextToken` is available only right after `createToken()`. The database keeps only a hash."
+        },
+        {
+          "q": "How does a mobile client send its Sanctum token?",
+          "options": ["`Authorization: Bearer <token>` header", "As a `?token=` query parameter", "In the JSON body of every request", "As a session cookie"],
+          "answer": 0,
+          "explain": "The Bearer header is the standard; query strings end up in logs and browser history."
+        },
+        {
+          "q": "What does `auth:sanctum` return when no valid token is sent?",
+          "options": ["`403 Forbidden`", "`404 Not Found`", "`422 Unprocessable`", "`401 Unauthorized`"],
+          "answer": 3,
+          "explain": "`401` means \"we don't know who you are\". `403` means \"we know you, but you can't do this\"."
+        },
+        {
+          "q": "What are token abilities for?",
+          "options": ["Encrypting the token", "Limiting which actions a specific token may perform", "Setting the token's expiry", "Choosing the database table"],
+          "answer": 1,
+          "explain": "Pass abilities to `createToken()` and check them with `tokenCan()`."
+        },
+        {
+          "q": "Your Vue SPA is served from the same domain as the API. What's the recommended Sanctum approach?",
+          "options": ["Cookie-based session auth via `/sanctum/csrf-cookie`", "Store a token in `localStorage`", "Send the password on every request", "Disable auth for the SPA"],
+          "answer": 0,
+          "explain": "SPA mode uses the normal session cookie plus CSRF protection, so JavaScript never holds a secret."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

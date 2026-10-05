@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Routing · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel routing: map URLs to code with route parameters, named routes and groups.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="04" data-lesson="routing">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A route connects a URL (plus an HTTP method) to the code that should answer it.</p>
+    <p class="analogy"><span>🛎️</span><span>Think of routes as a hotel receptionist. A guest asks for “room 204” (the URL), and the receptionist knows exactly who to send them to (your code). If nobody is assigned to that room, the guest gets a polite “not found” (404).</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Every page starts with a route</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🚪</span>
+        <h3>It's the front door</h3>
+        <p>No route, no page. Every request into your app is matched against your route list first.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🗺️</span>
+        <h3>One map of your app</h3>
+        <p>Open <code>routes/web.php</code> and you can see every URL your app answers, all in one place.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔁</span>
+        <h3>Change URLs safely</h3>
+        <p>Named routes let you rename a URL once, and every link updates automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>What happens when someone visits <code>/about</code></h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🌐</span><strong>Browser</strong><small>GET /about</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧭</span><strong>Router</strong><small>finds a matching route</small></div>
+        <div class="flow-node"><span class="flow-icon">⚙️</span><strong>Your code</strong><small>closure or controller</small></div>
+        <div class="flow-node"><span class="flow-icon">📄</span><strong>Response</strong><small>HTML, JSON or redirect</small></div>
+      </div>
+      <figcaption>The router reads the method + URL, picks the first matching route, runs its code and sends back whatever it returns.</figcaption>
+    </figure>
+    <p>Laravel keeps routes in the <code>routes/</code> folder. You'll spend most of your time in two files:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Used for</th><th>Comes with</th></tr></thead>
+        <tbody>
+          <tr><td><code>routes/web.php</code></td><td>Pages people visit in a browser</td><td>Sessions, cookies, CSRF protection</td></tr>
+          <tr><td><code>routes/api.php</code></td><td>JSON endpoints for apps &amp; JS frontends</td><td>Automatic <code>/api</code> prefix, stateless. Created by <code>php artisan install:api</code></td></tr>
+          <tr><td><code>routes/console.php</code></td><td>Custom Artisan commands &amp; schedules</td><td>No HTTP at all</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build your routing skills</h2>
+      <p>Each step adds one idea. Try each snippet in a fresh Laravel project as you go.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Your first route</h3>
+        <p>A route needs three things: the <strong>HTTP method</strong> (<code>get</code>), the <strong>URL</strong> (<code>/hello</code>), and the <strong>code to run</strong>. Here, the code is a closure (an unnamed function).</p>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="5-7">
+          &lt;?php
+
+          use Illuminate\Support\Facades\Route;
+
+          Route::get('/hello', function () {
+              return 'Hello, Laravel! 👋';
+          });
+        </code></pre>
+        <p>Run <code>php artisan serve</code> and visit <code>http://127.0.0.1:8000/hello</code>. Whatever the closure returns is sent back to the browser.</p>
+      </li>
+
+      <li class="step">
+        <h3>Return a view instead of text</h3>
+        <p>Real pages are HTML, so you'll usually return a <strong>Blade view</strong>. <code>view('about')</code> loads <code>resources/views/about.blade.php</code>.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/about', function () {
+              return view('about', ['team' => 'Blueprint Crew']);
+          });
+
+          // Shortcut when there's no logic at all:
+          Route::view('/contact', 'contact');
+        </code></pre>
+        <p>The array passes data to the view. Inside Blade you can now write <code>{{ $team }}</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Capture parts of the URL with parameters</h3>
+        <p>Wrap a URL segment in <code>{curly braces}</code> and Laravel hands its value to your function. Add <code>?</code> to make a parameter optional, and use a constraint to reject bad input.</p>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="1,6,10">
+          Route::get('/posts/{id}', function (string $id) {
+              return "Showing post #{$id}";
+          })->whereNumber('id');        // /posts/abc → 404
+
+          // Optional parameter with a default value
+          Route::get('/greet/{name?}', function (string $name = 'friend') {
+              return "Hi, {$name}!";
+          });
+
+          Route::get('/users/{user}/posts/{post}', function (string $user, string $post) {
+              return "User {$user}, post {$post}";
+          });
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Coming later: route model binding</div>
+          <p>Once you have models (Module 05), type-hint <code>Post $post</code> instead of <code>string $id</code>. Laravel then fetches the post from the database for you, or returns a 404 automatically.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Give routes a name</h3>
+        <p>A <strong>named route</strong> is a nickname for a URL. You build links from the name, never by typing the path by hand.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/posts/{id}', function (string $id) {
+              // ...
+          })->name('posts.show');
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/home.blade.php">
+          &lt;a href="{{ route('posts.show', ['id' => 42]) }}"&gt;Read post 42&lt;/a&gt;
+          {{-- renders: /posts/42 --}}
+        </code></pre>
+        <pre><code class="lang-php" data-file="Anywhere in PHP">
+          return redirect()->route('posts.show', ['id' => 42]);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Group routes that share settings</h3>
+        <p>When many routes share a prefix, middleware or controller, group them so you don't repeat yourself.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          use App\Http\Controllers\Admin\DashboardController;
+
+          Route::prefix('admin')                 // URLs start with /admin
+              ->name('admin.')                   // names start with admin.
+              ->middleware('auth')               // must be logged in
+              ->group(function () {
+                  Route::get('/dashboard', [DashboardController::class, 'index'])
+                      ->name('dashboard');       // → admin.dashboard, /admin/dashboard
+                  Route::get('/reports', [DashboardController::class, 'reports'])
+                      ->name('reports');         // → admin.reports, /admin/reports
+              });
+        </code></pre>
+        <p>Notice <code>[DashboardController::class, 'index']</code>. That's how a route points to a <strong>controller method</strong> instead of a closure. You'll build controllers in the next lesson.</p>
+      </li>
+
+      <li class="step">
+        <h3>Match the right HTTP verb</h3>
+        <p>The same URL can do different things depending on the method. Browsers use <code>GET</code> to read and <code>POST</code> to submit forms. The others are used for updating and deleting.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/posts', ...);            // list posts
+          Route::post('/posts', ...);           // save a new post
+          Route::put('/posts/{id}', ...);       // replace a post
+          Route::patch('/posts/{id}', ...);     // update part of a post
+          Route::delete('/posts/{id}', ...);    // delete a post
+
+          Route::match(['get', 'post'], '/search', ...);
+          Route::any('/webhook', ...);
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;a href="/posts/{{ $id }}"&gt;Read&lt;/a&gt;
+        </code></pre>
+        <p>Hard-coded paths break silently when you change a URL, and you'll be hunting through dozens of templates.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;a href="{{ route('posts.show', $id) }}"&gt;Read&lt;/a&gt;
+        </code></pre>
+        <p>Change the URL once in <code>web.php</code>, and every link that uses the route name keeps working.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::get('/posts/{id}', ...);
+          Route::get('/posts/create', ...); // never reached!
+        </code></pre>
+        <p><code>/posts/create</code> matches <code>{id}</code> first, with <code>id = "create"</code>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::get('/posts/create', ...);
+          Route::get('/posts/{id}', ...)->whereNumber('id');
+        </code></pre>
+        <p>Put specific routes first, and constrain parameters so they only match what they should.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: see every route at once</div>
+      <p>This prints a table of every route, its method, name and handler. It's the fastest way to debug a 404.</p>
+      <pre><code class="lang-bash">
+        php artisan route:list
+        php artisan route:list --path=admin   # filter
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>In a fresh Laravel project, build these routes:</p>
+      <ol>
+        <li><code>GET /</code>: returns the text “Home”.</li>
+        <li><code>GET /products/{id}</code>: only accepts numbers, is named <code>products.show</code>, and returns “Product #ID”.</li>
+        <li>A group with the prefix <code>/shop</code> containing <code>/cart</code> and <code>/checkout</code>, named <code>shop.cart</code> and <code>shop.checkout</code>.</li>
+        <li>Run <code>php artisan route:list</code> and check that all four appear.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Routes live in <code>routes/web.php</code> (pages) and <code>routes/api.php</code> (JSON).</li>
+      <li>A route = HTTP method + URL + code to run (closure or controller method).</li>
+      <li><code>{param}</code> captures URL segments; <code>{param?}</code> makes them optional.</li>
+      <li>Always name routes and generate links with <code>route('name')</code>.</li>
+      <li>Groups share prefixes, name prefixes and middleware.</li>
+      <li><code>php artisan route:list</code> is your routing debugger.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which file holds the routes for pages people visit in a browser?",
+          "options": ["`routes/api.php`", "`routes/web.php`", "`app/Http/routes.php`", "`config/routes.php`"],
+          "answer": 1,
+          "explain": "`routes/web.php` gets the web middleware group: sessions, cookies and CSRF protection."
+        },
+        {
+          "q": "What does `Route::get('/greet/{name?}', ...)` mean?",
+          "options": ["`name` is required", "`name` is optional", "`name` must be a number", "It only matches the literal text `{name?}`"],
+          "answer": 1,
+          "explain": "The `?` makes the parameter optional. Give the function argument a default value, like `$name = 'friend'`."
+        },
+        {
+          "q": "Why should you use `route('posts.show', $id)` instead of writing `/posts/` + id?",
+          "options": ["It's faster at runtime", "It's required by Blade", "Links keep working if the URL changes", "It adds CSRF protection"],
+          "answer": 2,
+          "explain": "Named routes decouple links from paths. Change the URL once, and every `route()` call updates."
+        },
+        {
+          "q": "Which command shows every registered route?",
+          "options": ["`php artisan routes`", "`php artisan route:show`", "`php artisan route:list`", "`composer routes`"],
+          "answer": 2,
+          "explain": "`php artisan route:list` prints methods, URIs, names and handlers."
+        },
+        {
+          "q": "You defined `/posts/{id}` before `/posts/create`. What happens when you visit `/posts/create`?",
+          "options": ["The create route runs", "The `{id}` route runs with id = \"create\"", "Laravel throws an error", "You get a 405 error"],
+          "answer": 1,
+          "explain": "Routes match top to bottom. Put specific routes first, or constrain `{id}` with `whereNumber('id')`."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

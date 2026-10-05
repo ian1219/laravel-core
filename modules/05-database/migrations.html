@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Migrations · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel migrations: build and change database tables with PHP, use up/down, column types, foreign keys, and migrate, rollback and fresh safely.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="05" data-lesson="migrations">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A migration is a PHP file that describes one change to your database structure, so every copy of your app can build the exact same tables.</p>
+    <p class="analogy"><span>🏗️</span><span>Think of migrations as numbered building instructions for a LEGO set. Anyone who follows steps 1, 2, 3 in order ends up with the same model, and if step 3 was a mistake, you can undo just that step.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Your schema deserves version control too</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🤝</span>
+        <h3>Teammates stay in sync</h3>
+        <p>Pull the latest code, run <code>php artisan migrate</code>, and your local database matches everyone else's. No more emailing SQL dumps.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🕰️</span>
+        <h3>Changes have history</h3>
+        <p>Migrations live in Git next to your code, so you can see when a column was added, by whom, and why.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🚀</span>
+        <h3>Deploys are repeatable</h3>
+        <p>The same files that built your laptop database build the production one. Laravel remembers which ones already ran.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>From PHP file to real table</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">⌨️</span><strong>make:migration</strong><small>creates a timestamped file</small></div>
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>You edit up()</strong><small>describe the table in PHP</small></div>
+        <div class="flow-node accent"><span class="flow-icon">▶️</span><strong>migrate</strong><small>runs every new file in order</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Database</strong><small>table exists + logged in <code>migrations</code></small></div>
+      </div>
+      <figcaption>Laravel records each finished migration in a special <code>migrations</code> table, so it never runs the same file twice.</figcaption>
+    </figure>
+    <p>Migrations live in <code>database/migrations/</code>. The filename starts with a timestamp, which is how Laravel knows the order to run them in.</p>
+    <pre class="tree"><span class="dir">database/migrations/</span>
+├── 0001_01_01_000000_create_users_table.php      <span class="note">← ships with Laravel</span>
+├── 0001_01_01_000001_create_cache_table.php
+├── 0001_01_01_000002_create_jobs_table.php
+├── 2025_03_10_120000_create_categories_table.php <span class="note">← yours</span>
+└── 2025_03_10_120500_create_posts_table.php      <span class="note">← runs after categories</span></pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build the blog's tables</h2>
+      <p>We'll create the <code>categories</code> and <code>posts</code> tables for our running blog example.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate a migration</h3>
+        <p>Artisan creates the file for you. If the name follows the pattern <code>create_xxx_table</code>, Laravel even pre-fills the table name.</p>
+        <pre><code class="lang-bash">
+          php artisan make:migration create_categories_table
+          php artisan make:migration create_posts_table
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Shortcut</div>
+          <p><code>php artisan make:model Post -m</code> creates the model <em>and</em> its migration in one go. You'll meet models in the <a href="models.html">next lesson</a>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Understand <code>up()</code> and <code>down()</code></h3>
+        <p>Every migration has two methods. <strong><code>up()</code></strong> makes the change, and <strong><code>down()</code></strong> undoes it exactly. The <code>Schema</code> facade and a <code>Blueprint</code> object (<code>$table</code>) let you describe columns in PHP instead of SQL.</p>
+        <pre><code class="lang-php" data-file="database/migrations/2025_03_10_120000_create_categories_table.php" data-hl="11-16,21">
+          &lt;?php
+
+          use Illuminate\Database\Migrations\Migration;
+          use Illuminate\Database\Schema\Blueprint;
+          use Illuminate\Support\Facades\Schema;
+
+          return new class extends Migration
+          {
+              public function up(): void
+              {
+                  Schema::create('categories', function (Blueprint $table) {
+                      $table-&gt;id();                       // BIGINT auto-increment primary key
+                      $table-&gt;string('name');             // VARCHAR(255)
+                      $table-&gt;string('slug')-&gt;unique();   // no two categories share a slug
+                      $table-&gt;timestamps();               // created_at + updated_at
+                  });
+              }
+
+              public function down(): void
+              {
+                  Schema::dropIfExists('categories');
+              }
+          };
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Pick the right column types</h3>
+        <p>Each <code>$table-&gt;...</code> call adds one column. Chain <strong>modifiers</strong> such as <code>-&gt;nullable()</code> or <code>-&gt;default()</code> to fine-tune it.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Stores</th><th>Blog example</th></tr></thead>
+            <tbody>
+              <tr><td><code>id()</code></td><td>Auto-increment big integer primary key</td><td><code>id</code></td></tr>
+              <tr><td><code>string('x', 255)</code></td><td>Short text (VARCHAR)</td><td><code>title</code>, <code>slug</code></td></tr>
+              <tr><td><code>text('x')</code></td><td>Long text</td><td><code>body</code></td></tr>
+              <tr><td><code>boolean('x')</code></td><td>true / false</td><td><code>is_featured</code></td></tr>
+              <tr><td><code>unsignedInteger('x')</code></td><td>Whole numbers ≥ 0</td><td><code>views</code></td></tr>
+              <tr><td><code>timestamp('x')</code></td><td>Date + time</td><td><code>published_at</code></td></tr>
+              <tr><td><code>json('x')</code></td><td>Structured data</td><td><code>meta</code></td></tr>
+              <tr><td><code>foreignId('x')</code></td><td>A link to another table's id</td><td><code>user_id</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Link tables with foreign keys</h3>
+        <p>A <strong>foreign key</strong> is a column that points at a row in another table. <code>foreignId('user_id')-&gt;constrained()</code> creates the column <em>and</em> tells the database it must match a real <code>users.id</code>. Laravel guesses the table from the column name.</p>
+        <pre><code class="lang-php" data-file="database/migrations/2025_03_10_120500_create_posts_table.php" data-hl="5-6">
+          public function up(): void
+          {
+              Schema::create('posts', function (Blueprint $table) {
+                  $table-&gt;id();
+                  $table-&gt;foreignId('user_id')-&gt;constrained()-&gt;cascadeOnDelete();
+                  $table-&gt;foreignId('category_id')-&gt;nullable()-&gt;constrained()-&gt;nullOnDelete();
+                  $table-&gt;string('title');
+                  $table-&gt;string('slug')-&gt;unique();
+                  $table-&gt;text('body');
+                  $table-&gt;unsignedInteger('views')-&gt;default(0);
+                  $table-&gt;timestamp('published_at')-&gt;nullable();
+                  $table-&gt;timestamps();
+              });
+          }
+
+          public function down(): void
+          {
+              Schema::dropIfExists('posts');
+          }
+        </code></pre>
+        <p><code>cascadeOnDelete()</code> means "delete a user, and their posts go too". <code>nullOnDelete()</code> means "delete a category, and its posts simply become uncategorised". Because <code>posts</code> points at <code>categories</code>, the categories migration must run first, which is why its timestamp is earlier.</p>
+      </li>
+
+      <li class="step">
+        <h3>Run, roll back, start fresh</h3>
+        <p>These commands are your daily tools. <strong>Rollback</strong> runs <code>down()</code> on the most recent batch of migrations.</p>
+        <pre><code class="lang-bash">
+          php artisan migrate              # run every migration that hasn't run yet
+          php artisan migrate:status       # see which ones have run
+          php artisan migrate:rollback     # undo the last batch
+          php artisan migrate:fresh        # DROP ALL tables, then migrate from scratch
+          php artisan migrate:fresh --seed # same, then fill with seed data
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ <code>migrate:fresh</code> deletes everything</div>
+          <p>It's perfect on your laptop and catastrophic in production. Never run it against a database holding real users' data.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Change an existing table with a new migration</h3>
+        <p>Once a migration has run anywhere other than your own machine, treat it as <strong>frozen</strong>. To add an <code>excerpt</code> column later, write a <em>new</em> migration that alters the table.</p>
+        <pre><code class="lang-bash">
+          php artisan make:migration add_excerpt_to_posts_table
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/migrations/2025_04_02_090000_add_excerpt_to_posts_table.php">
+          public function up(): void
+          {
+              Schema::table('posts', function (Blueprint $table) {
+                  $table-&gt;string('excerpt', 300)-&gt;nullable()-&gt;after('title');
+              });
+          }
+
+          public function down(): void
+          {
+              Schema::table('posts', function (Blueprint $table) {
+                  $table-&gt;dropColumn('excerpt');
+              });
+          }
+        </code></pre>
+        <p>Note <code>Schema::table()</code> (change an existing table) versus <code>Schema::create()</code> (make a new one).</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // Editing create_posts_table.php
+          // after it already ran on staging
+          $table-&gt;string('excerpt');
+        </code></pre>
+        <p>Laravel thinks that file already ran, so the column never appears on any server that migrated before.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-bash">
+          php artisan make:migration add_excerpt_to_posts_table
+          php artisan migrate
+        </code></pre>
+        <p>A new migration is picked up everywhere, and its <code>down()</code> lets you undo it cleanly.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function down(): void
+          {
+              //
+          }
+        </code></pre>
+        <p>An empty <code>down()</code> means rollback silently does nothing, leaving your schema half-changed.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function down(): void
+          {
+              Schema::dropIfExists('posts');
+          }
+        </code></pre>
+        <p>Make <code>down()</code> the exact mirror of <code>up()</code> so rollbacks are always safe.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: the "edit freely" window</div>
+      <p>While a migration exists <em>only</em> on your machine and hasn't been pushed, it's fine to edit it and run <code>php artisan migrate:fresh</code>. The rule "never edit a migration" kicks in the moment someone else could have run it.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>Extend the blog schema:</p>
+      <ol>
+        <li>Create a <code>comments</code> table with <code>id</code>, <code>post_id</code> (cascade on delete), <code>user_id</code>, a <code>body</code> text column and timestamps.</li>
+        <li>Create a <code>tags</code> table with a unique <code>name</code>.</li>
+        <li>Run <code>php artisan migrate</code>, then <code>php artisan migrate:status</code> to confirm they ran.</li>
+        <li>Roll back once with <code>migrate:rollback</code> and check which tables disappeared.</li>
+        <li>Add a <code>is_featured</code> boolean (default <code>false</code>) to <code>posts</code> using a <em>new</em> migration.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A migration describes one schema change; <code>up()</code> applies it and <code>down()</code> reverses it.</li>
+      <li>Files run in timestamp order, and Laravel logs each one so it never runs twice.</li>
+      <li><code>foreignId('user_id')-&gt;constrained()</code> adds the column and the foreign key in one line.</li>
+      <li><code>migrate</code> moves forward, <code>migrate:rollback</code> undoes the last batch, <code>migrate:fresh</code> wipes and rebuilds.</li>
+      <li>Never edit a migration that has already run elsewhere; write a new one with <code>Schema::table()</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What should a migration's `down()` method do?",
+          "options": ["Run the migration a second time", "Exactly reverse what `up()` did", "Delete the migration file", "Seed the database"],
+          "answer": 1,
+          "explain": "`down()` is the undo button. `migrate:rollback` calls it, so it should mirror `up()`."
+        },
+        {
+          "q": "What does `$table->foreignId('user_id')->constrained()` create?",
+          "options": ["Only a plain integer column", "A new `users` table", "An unsigned big integer column plus a foreign key to `users.id`", "An index on `users.name`"],
+          "answer": 2,
+          "explain": "`foreignId` makes the column and `constrained()` guesses the `users` table from the name and adds the foreign key."
+        },
+        {
+          "q": "A teammate already ran your `create_posts_table` migration. You need a new column. What do you do?",
+          "options": ["Write a new migration using `Schema::table()`", "Edit the original migration", "Run `migrate:fresh` on production", "Add the column by hand in a database GUI"],
+          "answer": 0,
+          "explain": "Already-run migrations are frozen. A new migration is picked up by everyone on their next `php artisan migrate`."
+        },
+        {
+          "q": "Which command drops every table and runs all migrations again?",
+          "options": ["`php artisan migrate:rollback`", "`php artisan migrate:status`", "`php artisan migrate:reset-all`", "`php artisan migrate:fresh`"],
+          "answer": 3,
+          "explain": "`migrate:fresh` wipes the whole database. Great locally, dangerous in production."
+        },
+        {
+          "q": "How does Laravel know which migrations have already run?",
+          "options": ["It checks file modification dates", "It records them in a `migrations` table", "It reads a list in `.env`", "It asks you every time"],
+          "answer": 1,
+          "explain": "Each completed migration is logged, with a batch number, in the `migrations` table."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

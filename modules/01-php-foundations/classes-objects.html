@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Classes &amp; Objects · Laravel Blueprint</title>
+  <meta name="description" content="Learn PHP classes and objects: properties, methods, $this, constructors with property promotion, static members, the nullsafe operator, enums and match.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="01" data-lesson="classes-objects">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A class is a blueprint that describes some data and the actions on it, and an object is one real thing built from that blueprint.</p>
+    <p class="analogy"><span>🍪</span><span>A class is a cookie cutter; objects are the cookies. One cutter (<code>Post</code>) can stamp out as many cookies as you like, and each cookie can have its own sprinkles (its own title, its own views).</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Almost every Laravel file is a class</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧺</span>
+        <h3>Data and behaviour together</h3>
+        <p>A <code>Post</code> object holds its title <em>and</em> knows how to publish itself. No more loose arrays and scattered functions.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏗️</span>
+        <h3>Laravel is built of them</h3>
+        <p>Models, controllers, middleware, jobs, mailables: open any file in <code>app/</code> and you'll find <code>class</code> at the top.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Your editor understands you</h3>
+        <p>With typed properties, your IDE autocompletes <code>$post-&gt;</code> and warns you about typos before you run anything.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One blueprint, many objects</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 230" role="img" aria-label="A Post class with title, views and publish() creating two separate objects" style="width:100%;max-width:640px;height:auto">
+        <rect x="20" y="40" width="200" height="150" rx="12" fill="none" stroke="var(--mod)" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="120" y="30" text-anchor="middle" fill="var(--text-muted)" font-size="12">class (blueprint)</text>
+        <text x="120" y="70" text-anchor="middle" fill="currentColor" font-size="16" font-weight="600">Post</text>
+        <line x1="36" y1="84" x2="204" y2="84" stroke="var(--text-muted)" stroke-width="1"/>
+        <text x="40" y="108" fill="currentColor" font-size="13">string $title</text>
+        <text x="40" y="130" fill="currentColor" font-size="13">int $views</text>
+        <line x1="36" y1="144" x2="204" y2="144" stroke="var(--text-muted)" stroke-width="1"/>
+        <text x="40" y="170" fill="currentColor" font-size="13">publish(): void</text>
+        <g stroke="var(--mod)" stroke-width="2" fill="none">
+          <path d="M224 90 C 300 90, 320 60, 384 60"/>
+          <path d="M224 140 C 300 140, 320 170, 384 170"/>
+        </g>
+        <text x="300" y="118" text-anchor="middle" fill="var(--text-muted)" font-size="12">new Post(...)</text>
+        <rect x="390" y="20" width="230" height="80" rx="12" fill="none" stroke="var(--mod)" stroke-width="2"/>
+        <text x="405" y="44" fill="var(--text-muted)" font-size="12">$first (object)</text>
+        <text x="405" y="66" fill="currentColor" font-size="13">title: 'Hello Laravel'</text>
+        <text x="405" y="86" fill="currentColor" font-size="13">views: 120</text>
+        <rect x="390" y="130" width="230" height="80" rx="12" fill="none" stroke="var(--mod)" stroke-width="2"/>
+        <text x="405" y="154" fill="var(--text-muted)" font-size="12">$second (object)</text>
+        <text x="405" y="176" fill="currentColor" font-size="13">title: 'OOP in PHP'</text>
+        <text x="405" y="196" fill="currentColor" font-size="13">views: 7</text>
+      </svg>
+      <figcaption>The class defines the shape. Each object (also called an <strong>instance</strong>) has its own copy of the data.</figcaption>
+    </figure>
+    <dl class="terms">
+      <div><dt>Property</dt><dd>A variable that belongs to an object, like <code>$title</code>.</dd></div>
+      <div><dt>Method</dt><dd>A function that belongs to an object, like <code>publish()</code>.</dd></div>
+      <div><dt>Instance</dt><dd>One object made from a class with <code>new</code>.</dd></div>
+      <div><dt><code>$this</code></dt><dd>Inside a method, "the object I'm currently working on".</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build your first classes</h2>
+      <p>We'll grow a small <code>Post</code> class for our blog, one idea at a time.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Define a class and create objects</h3>
+        <p>A class has <strong>typed properties</strong> (its data) and <strong>methods</strong> (its actions). <code>new</code> creates an object, and the <strong>object operator</strong> <code>-&gt;</code> reaches into it.</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="14-16">
+          &lt;?php
+
+          class Post
+          {
+              public string $title = '';
+              public int $views = 0;
+
+              public function addView(): void
+              {
+                  $this-&gt;views++;
+              }
+          }
+
+          $post = new Post();
+          $post-&gt;title = 'Hello Laravel';
+          $post-&gt;addView();
+
+          echo $post-&gt;views;   // 1
+        </code></pre>
+        <p>Inside the class, <code>$this-&gt;views</code> means "this particular object's views". Class names use <strong>PascalCase</strong> and, by convention, live in a file with the same name.</p>
+      </li>
+
+      <li class="step">
+        <h3>Set up objects with a constructor</h3>
+        <p>The <strong>constructor</strong> <code>__construct()</code> runs automatically when you call <code>new</code>. It's where an object gets its starting data, so it's never half-built.</p>
+        <pre><code class="lang-php" data-file="Post.php">
+          class Post
+          {
+              public string $title;
+              public string $author;
+
+              public function __construct(string $title, string $author)
+              {
+                  $this-&gt;title = $title;
+                  $this-&gt;author = $author;
+              }
+          }
+
+          $post = new Post('Hello Laravel', 'Ada');
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Shorten it with constructor property promotion</h3>
+        <p>That pattern is so common that PHP 8 added <strong>constructor property promotion</strong>: put the visibility keyword in front of a constructor parameter and PHP declares <em>and</em> assigns the property for you. This is what modern Laravel code looks like.</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="4-8">
+          class Post
+          {
+              public function __construct(
+                  public string $title,
+                  public string $author,
+                  public int $views = 0,
+                  public ?string $subtitle = null,
+              ) {}
+
+              public function summary(): string
+              {
+                  return "{$this-&gt;title} by {$this-&gt;author} ({$this-&gt;views} views)";
+              }
+          }
+
+          $post = new Post(title: 'Hello Laravel', author: 'Ada');
+          echo $post-&gt;summary();   // Hello Laravel by Ada (0 views)
+        </code></pre>
+        <p>Notice the named arguments from <a href="functions.html">Functions</a> working with <code>new</code> too.</p>
+      </li>
+
+      <li class="step">
+        <h3>Class-level members: constants and <code>static</code></h3>
+        <p>Some things belong to the <em>class itself</em>, not to any one object. Access them with <code>::</code> (the "scope resolution operator") instead of <code>-&gt;</code>. A <strong>static method</strong> is often used as a friendly "named constructor".</p>
+        <pre><code class="lang-php" data-file="Post.php">
+          class Post
+          {
+              public const MAX_TITLE = 120;
+
+              public function __construct(public string $title) {}
+
+              public static function draft(): static
+              {
+                  return new static('Untitled draft');
+              }
+          }
+
+          echo Post::MAX_TITLE;          // 120
+          $draft = Post::draft();        // static call, no object needed first
+          echo Post::class;              // "Post" (the full class name as a string)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Objects inside objects, and the nullsafe operator</h3>
+        <p>Properties can hold other objects. When one of them might be <code>null</code>, the <strong>nullsafe operator</strong> <code>?-&gt;</code> stops the chain and returns <code>null</code> instead of crashing.</p>
+        <pre><code class="lang-php" data-file="Comment.php" data-hl="13">
+          class Author
+          {
+              public function __construct(public string $name) {}
+          }
+
+          class Comment
+          {
+              public function __construct(public string $body, public ?Author $author = null) {}
+          }
+
+          $anon = new Comment('Great post!');
+
+          echo $anon-&gt;author?-&gt;name ?? 'Anonymous';   // Anonymous
+          // $anon-&gt;author-&gt;name would be an Error: reading a property on null
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>A fixed set of choices: enums and <code>match</code></h3>
+        <p>An <strong>enum</strong> (PHP 8.1+) is a special class with a fixed list of allowed values, called <strong>cases</strong>. A <strong>backed enum</strong> gives each case a string or int, perfect for saving to a database. <code>match</code> is a strict, expression-based <code>switch</code> that returns a value.</p>
+        <pre><code class="lang-php" data-file="PostStatus.php" data-hl="9-13">
+          enum PostStatus: string
+          {
+              case Draft = 'draft';
+              case Published = 'published';
+              case Archived = 'archived';
+
+              public function label(): string
+              {
+                  return match ($this) {
+                      PostStatus::Draft     =&gt; '📝 Draft',
+                      PostStatus::Published =&gt; '✅ Live',
+                      PostStatus::Archived  =&gt; '📦 Archived',
+                  };
+              }
+          }
+
+          $status = PostStatus::from('published');   // from a DB string
+          echo $status-&gt;label();                     // ✅ Live
+          echo $status-&gt;value;                       // published
+          PostStatus::tryFrom('oops');               // null instead of an error
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Why not just use strings?</div>
+          <p>With a plain string, <code>'pubished'</code> (a typo) slips through. A parameter typed <code>PostStatus $status</code> only accepts real cases, and <code>match</code> throws an error if you forget to handle one.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function addView(): void
+          {
+              $views++;   // undefined variable
+          }
+        </code></pre>
+        <p>Inside a method, a bare <code>$views</code> is a local variable, not the property.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function addView(): void
+          {
+              $this-&gt;views++;
+          }
+        </code></pre>
+        <p>Always go through <code>$this-&gt;</code> to read or change the object's own properties.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $post = new Post();
+          $post-&gt;title = 'Hi';
+          // forgot the author... object is half-built
+        </code></pre>
+        <p>Setting required data one property at a time makes it easy to forget something.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $post = new Post(title: 'Hi', author: 'Ada');
+        </code></pre>
+        <p>Require it in a promoted constructor. The object is valid from the moment it exists.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: one class per file, autoloaded</div>
+      <p>In real projects you never <code>require</code> class files by hand. Composer's <strong>autoloader</strong> finds <code>App\Models\Post</code> in <code>app/Models/Post.php</code> automatically, as long as the <code>namespace</code> and folder match.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>Product</code> class with promoted properties <code>name</code>, <code>price</code> (float) and <code>stock</code> (int, default 0).</li>
+        <li>Add a method <code>isAvailable(): bool</code> that returns whether stock is above zero.</li>
+        <li>Add a static method <code>free(string $name): static</code> that creates a product with price 0.</li>
+        <li>Create an enum <code>Size: string</code> with <code>Small</code>, <code>Medium</code> and <code>Large</code>, plus a <code>label()</code> method using <code>match</code>.</li>
+        <li>Give <code>Product</code> a <code>?Size $size = null</code> property and print <code>$product-&gt;size?-&gt;label() ?? 'One size'</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Models</strong>: <code>class Post extends Model</code> is a class, and each database row becomes an object (see <a href="../05-database/models.html">Models</a>).</li>
+        <li><strong>Controllers</strong>: classes whose methods answer requests (see <a href="../04-laravel-basics/controllers.html">Controllers</a>).</li>
+        <li><strong>Constructor promotion</strong> is how services receive their dependencies: <code>public function __construct(private Mailer $mailer) {}</code>.</li>
+        <li><strong>Enums</strong> can be cast on model attributes, so <code>$post-&gt;status</code> comes back as a <code>PostStatus</code> case.</li>
+        <li><strong>Nullsafe</strong> chains like <code>$post-&gt;author?-&gt;name</code> are common in Blade views.</li>
+      </ul>
+      <p>Next up, <a href="../02-oop/encapsulation.html">Module 02</a> turns these basics into the four pillars of object-oriented programming.</p>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A class is a blueprint; <code>new</code> creates an object (instance) from it.</li>
+      <li>Properties hold data, methods hold behaviour, and <code>$this</code> means "this object".</li>
+      <li>Constructor property promotion declares and assigns properties in one line.</li>
+      <li><code>-&gt;</code> works on objects; <code>::</code> works on the class itself (constants, static methods).</li>
+      <li><code>?-&gt;</code> safely walks a chain that might hit <code>null</code>.</li>
+      <li>Enums model a fixed set of values; <code>match</code> maps each one to a result.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What is the relationship between a class and an object?",
+          "options": ["They are the same thing", "A class is a blueprint; an object is one instance built from it", "An object is a blueprint; a class is built from it", "A class is a kind of array"],
+          "answer": 1,
+          "explain": "You write the class once, then create as many objects (instances) from it as you need with `new`."
+        },
+        {
+          "q": "Inside a method, how do you read the object's own `title` property?",
+          "options": ["`$title`", "`self.title`", "`Post::title`", "`$this->title`"],
+          "answer": 3,
+          "explain": "`$this` refers to the current object, and `->` accesses its properties and methods."
+        },
+        {
+          "q": "What does `public function __construct(public string $title) {}` do?",
+          "options": ["Declares a `title` property and assigns it from the argument", "Creates a static method", "Defines a constant", "Nothing; the body is empty"],
+          "answer": 0,
+          "explain": "That's **constructor property promotion**: the visibility keyword turns the parameter into a property automatically."
+        },
+        {
+          "q": "If `$comment->author` is `null`, what does `$comment->author?->name` return?",
+          "options": ["An Error", "An empty string", "`null`", "`false`"],
+          "answer": 2,
+          "explain": "The nullsafe operator `?->` short-circuits to `null` instead of throwing."
+        },
+        {
+          "q": "Which is the best way to represent a post status that can only be draft, published or archived?",
+          "options": ["Three global constants", "A backed enum like `enum PostStatus: string`", "Any string", "An integer from 1 to 3"],
+          "answer": 1,
+          "explain": "Enums restrict values to a fixed set of cases, and type hints like `PostStatus $status` reject anything else."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

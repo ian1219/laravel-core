@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Controllers · Laravel Blueprint</title>
+  <meta name="description" content="Move logic out of route files into Laravel controllers: make:controller, single-action controllers, passing data to views and dependency injection.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="04" data-lesson="controllers">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A controller is a class that groups the code answering related requests, so your route file stays a clean list of URLs.</p>
+    <p class="analogy"><span>🧑‍💼</span><span>If routes are the receptionist, controllers are the department managers. The receptionist just says “billing questions go to Sam”. Sam then handles every billing request, and has the tools to do it.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Closures don't scale</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📜</span>
+        <h3>Readable routes</h3>
+        <p>Twenty closures with logic inside make <code>web.php</code> hundreds of lines long. With controllers, each route is one line.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📦</span>
+        <h3>Related code together</h3>
+        <p>Everything about posts (list, show, create, edit) lives in one <code>PostController</code>.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">💉</span>
+        <h3>Free dependencies</h3>
+        <p>Type-hint what you need in a method's parameters, and Laravel builds it and passes it in for you.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Where a controller sits</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🧭</span><strong>Route</strong><small>GET /posts/{id}</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎛️</span><strong>PostController@show</strong><small>receives $id + Request</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Model</strong><small>fetch the post</small></div>
+        <div class="flow-node"><span class="flow-icon">🎨</span><strong>View</strong><small>posts/show.blade.php</small></div>
+      </div>
+      <figcaption>The route names the controller and method; the method does the work and returns the response. This is the C in <a href="../03-web-fundamentals/mvc.html">MVC</a>.</figcaption>
+    </figure>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">🧱</span><h3>Basic controller</h3><p>Several public methods, such as <code>index</code> and <code>show</code>, one per action.</p></div>
+      <div class="mini-card"><span class="mini-icon">🎯</span><h3>Single-action</h3><p>One <code>__invoke</code> method for one job.</p></div>
+      <div class="mini-card"><span class="mini-icon">🗂️</span><h3>Resource</h3><p>The seven standard CRUD methods, wired with one route line.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a <code>PostController</code></h2>
+      <p>We'll keep using the blog. You don't need a database yet; we'll fake the data with arrays.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate the controller</h3>
+        <p>Let Artisan write the boilerplate. Controller names are singular, PascalCase, and end in <code>Controller</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller PostController
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          &lt;?php
+
+          namespace App\Http\Controllers;
+
+          use Illuminate\Http\Request;
+
+          class PostController extends Controller
+          {
+              //
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Add methods and point routes at them</h3>
+        <p>Each <strong>public method</strong> is an action. In the route, use the array syntax <code>[Class::class, 'method']</code>. Route parameters arrive as method arguments, matched by name.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          class PostController extends Controller
+          {
+              public function index()
+              {
+                  return 'All posts';
+              }
+
+              public function show(string $id)
+              {
+                  return "Post #{$id}";
+              }
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/web.php" data-hl="1,3-4">
+          use App\Http\Controllers\PostController;
+
+          Route::get('/posts', [PostController::class, 'index'])-&gt;name('posts.index');
+          Route::get('/posts/{id}', [PostController::class, 'show'])-&gt;name('posts.show');
+        </code></pre>
+        <div class="callout tip">
+          <div class="callout-title">💡 Group routes by controller</div>
+          <pre><code class="lang-php">
+            Route::controller(PostController::class)-&gt;group(function () {
+                Route::get('/posts', 'index');
+                Route::get('/posts/{id}', 'show');
+            });
+          </code></pre>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Pass data to a view</h3>
+        <p>Most actions end by returning a view. Pass data as an array, or use <code>compact()</code>, which builds the array from variable names.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="10,15">
+          public function index()
+          {
+              $posts = [
+                  ['id' =&gt; 1, 'title' =&gt; 'Hello Laravel'],
+                  ['id' =&gt; 2, 'title' =&gt; 'Controllers are neat'],
+              ];
+              $heading = 'Latest posts';
+
+              // same as ['posts' =&gt; $posts, 'heading' =&gt; $heading]
+              return view('posts.index', compact('posts', 'heading'));
+          }
+
+          public function show(string $id)
+          {
+              return view('posts.show', ['id' =&gt; $id]);
+          }
+        </code></pre>
+        <p>In <code>resources/views/posts/index.blade.php</code>, <code>$posts</code> and <code>$heading</code> are now available. You'll style them in <a href="blade.html">Blade Templates</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Inject dependencies through parameters</h3>
+        <p><strong>Dependency injection</strong> means “ask for what you need instead of creating it”. Type-hint a class in a method's parameters and Laravel's <strong>service container</strong> builds it and passes it in, alongside any route parameters.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="1,3">
+          use Illuminate\Http\Request;
+
+          public function search(Request $request)
+          {
+              $term = $request-&gt;input('q', '');
+
+              return view('posts.search', ['term' =&gt; $term]);
+          }
+
+          // Route parameters and injected classes can be mixed:
+          public function update(Request $request, string $id)
+          {
+              // $request is injected, $id comes from /posts/{id}
+          }
+        </code></pre>
+        <p>You'll see how this magic works in <a href="../10-laravel-core/service-container.html">The Service Container</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Single-action controllers with <code>__invoke</code></h3>
+        <p>Some actions don't fit a group, like a homepage or “publish this post”. Give them their own <strong>invokable</strong> controller with one <code>__invoke</code> method.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller ShowHomepageController --invokable
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/ShowHomepageController.php">
+          class ShowHomepageController extends Controller
+          {
+              public function __invoke()
+              {
+                  return view('home');
+              }
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/', ShowHomepageController::class);   // no method name needed
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>A peek ahead: resource controllers</h3>
+        <p>Almost every “thing” in an app needs the same seven actions: list, show, create form, store, edit form, update, delete. A <strong>resource controller</strong> generates all of them, and one route line registers them all.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller PostController --resource
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::resource('posts', PostController::class);
+        </code></pre>
+        <p>The full story is in <a href="../06-crud/resource-controllers.html">Resource Controllers</a>.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::get('/posts/{id}', 'PostController@show');
+        </code></pre>
+        <p>The old string syntax isn't checked by your editor and breaks silently when you rename a class.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          use App\Http\Controllers\PostController;
+
+          Route::get('/posts/{id}', [PostController::class, 'show']);
+        </code></pre>
+        <p>The array syntax with <code>::class</code> gives you autocompletion and “go to definition”.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function show(string $id)
+          {
+              $request = new Request();
+              $term = $_GET['q'];
+          }
+        </code></pre>
+        <p>Building the request yourself gives you an empty object, not the real incoming request.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function show(Request $request, string $id)
+          {
+              $term = $request-&gt;input('q');
+          }
+        </code></pre>
+        <p>Type-hint it and let Laravel inject the current request.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: keep controllers thin</div>
+      <p>A healthy action is around 5–15 lines: read input, call a model or service, return a response. If one grows past that, move the logic out. See <a href="../14-architecture/service-classes.html">Service Classes</a>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>PostController</code> with <code>index</code> and <code>show</code> actions, and wire them to <code>/posts</code> and <code>/posts/{id}</code>.</li>
+        <li>Make <code>index</code> pass an array of three fake posts to a <code>posts.index</code> view.</li>
+        <li>Create an invokable <code>AboutController</code> for <code>/about</code>.</li>
+        <li>Add a <code>search</code> action that injects <code>Request</code> and echoes back <code>?q=</code>.</li>
+        <li>Run <code>php artisan route:list</code> and check that each route shows its controller.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Create controllers with <code>php artisan make:controller NameController</code>; they live in <code>app/Http/Controllers</code>.</li>
+      <li>Point routes at them with <code>[PostController::class, 'method']</code>.</li>
+      <li>Route parameters arrive as method arguments; return <code>view('name', $data)</code> to pass data.</li>
+      <li>Type-hint classes like <code>Request</code> and Laravel injects them automatically.</li>
+      <li>Use <code>__invoke</code> (<code>--invokable</code>) for single-job controllers, and <code>--resource</code> for full CRUD.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which command creates a new controller?",
+          "options": ["`php artisan new:controller Post`", "`php artisan make:controller PostController`", "`composer make controller`", "`laravel controller Post`"],
+          "answer": 1,
+          "explain": "`make:controller` creates the file in `app/Http/Controllers`."
+        },
+        {
+          "q": "How do you point a route at the `show` method of `PostController`?",
+          "options": ["`Route::get('/posts/{id}', PostController::show)`", "`Route::get('/posts/{id}', 'show')`", "`Route::get('/posts/{id}', new PostController)`", "`Route::get('/posts/{id}', [PostController::class, 'show'])`"],
+          "answer": 3,
+          "explain": "The array syntax names the class and the method."
+        },
+        {
+          "q": "What method does a single-action (invokable) controller define?",
+          "options": ["`__invoke`", "`handle`", "`__construct`", "`run`"],
+          "answer": 0,
+          "explain": "`__invoke` runs when the route is given just the class, e.g. `Route::get('/', HomeController::class)`."
+        },
+        {
+          "q": "In `public function search(Request $request)`, where does `$request` come from?",
+          "options": ["You must create it with `new Request()`", "It's a global variable", "Laravel's service container injects it because of the type-hint", "It comes from the route URL"],
+          "answer": 2,
+          "explain": "That's dependency injection: type-hint what you need and Laravel provides it."
+        },
+        {
+          "q": "What does `compact('posts', 'heading')` return?",
+          "options": ["`['posts' => $posts, 'heading' => $heading]`", "A Blade view", "A compressed string", "Two separate variables"],
+          "answer": 0,
+          "explain": "`compact()` builds an array from variable names, which is handy for `view()`."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

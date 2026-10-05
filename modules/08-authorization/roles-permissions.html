@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Roles &amp; Permissions · Laravel Blueprint</title>
+  <meta name="description" content="Scale authorization with roles: a simple role enum column, a many-to-many roles and permissions design, and when to use spatie/laravel-permission.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="08" data-lesson="roles-permissions">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Roles group users (admin, editor, author), and permissions name individual actions (“publish posts”), so your gates and policies can check what someone <em>is</em> instead of who they are.</p>
+    <p class="analogy"><span>🏥</span><span>In a hospital, nobody keeps a list of which doctor may open which cupboard. Staff have roles (nurse, surgeon, cleaner), and each role comes with a set of key cards. Hire a new nurse, give them the nurse role, and they get every key a nurse needs.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>From “is it mine?” to “what's my job?”</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">👥</span>
+        <h3>Teams, not just owners</h3>
+        <p>Editors need to fix <em>other people's</em> posts. Ownership checks alone can't express that.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚙️</span>
+        <h3>Change access without deploys</h3>
+        <p>When roles live in the database, an admin can promote someone with a click instead of a code change.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📏</span>
+        <h3>Start simple, scale later</h3>
+        <p>A single column is enough at first. Knowing the next step means you won't paint yourself into a corner.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Three levels of complexity</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>1️⃣</span><strong>Role column</strong><small>users.role = 'admin' | 'editor' | 'author'. One role per user, with rules in code. Great for small apps.</small></div>
+        <div class="layer"><span>2️⃣</span><strong>Roles + permissions tables</strong><small>Many-to-many tables. Users can have several roles, and roles hold editable permissions.</small></div>
+        <div class="layer"><span>3️⃣</span><strong>spatie/laravel-permission</strong><small>The same design, ready-made: caching, middleware, Blade directives and guard support.</small></div>
+      </div>
+      <figcaption>Climb only as high as your app actually needs.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Grow a role system for the blog</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Start with a role column and an enum</h3>
+        <p>A PHP <strong>enum</strong> lists the allowed values, so a typo like <code>'admn'</code> can't sneak in. Add the column with a migration and cast it on the model.</p>
+        <pre><code class="lang-php" data-file="app/Enums/Role.php">
+          &lt;?php
+
+          namespace App\Enums;
+
+          enum Role: string
+          {
+              case Admin = 'admin';
+              case Editor = 'editor';
+              case Author = 'author';
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/migrations/xxxx_add_role_to_users_table.php">
+          Schema::table('users', function (Blueprint $table) {
+              $table-&gt;string('role')-&gt;default('author');
+          });
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Models/User.php" data-hl="6">
+          protected function casts(): array
+          {
+              return [
+                  'email_verified_at' =&gt; 'datetime',
+                  'password' =&gt; 'hashed',
+                  'role' =&gt; \App\Enums\Role::class,
+              ];
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Use the role in policies and gates</h3>
+        <p>Combine roles with ownership: editors can update any post, and authors can only update their own.</p>
+        <pre><code class="lang-php" data-file="app/Policies/PostPolicy.php">
+          use App\Enums\Role;
+
+          public function before(User $user, string $ability): ?bool
+          {
+              return $user-&gt;role === Role::Admin ? true : null;
+          }
+
+          public function update(User $user, Post $post): bool
+          {
+              return $user-&gt;role === Role::Editor
+                  || $user-&gt;id === $post-&gt;user_id;
+          }
+        </code></pre>
+        <p>Remember to keep the <code>role</code> column out of <code>$fillable</code>, so nobody can promote themselves through a form (see <a href="../12-security/sql-injection-mass-assignment.html">mass assignment</a>).</p>
+      </li>
+
+      <li class="step">
+        <h3>Outgrown one role? Design roles &amp; permissions tables</h3>
+        <p>When users need several roles, or admins want to edit what each role can do, move to two <strong>many-to-many</strong> relationships (see <a href="../05-database/relationships.html">Relationships</a>).</p>
+        <figure class="diagram">
+          <svg viewBox="0 0 720 230" role="img" aria-label="users to role_user to roles to permission_role to permissions" style="width:100%;max-width:720px">
+            <g fill="none" stroke="var(--mod)" stroke-width="2">
+              <rect x="10" y="60" width="110" height="110" rx="10"/>
+              <rect x="160" y="60" width="120" height="110" rx="10" stroke-dasharray="5 4"/>
+              <rect x="320" y="60" width="110" height="110" rx="10"/>
+              <rect x="470" y="60" width="130" height="110" rx="10" stroke-dasharray="5 4"/>
+            </g>
+            <g stroke="var(--text-muted)" stroke-width="2">
+              <line x1="120" y1="115" x2="160" y2="115"/>
+              <line x1="280" y1="115" x2="320" y2="115"/>
+              <line x1="430" y1="115" x2="470" y2="115"/>
+              <line x1="600" y1="115" x2="620" y2="115"/>
+            </g>
+            <g font-family="inherit" font-size="15" font-weight="700" fill="currentColor" text-anchor="middle">
+              <text x="65" y="85">users</text>
+              <text x="220" y="85">role_user</text>
+              <text x="375" y="85">roles</text>
+              <text x="535" y="85">permission_role</text>
+            </g>
+            <g font-family="inherit" font-size="12" fill="var(--text-muted)" text-anchor="middle">
+              <text x="65" y="112">id</text>
+              <text x="65" y="132">name</text>
+              <text x="65" y="152">email</text>
+              <text x="220" y="112">user_id</text>
+              <text x="220" y="132">role_id</text>
+              <text x="375" y="112">id</text>
+              <text x="375" y="132">name</text>
+              <text x="535" y="112">role_id</text>
+              <text x="535" y="132">permission_id</text>
+            </g>
+            <g font-family="inherit" font-size="12" fill="var(--text-muted)" text-anchor="middle">
+              <text x="220" y="200">pivot</text>
+              <text x="535" y="200">pivot</text>
+            </g>
+            <g>
+              <rect x="620" y="60" width="95" height="110" rx="10" fill="none" stroke="var(--mod)" stroke-width="2"/>
+              <text x="667" y="85" font-family="inherit" font-size="13" font-weight="700" fill="currentColor" text-anchor="middle">permissions</text>
+              <text x="667" y="112" font-family="inherit" font-size="12" fill="var(--text-muted)" text-anchor="middle">id</text>
+              <text x="667" y="132" font-family="inherit" font-size="12" fill="var(--text-muted)" text-anchor="middle">name</text>
+            </g>
+          </svg>
+          <figcaption>Dashed boxes are pivot tables. A user has many roles, and a role has many permissions such as “publish posts”.</figcaption>
+        </figure>
+        <pre><code class="lang-php" data-file="app/Models/User.php">
+          public function roles(): BelongsToMany
+          {
+              return $this-&gt;belongsToMany(Role::class);
+          }
+
+          public function hasPermission(string $name): bool
+          {
+              return $this-&gt;roles()
+                  -&gt;whereHas('permissions', fn ($q) =&gt; $q-&gt;where('name', $name))
+                  -&gt;exists();
+          }
+        </code></pre>
+        <p>Here <code>Role</code> is an Eloquent model (not the enum from step 1), with its own <code>permissions()</code> <code>belongsToMany</code> relationship.</p>
+      </li>
+
+      <li class="step">
+        <h3>Plug permissions into gates</h3>
+        <p>One <code>Gate::before</code> can route every ability name to the permissions table, so <code>@can('publish posts')</code> just works.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          Gate::before(function (User $user, string $ability) {
+              return $user-&gt;hasPermission($ability) ? true : null;
+          });
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Watch your queries</div>
+          <p>This runs a database query on <em>every</em> check. A page with twenty <code>@can</code> calls makes twenty queries. Real implementations cache the user's permissions, and that's one big reason to use a package.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Reach for <code>spatie/laravel-permission</code></h3>
+        <p>When you need multiple roles, permissions editable at runtime, caching and route middleware, use the popular <strong>spatie/laravel-permission</strong> package. It implements exactly the table design above.</p>
+        <pre><code class="lang-bash">
+          composer require spatie/laravel-permission
+          php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+          php artisan migrate
+        </code></pre>
+        <pre><code class="lang-php" data-hl="1,4-6,9-10">
+          use Spatie\Permission\Traits\HasRoles;   // add `use HasRoles;` to User
+
+          // set up (e.g. in a seeder)
+          $editor = Role::create(['name' =&gt; 'editor']);
+          Permission::create(['name' =&gt; 'publish posts']);
+          $editor-&gt;givePermissionTo('publish posts');
+
+          // use it
+          $user-&gt;assignRole('editor');
+          $user-&gt;hasRole('editor');          // true
+          $user-&gt;can('publish posts');       // true, works with Gate and @can
+        </code></pre>
+        <pre><code class="lang-blade">
+          @role('editor')
+              &lt;a href="/admin/review"&gt;Review queue&lt;/a&gt;
+          @endrole
+
+          @can('publish posts') &lt;button&gt;Publish&lt;/button&gt; @endcan
+        </code></pre>
+        <p>To use its <code>role:</code> and <code>permission:</code> route middleware, register the aliases in <code>bootstrap/app.php</code> with <code>$middleware-&gt;alias([...])</code>, as described in the package docs.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          @if (auth()-&gt;user()-&gt;role === 'admin'
+              || auth()-&gt;user()-&gt;role === 'editor')
+              &lt;button&gt;Publish&lt;/button&gt;
+          @endif
+        </code></pre>
+        <p>Role checks scattered through views are hard to find and easy to get wrong when a new role appears.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          @can('publish', $post)
+              &lt;button&gt;Publish&lt;/button&gt;
+          @endcan
+        </code></pre>
+        <p>Views ask about <em>abilities</em>. Which roles have those abilities is decided in one policy or gate.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          protected $fillable = ['name', 'email', 'password', 'role'];
+        </code></pre>
+        <p>A crafted form field <code>role=admin</code> could promote any user who edits their profile.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          protected $fillable = ['name', 'email', 'password'];
+          // $user-&gt;role = Role::Editor; $user-&gt;save();  (admin only)
+        </code></pre>
+        <p>Set roles explicitly in admin-only code paths, never through mass assignment.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: check permissions, not roles</div>
+      <p>Prefer <code>can('publish posts')</code> over <code>hasRole('editor')</code>. If a “senior author” role later needs to publish too, you add a permission to that role and change zero lines of code.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create the <code>Role</code> enum and add a <code>role</code> column (default <code>author</code>) to <code>users</code>.</li>
+        <li>Update <code>PostPolicy</code> so admins can do anything, editors can update any post, and authors only their own.</li>
+        <li>Seed one user of each role and test editing the same post as each of them.</li>
+        <li>Sketch, on paper, the tables you'd need if a user could be both editor and moderator.</li>
+        <li>Bonus: install <code>spatie/laravel-permission</code> in a scratch project and recreate the same rules with <code>givePermissionTo</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Roles</strong> group users, and <strong>permissions</strong> name actions. Roles hold permissions.</li>
+      <li>Small apps: a <code>role</code> column cast to a PHP <strong>enum</strong> is plenty.</li>
+      <li>Larger apps: <code>roles</code>, <code>permissions</code> and two pivot tables (many-to-many).</li>
+      <li><strong>spatie/laravel-permission</strong> gives you that design with caching, middleware and Blade directives.</li>
+      <li>Keep checks in policies/gates, ask about abilities in views, and never mass-assign roles.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What's the difference between a role and a permission?",
+          "options": ["They are the same thing", "A role groups users; a permission names a specific action", "Permissions group roles", "Roles are only for APIs"],
+          "answer": 1,
+          "explain": "For example, the role `editor` might hold the permissions `publish posts` and `edit any post`."
+        },
+        {
+          "q": "Why cast the `role` column to a PHP enum?",
+          "options": ["It makes queries faster", "It's required by Eloquent", "Only valid roles can be used, and typos are caught", "It encrypts the role"],
+          "answer": 2,
+          "explain": "An enum limits the column to known cases like `Role::Admin`, so comparisons are safe and readable."
+        },
+        {
+          "q": "A user can have many roles, and a role can belong to many users. Which relationship is that?",
+          "options": ["many-to-many (`belongsToMany`)", "one-to-one", "one-to-many (`hasMany`)", "polymorphic one-to-one"],
+          "answer": 0,
+          "explain": "Many-to-many needs a pivot table such as `role_user`."
+        },
+        {
+          "q": "Why should `role` NOT be in `$fillable`?",
+          "options": ["Enums can't be fillable", "It slows down saves", "Laravel forbids it", "A user could promote themselves by adding `role=admin` to a form"],
+          "answer": 3,
+          "explain": "Mass assignment would let request data set the role. Assign roles explicitly in admin-only code."
+        },
+        {
+          "q": "With spatie/laravel-permission, how do you give a user the `editor` role?",
+          "options": ["`$user->role = 'editor'`", "`$user->assignRole('editor')`", "`Role::give($user)`", "`Gate::role('editor')`"],
+          "answer": 1,
+          "explain": "The `HasRoles` trait adds `assignRole`, `hasRole`, `givePermissionTo` and more."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

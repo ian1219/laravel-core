@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rate Limiting · Laravel Blueprint</title>
+  <meta name="description" content="Slow down brute-force and abusive clients with RateLimiter::for, the throttle middleware and login throttling in Laravel.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="12" data-lesson="rate-limiting">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Rate limiting caps how many requests a user or IP address can make in a time window, so password guessers, scrapers and buggy scripts get a polite “slow down” (429) instead of your server's full attention.</p>
+    <p class="analogy"><span>🎢</span><span>It's the ride attendant at a theme park: everyone gets a turn, but nobody can jump back in line twenty times a minute. Wait your turn, and you're welcome back.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Not every visitor plays fair</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔐</span>
+        <h3>Stops password guessing</h3>
+        <p>Five tries a minute turns a million-guess attack from minutes into years.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧯</span>
+        <h3>Protects your server</h3>
+        <p>One runaway script can't use up all your CPU, database connections or email quota.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚖️</span>
+        <h3>Fair for everyone</h3>
+        <p>API users share capacity fairly, and you can give paying customers higher limits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The attack</span>
+      <h2>Brute force without a limit</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">😈</span><strong>Attacker</strong><small>script with a list of common passwords</small></div>
+        <div class="flow-node"><span class="flow-icon">🔁</span><strong>POST /login</strong><small>thousands of attempts per minute</small></div>
+        <div class="flow-node"><span class="flow-icon">🙂</span><strong>Victim</strong><small>used “summer2024” as their password</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💥</span><strong>Effect</strong><small>account guessed and taken over</small></div>
+      </div>
+      <figcaption>Without a limit, the only thing slowing the attacker down is your server's speed.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The defence</span>
+      <h2>A counter in front of your route</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Request</strong><small>POST /login from 203.0.113.7</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🚦</span><strong>throttle middleware</strong><small>counts hits for this key in the cache</small></div>
+        <div class="flow-node"><span class="flow-icon">✅</span><strong>Under the limit</strong><small>continue to the controller</small></div>
+        <div class="flow-node"><span class="flow-icon">⏳</span><strong>Over the limit</strong><small>429 Too Many Requests + Retry-After</small></div>
+      </div>
+      <figcaption>Each limiter has a <strong>key</strong> (who is being counted: a user ID, an IP, or both) and a <strong>window</strong> (per minute, hour or day). Counts live in your cache store.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Add rate limits to your app</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Quick limit with <code>throttle:max,minutes</code></h3>
+        <p>The fastest way to limit a route is the <code>throttle</code> middleware with two numbers: how many requests, per how many minutes.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::post('/contact', [ContactController::class, 'send'])
+              -&gt;middleware('throttle:3,1');   // 3 requests per 1 minute
+        </code></pre>
+        <p>The fourth submission within a minute gets a <strong>429 Too Many Requests</strong>. Logged-in users are counted by user ID; guests by IP address.</p>
+      </li>
+
+      <li class="step">
+        <h3>Define named limiters with <code>RateLimiter::for</code></h3>
+        <p>For anything more than a one-off, define a <strong>named limiter</strong> in <code>AppServiceProvider</code>. It's a closure that receives the request and returns a <code>Limit</code>.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="9-13">
+          use Illuminate\Cache\RateLimiting\Limit;
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\RateLimiter;
+
+          public function boot(): void
+          {
+              RateLimiter::for('comments', function (Request $request) {
+                  return Limit::perMinute(5)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip());
+              });
+
+              RateLimiter::for('api', function (Request $request) {
+                  return Limit::perMinute(60)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip());
+              });
+          }
+        </code></pre>
+        <p><code>-&gt;by(...)</code> sets the <strong>key</strong>. Other windows include <code>Limit::perSecond()</code>, <code>perHour()</code> and <code>perDay()</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Attach a named limiter with <code>throttle:name</code></h3>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::post('/posts/{post}/comments', [CommentController::class, 'store'])
+              -&gt;middleware(['auth', 'throttle:comments']);
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          Route::middleware(['auth:sanctum', 'throttle:api'])-&gt;group(function () {
+              Route::apiResource('posts', Api\PostController::class);
+          });
+        </code></pre>
+        <p>API responses also include <code>X-RateLimit-Limit</code> and <code>X-RateLimit-Remaining</code> headers so well-behaved clients can pace themselves.</p>
+      </li>
+
+      <li class="step">
+        <h3>Smarter limits: per plan, multiple limits, custom responses</h3>
+        <p>Because the limiter is just PHP, you can return different limits for different users, or several limits at once.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          RateLimiter::for('uploads', function (Request $request) {
+              if ($request-&gt;user()?-&gt;isPro()) {
+                  return Limit::none();
+              }
+
+              return [
+                  Limit::perMinute(10)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip()),
+                  Limit::perDay(100)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip()),
+              ];
+          });
+        </code></pre>
+        <p>Add <code>-&gt;response(fn () =&gt; response('Slow down!', 429))</code> to a <code>Limit</code> to customise what blocked clients see.</p>
+      </li>
+
+      <li class="step">
+        <h3>Throttle logins (already done for you)</h3>
+        <p>The login code in Laravel's <a href="../07-authentication/starter-kits.html">starter kits</a> (Breeze and the newer kits) and in Fortify already limits failed attempts: <strong>5 tries</strong>, keyed by <strong>email + IP</strong>, then a lockout with a "Too many login attempts. Please try again in N seconds." message. Here's the pattern, so you can use it in your own code:</p>
+        <pre><code class="lang-php" data-file="app/Http/Requests/Auth/LoginRequest.php">
+          use Illuminate\Support\Facades\RateLimiter;
+          use Illuminate\Support\Str;
+
+          $key = Str::transliterate(Str::lower($this-&gt;input('email')) . '|' . $this-&gt;ip());
+
+          if (RateLimiter::tooManyAttempts($key, 5)) {
+              $seconds = RateLimiter::availableIn($key);
+              throw ValidationException::withMessages([
+                  'email' =&gt; "Too many login attempts. Try again in {$seconds} seconds.",
+              ]);
+          }
+
+          if (! Auth::attempt($this-&gt;only('email', 'password'))) {
+              RateLimiter::hit($key);             // count the failure (60s decay)
+              throw ValidationException::withMessages(['email' =&gt; __('auth.failed')]);
+          }
+
+          RateLimiter::clear($key);               // success: reset the counter
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Why email + IP?</div>
+          <p>Keying only by IP lets an attacker try one password against many accounts. Keying only by email lets anyone lock a real user out. Combining both limits guessing without making lockouts easy to abuse.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::post('/password/email', ...);
+          Route::post('/register', ...);
+          // no limits at all
+        </code></pre>
+        <p>Endpoints that send email or create accounts are favourite targets for spam and abuse.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::post('/password/email', ...)
+              -&gt;middleware('throttle:6,1');
+        </code></pre>
+        <p>Limit anything that sends messages, creates records or checks secrets.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Limit::perMinute(5)-&gt;by('global');
+        </code></pre>
+        <p>A single shared key means one noisy client blocks <em>everyone</em>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Limit::perMinute(5)
+              -&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip());
+        </code></pre>
+        <p>Key per user (or per IP for guests) so limits apply to each client separately.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: use a shared cache in production</div>
+      <p>Rate limit counters live in your default cache store. If you run several servers, use Redis or the database cache so every server sees the same counts. The <code>file</code> store only counts per machine.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Add <code>throttle:3,1</code> to a test route and refresh it four times quickly. Note the 429 page.</li>
+        <li>Define a <code>comments</code> limiter in <code>AppServiceProvider</code> (5 per minute per user) and attach it to your comment route.</li>
+        <li>Hit an API route with <code>curl -i</code> and find the <code>X-RateLimit-Remaining</code> header.</li>
+        <li>With a starter kit installed, enter a wrong password six times and read the lockout message.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Rate limiting caps requests per <strong>key</strong> (user or IP) per time window; blocked clients get <strong>429</strong>.</li>
+      <li><code>throttle:5,1</code> is the quick version; <code>RateLimiter::for('name', ...)</code> in <code>AppServiceProvider</code> is the flexible one.</li>
+      <li>Attach named limiters with <code>throttle:name</code> on routes or groups.</li>
+      <li>Starter kits already throttle logins by email + IP using <code>RateLimiter::hit</code> and <code>tooManyAttempts</code>.</li>
+      <li>Limit anything that sends email, creates accounts or checks secrets.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `->middleware('throttle:10,1')` mean?",
+          "options": ["10 requests per 1 second", "1 request every 10 minutes", "10 requests per 1 minute", "10 users at once"],
+          "answer": 2,
+          "explain": "The first number is the maximum attempts, the second is the window in minutes."
+        },
+        {
+          "q": "Where do you usually define a named limiter with `RateLimiter::for`?",
+          "options": ["In the `boot()` method of `AppServiceProvider`", "In `routes/web.php`", "In `.env`", "In the controller constructor"],
+          "answer": 0,
+          "explain": "Named limiters are registered at boot, then referenced by name with `throttle:name`."
+        },
+        {
+          "q": "Which HTTP status does a rate-limited client receive?",
+          "options": ["403 Forbidden", "419 Page Expired", "500 Server Error", "429 Too Many Requests"],
+          "answer": 3,
+          "explain": "429 means \"slow down\", and the response includes a `Retry-After` header."
+        },
+        {
+          "q": "Why do starter kits key login throttling by **email + IP**?",
+          "options": ["It's faster to compute", "It limits guessing without letting anyone easily lock out a real user", "Emails can't be rate limited alone", "The cache requires two values"],
+          "answer": 1,
+          "explain": "IP-only allows spraying many accounts; email-only allows locking a victim out. The combination balances both."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

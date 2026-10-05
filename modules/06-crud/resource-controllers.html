@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Resource Controllers · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel resource controllers: the seven CRUD actions, Route::resource, make:controller --resource --model, and route model binding.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="06" data-lesson="resource-controllers">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A resource controller is a controller with seven standard methods for listing, showing, creating, editing and deleting one kind of thing, wired up by a single line of routing.</p>
+    <p class="analogy"><span>🍽️</span><span>It's like a restaurant's set menu. Every restaurant serves starters, mains and desserts in the same order, so diners know what to expect. Every resource controller has the same seven "courses" with the same names, so every Laravel developer knows where to look.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Stop reinventing CRUD routes</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>One line, seven routes</h3>
+        <p><code>Route::resource('posts', PostController::class)</code> replaces seven hand-written route definitions.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📐</span>
+        <h3>A shared vocabulary</h3>
+        <p><code>index</code>, <code>store</code>, <code>update</code>… Any Laravel developer can open your controller and instantly find their way.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔗</span>
+        <h3>Names for free</h3>
+        <p>Every route gets a name like <code>posts.edit</code>, ready for <code>route()</code> in your Blade views.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The seven actions</h2>
+    </div>
+    <p>Here's every route that <code>Route::resource('posts', PostController::class)</code> registers. <code>{post}</code> is a placeholder for a post's id.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Verb</th><th>URI</th><th>Action</th><th>Route name</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/posts</code></td><td><code>index</code></td><td><code>posts.index</code></td><td>List all posts</td></tr>
+          <tr><td><code>GET</code></td><td><code>/posts/create</code></td><td><code>create</code></td><td><code>posts.create</code></td><td>Show the "new post" form</td></tr>
+          <tr><td><code>POST</code></td><td><code>/posts</code></td><td><code>store</code></td><td><code>posts.store</code></td><td>Save the new post</td></tr>
+          <tr><td><code>GET</code></td><td><code>/posts/{post}</code></td><td><code>show</code></td><td><code>posts.show</code></td><td>Show one post</td></tr>
+          <tr><td><code>GET</code></td><td><code>/posts/{post}/edit</code></td><td><code>edit</code></td><td><code>posts.edit</code></td><td>Show the "edit post" form</td></tr>
+          <tr><td><code>PUT/PATCH</code></td><td><code>/posts/{post}</code></td><td><code>update</code></td><td><code>posts.update</code></td><td>Save the changes</td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/posts/{post}</code></td><td><code>destroy</code></td><td><code>posts.destroy</code></td><td>Delete the post</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>create</strong><small>GET the form</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💾</span><strong>store</strong><small>POST the data</small></div>
+        <div class="flow-node"><span class="flow-icon">↪️</span><strong>redirect</strong><small>to show or index</small></div>
+      </div>
+      <figcaption>Notice the pattern: one action <em>shows</em> a form (<code>create</code>, <code>edit</code>) and its partner <em>handles</em> the submit (<code>store</code>, <code>update</code>).</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Scaffold the blog's <code>PostController</code></h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate the controller</h3>
+        <p>The <code>--resource</code> flag adds all seven empty methods. Adding <code>--model=Post</code> type-hints each method with the <code>Post</code> model.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller PostController --resource --model=Post
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Everything at once</div>
+          <p><code>php artisan make:model Post -mcr</code> creates the model, a migration and a resource controller in one command.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Look at what you got</h3>
+        <p>Laravel gives you a skeleton. Your job over the next lessons is to fill in each method.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          &lt;?php
+
+          namespace App\Http\Controllers;
+
+          use App\Models\Post;
+          use Illuminate\Http\Request;
+
+          class PostController extends Controller
+          {
+              public function index() { /* list */ }
+              public function create() { /* show form */ }
+              public function store(Request $request) { /* save */ }
+              public function show(Post $post) { /* one post */ }
+              public function edit(Post $post) { /* edit form */ }
+              public function update(Request $request, Post $post) { /* save changes */ }
+              public function destroy(Post $post) { /* delete */ }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Register all seven routes in one line</h3>
+        <p>Add a single <code>Route::resource</code> call, then check the result.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          use App\Http\Controllers\PostController;
+
+          Route::resource('posts', PostController::class);
+        </code></pre>
+        <pre><code class="lang-bash">
+          php artisan route:list --name=posts
+        </code></pre>
+        <pre><code class="lang-text">
+          GET|HEAD   posts ............... posts.index › PostController@index
+          POST       posts ............... posts.store › PostController@store
+          GET|HEAD   posts/create ........ posts.create › PostController@create
+          GET|HEAD   posts/{post} ........ posts.show › PostController@show
+          PUT|PATCH  posts/{post} ........ posts.update › PostController@update
+          DELETE     posts/{post} ........ posts.destroy › PostController@destroy
+          GET|HEAD   posts/{post}/edit ... posts.edit › PostController@edit
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Let route model binding fetch the post</h3>
+        <p>Because the URI segment is <code>{post}</code> and the method asks for <code>Post $post</code>, Laravel runs <code>Post::findOrFail($id)</code> for you. This is called <strong>route model binding</strong>. A missing id becomes a 404 automatically.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function show(Post $post)
+          {
+              return view('posts.show', compact('post'));
+          }
+        </code></pre>
+        <p>Want pretty URLs like <code>/posts/hello-world</code>? Tell the model which column to look up by:</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          public function getRouteKeyName(): string
+          {
+              return 'slug';
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Trim or extend the set</h3>
+        <p>Not every resource needs all seven actions. Use <code>only</code> or <code>except</code>, and register several resources at once with <code>Route::resources</code>.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          // Public can only read
+          Route::resource('posts', PostController::class)-&gt;only(['index', 'show']);
+
+          // Admins get the rest, behind login
+          Route::resource('posts', PostController::class)
+              -&gt;except(['index', 'show'])
+              -&gt;middleware('auth');
+
+          // Comments live under a post: /posts/{post}/comments
+          Route::resource('posts.comments', CommentController::class)-&gt;shallow();
+        </code></pre>
+        <p>For JSON APIs, <code>Route::apiResource()</code> registers the five actions without <code>create</code> and <code>edit</code>, since APIs don't serve HTML forms. See <a href="../09-api-development/api-routes-resources.html">API Routes &amp; Resources</a>.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::get('/posts', [PostController::class, 'index']);
+          Route::get('/posts/create', [PostController::class, 'create']);
+          Route::post('/posts', [PostController::class, 'store']);
+          // ...four more lines, no names
+        </code></pre>
+        <p>Hand-writing standard CRUD routes is noisy and easy to get subtly wrong.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::resource('posts', PostController::class);
+        </code></pre>
+        <p>One line, seven correctly ordered and named routes.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function publishAll() { /* ... */ }
+          public function exportCsv() { /* ... */ }
+          // 15 custom methods in PostController
+        </code></pre>
+        <p>Stuffing extra actions into a resource controller blurs its purpose.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::post('/posts/export', ExportPostsController::class);
+        </code></pre>
+        <p>Give unusual actions their own small (often single-action, <code>__invoke</code>) controller.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: define extra routes <em>before</em> the resource</div>
+      <p>A custom route like <code>/posts/drafts</code> placed after <code>Route::resource('posts', ...)</code> gets swallowed by <code>/posts/{post}</code>. Register it first, exactly like the route-ordering rule from <a href="../04-laravel-basics/routing.html">Routing</a>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Generate <code>CategoryController</code> with <code>--resource --model=Category</code>.</li>
+        <li>Register it with <code>Route::resource</code> and run <code>php artisan route:list --name=categories</code>.</li>
+        <li>Limit it to <code>index</code>, <code>show</code>, <code>store</code> and <code>destroy</code> with <code>only()</code>, and re-run <code>route:list</code>.</li>
+        <li>Make <code>show()</code> return <code>$category-&gt;name</code> and visit <code>/categories/1</code> and <code>/categories/999</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A resource controller has seven actions: <code>index</code>, <code>create</code>, <code>store</code>, <code>show</code>, <code>edit</code>, <code>update</code>, <code>destroy</code>.</li>
+      <li><code>Route::resource()</code> registers all seven routes with names like <code>posts.show</code>.</li>
+      <li><code>make:controller PostController --resource --model=Post</code> scaffolds the class.</li>
+      <li>Route model binding turns <code>{post}</code> into a <code>Post</code> object, or a 404.</li>
+      <li>Use <code>only()</code> / <code>except()</code> to trim, and <code>apiResource()</code> for JSON APIs.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which action handles the submitted \"new post\" form?",
+          "options": ["`create`", "`store`", "`update`", "`index`"],
+          "answer": 1,
+          "explain": "`create` shows the form with GET; `store` receives the POST and saves the post."
+        },
+        {
+          "q": "What verb and URI does `posts.destroy` use?",
+          "options": ["`GET /posts/{post}/delete`", "`POST /posts/delete`", "`DELETE /posts/{post}`", "`PATCH /posts/{post}`"],
+          "answer": 2,
+          "explain": "Destroying a resource uses the DELETE verb on the resource's own URI."
+        },
+        {
+          "q": "What does `--model=Post` add when running `make:controller --resource`?",
+          "options": ["It type-hints `Post $post` in the methods", "It creates the `posts` table", "It creates a Blade view per action", "It registers the routes"],
+          "answer": 0,
+          "explain": "The generated methods receive `Post $post`, ready for route model binding."
+        },
+        {
+          "q": "A user visits `/posts/999` but no post 999 exists. With route model binding, what happens?",
+          "options": ["`$post` is `null`", "An empty Post is created", "A 500 error", "A 404 page"],
+          "answer": 3,
+          "explain": "Binding uses a find-or-fail lookup, so missing records become a 404 automatically."
+        },
+        {
+          "q": "Which actions does `Route::apiResource()` leave out?",
+          "options": ["`create` and `edit`", "`show` and `index`", "`store` and `update`", "`destroy` only"],
+          "answer": 0,
+          "explain": "APIs don't serve HTML forms, so the two form-showing actions are skipped."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Models · Laravel Blueprint</title>
+  <meta name="description" content="Learn Eloquent models in Laravel: naming conventions, $fillable vs $guarded, the casts() method, accessors and mutators with Attribute, and timestamps.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="05" data-lesson="models">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">An Eloquent model is a PHP class that represents one database table, where each object you create from it is one row.</p>
+    <p class="analogy"><span>🗂️</span><span>A table is a filing cabinet, and the model is the trained clerk who works it. You ask the clerk "give me post 7" or "file this new post", and they handle the drawers, labels and paperwork for you.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Talk to tables like they're objects</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Rows become objects</h3>
+        <p>Instead of juggling raw arrays, you write <code>$post-&gt;title</code> and <code>$post-&gt;save()</code>. Your editor can autocomplete it.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Safety built in</h3>
+        <p><code>$fillable</code> stops attackers from sneaking extra fields like <code>is_admin</code> into your forms.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✨</span>
+        <h3>Data comes out ready to use</h3>
+        <p>Casts turn <code>"1"</code> into <code>true</code> and date strings into Carbon objects automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Conventions connect the dots</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>posts table</strong><small>plural, snake_case</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧱</span><strong>Post model</strong><small>singular, StudlyCase</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>$post object</strong><small>one row, as PHP</small></div>
+      </div>
+      <figcaption>Name things the Laravel way and Eloquent finds the right table with zero configuration.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model class</th><th>Table Eloquent expects</th><th>Foreign key elsewhere</th></tr></thead>
+        <tbody>
+          <tr><td><code>Post</code></td><td><code>posts</code></td><td><code>post_id</code></td></tr>
+          <tr><td><code>User</code></td><td><code>users</code></td><td><code>user_id</code></td></tr>
+          <tr><td><code>Category</code></td><td><code>categories</code></td><td><code>category_id</code></td></tr>
+          <tr><td><code>Comment</code></td><td><code>comments</code></td><td><code>comment_id</code></td></tr>
+          <tr><td><code>BlogPost</code></td><td><code>blog_posts</code></td><td><code>blog_post_id</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Eloquent also assumes a primary key called <code>id</code> and two timestamp columns, <code>created_at</code> and <code>updated_at</code>. All of these can be overridden, but you rarely need to.</p>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build the <code>Post</code> model</h2>
+      <p>We'll assume the <code>posts</code> table from the <a href="migrations.html">Migrations</a> lesson exists.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate the model</h3>
+        <p>Models live in <code>app/Models/</code>. Add flags to create related files at the same time.</p>
+        <pre><code class="lang-bash">
+          php artisan make:model Post                 # just the model
+          php artisan make:model Category -m          # + migration
+          php artisan make:model Comment -mfc         # + migration, factory, controller
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          &lt;?php
+
+          namespace App\Models;
+
+          use Illuminate\Database\Eloquent\Model;
+
+          class Post extends Model
+          {
+              //
+          }
+        </code></pre>
+        <p>That empty class already works. <code>Post::all()</code> would return every row in <code>posts</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Override conventions only when you must</h3>
+        <p>If you're stuck with a legacy table, set a property to tell Eloquent the real names.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          class Post extends Model
+          {
+              protected $table = 'blog_articles';  // table isn't "posts"
+              protected $primaryKey = 'article_id'; // key isn't "id"
+              public $timestamps = false;           // no created_at / updated_at
+          }
+        </code></pre>
+        <p>For a fresh project, skip all three and follow the conventions.</p>
+      </li>
+
+      <li class="step">
+        <h3>Guard against mass assignment</h3>
+        <p><strong>Mass assignment</strong> means filling many attributes at once from an array, like <code>Post::create($request-&gt;all())</code>. That's convenient but risky: a sneaky user could post <code>user_id=1</code> and claim someone else's post. <strong><code>$fillable</code></strong> is an allow-list of columns that may be mass-assigned.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php" data-hl="3-9">
+          class Post extends Model
+          {
+              protected $fillable = [
+                  'title',
+                  'slug',
+                  'body',
+                  'category_id',
+                  'published_at',
+              ];
+          }
+        </code></pre>
+        <p>The opposite is <strong><code>$guarded</code></strong>, a block-list. <code>protected $guarded = ['id'];</code> allows everything except <code>id</code>. Pick one style per model. <code>$fillable</code> is the safer default for beginners because new columns are blocked until you opt in.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Notice what's missing</div>
+          <p><code>user_id</code> isn't fillable. You'll set it from the logged-in user instead, e.g. <code>$request-&gt;user()-&gt;posts()-&gt;create(...)</code>. More in <a href="../12-security/sql-injection-mass-assignment.html">SQL Injection &amp; Mass Assignment</a>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Cast columns to useful PHP types</h3>
+        <p>Databases return most values as strings. The <strong><code>casts()</code></strong> method tells Eloquent how to convert each column on the way out (and back on the way in).</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          protected function casts(): array
+          {
+              return [
+                  'published_at' =&gt; 'datetime',  // Carbon date object
+                  'is_featured'  =&gt; 'boolean',   // true / false
+                  'views'        =&gt; 'integer',
+                  'meta'         =&gt; 'array',     // JSON column ⇄ PHP array
+              ];
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="Anywhere">
+          $post-&gt;published_at-&gt;diffForHumans(); // "3 days ago"
+          if ($post-&gt;is_featured) { /* real boolean */ }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Shape values with accessors and mutators</h3>
+        <p>An <strong>accessor</strong> changes a value when you <em>read</em> it; a <strong>mutator</strong> changes it when you <em>write</em> it. In modern Laravel, both are one method returning an <code>Attribute</code>.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php" data-hl="8-9,17">
+          use Illuminate\Database\Eloquent\Casts\Attribute;
+          use Illuminate\Support\Str;
+
+          // Accessor + mutator on a real column
+          protected function title(): Attribute
+          {
+              return Attribute::make(
+                  get: fn (string $value) =&gt; Str::headline($value),
+                  set: fn (string $value) =&gt; trim($value),
+              );
+          }
+
+          // A "virtual" attribute with no column behind it
+          protected function readingTime(): Attribute
+          {
+              return Attribute::make(
+                  get: fn () =&gt; max(1, (int) ceil(str_word_count($this-&gt;body) / 200)) . ' min read',
+              );
+          }
+        </code></pre>
+        <p>Use them as normal properties: <code>$post-&gt;title</code> and <code>$post-&gt;reading_time</code> (the method name in camelCase becomes a snake_case property).</p>
+      </li>
+
+      <li class="step">
+        <h3>Let timestamps work for you</h3>
+        <p>When a model is created, Eloquent fills <code>created_at</code> and <code>updated_at</code>. On every save it refreshes <code>updated_at</code>. Both come back as Carbon dates automatically.</p>
+        <pre><code class="lang-php">
+          $post = Post::create(['title' =&gt; 'Hello', 'slug' =&gt; 'hello', 'body' =&gt; '...']);
+          $post-&gt;created_at;                  // 2025-03-10 12:00:00 (Carbon)
+          $post-&gt;created_at-&gt;format('M j, Y'); // "Mar 10, 2025"
+          $post-&gt;touch();                     // bump updated_at only
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          protected $guarded = [];
+
+          Post::create($request-&gt;all());
+        </code></pre>
+        <p>An empty <code>$guarded</code> plus <code>all()</code> lets users set any column, including ones you never put in the form.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          protected $fillable = ['title', 'slug', 'body'];
+
+          Post::create($request-&gt;validated());
+        </code></pre>
+        <p>An explicit allow-list plus validated input means only the fields you intended can ever be written.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          {{-- In every Blade view... --}}
+          {{ \Carbon\Carbon::parse($post-&gt;published_at)-&gt;format('M j') }}
+        </code></pre>
+        <p>Parsing the same column by hand everywhere is repetitive and easy to forget.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          {{-- casts(): 'published_at' =&gt; 'datetime' --}}
+          {{ $post-&gt;published_at-&gt;format('M j') }}
+        </code></pre>
+        <p>Cast it once in the model and every part of your app gets a real date object.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: poke your models in Tinker</div>
+      <p><code>php artisan tinker</code> opens an interactive PHP shell with your app loaded. Try <code>Post::first()</code> or <code>new Post(['title' =&gt; 'hi'])</code> to see exactly what a model holds.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>Category</code>, <code>Comment</code> and <code>Tag</code> models with <code>php artisan make:model</code>.</li>
+        <li>Give <code>Category</code> a <code>$fillable</code> of <code>name</code> and <code>slug</code>.</li>
+        <li>Add a <code>casts()</code> method to <code>Post</code> that casts <code>published_at</code> to <code>datetime</code> and <code>is_featured</code> to <code>boolean</code>.</li>
+        <li>Add an <code>excerpt</code> accessor that returns the first 120 characters of <code>body</code> using <code>Str::limit()</code>.</li>
+        <li>Open Tinker and check that <code>Post::first()-&gt;excerpt</code> works.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>One model per table: <code>Post</code> ⇄ <code>posts</code>, <code>Category</code> ⇄ <code>categories</code>.</li>
+      <li><code>$fillable</code> is an allow-list for mass assignment; <code>$guarded</code> is a block-list. Prefer <code>$fillable</code>.</li>
+      <li><code>casts()</code> converts columns into dates, booleans, integers and arrays automatically.</li>
+      <li><code>Attribute::make(get:, set:)</code> defines accessors and mutators in one method.</li>
+      <li><code>created_at</code> and <code>updated_at</code> are managed for you.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which table does a model named `Category` use by default?",
+          "options": ["`category`", "`Categorys`", "`categories`", "`tbl_category`"],
+          "answer": 2,
+          "explain": "Eloquent takes the class name, converts it to snake_case and pluralises it: `categories`."
+        },
+        {
+          "q": "What does `protected $fillable = ['title', 'body'];` do?",
+          "options": ["Only `title` and `body` can be mass-assigned", "It makes those columns required", "It hides those columns from JSON", "It adds those columns to the database"],
+          "answer": 0,
+          "explain": "`$fillable` is an allow-list. `Post::create([...])` silently ignores anything not in it."
+        },
+        {
+          "q": "In Laravel 11+, where do you declare that `published_at` should be a date?",
+          "options": ["In the migration only", "In a `$dates` property", "In `config/database.php`", "In the model's `casts()` method"],
+          "answer": 3,
+          "explain": "Return `['published_at' => 'datetime']` from `casts()` and you get a Carbon object back."
+        },
+        {
+          "q": "A method `protected function readingTime(): Attribute` is accessed as...",
+          "options": ["`$post->readingTime()`", "`$post->reading_time`", "`$post->getReadingTime()`", "`Post::readingTime`"],
+          "answer": 1,
+          "explain": "Attribute methods are read like properties, using the snake_case version of the method name."
+        },
+        {
+          "q": "Which columns does Eloquent fill automatically when you create and update a model?",
+          "options": ["`id` and `slug`", "`created_at` and `updated_at`", "`user_id` and `created_by`", "None, you must always set them"],
+          "answer": 1,
+          "explain": "With `$timestamps` left on (the default), Eloquent manages both timestamp columns."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

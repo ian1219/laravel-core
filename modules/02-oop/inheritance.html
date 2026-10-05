@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Inheritance · Laravel Blueprint</title>
+  <meta name="description" content="Learn PHP inheritance: extends, overriding methods, parent::, protected members, final classes and how every Laravel model extends a base class.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="02" data-lesson="inheritance">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Inheritance lets a child class reuse everything a parent class already has, then add to it or change parts of it.</p>
+    <p class="analogy"><span>🚗</span><span>Every car model starts from the same chassis: wheels, engine, brakes. A sports car <em>extends</em> that chassis with a spoiler and a louder exhaust. Nobody re-invents the wheels.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>How Laravel hands you superpowers</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🎁</span>
+        <h3>Free features</h3>
+        <p>Write <code>class Post extends Model</code> and your empty class can already save, find and delete database rows.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✂️</span>
+        <h3>Less duplication</h3>
+        <p>Shared code lives once in the parent. Each child only contains what makes it different.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎛️</span>
+        <h3>Customise by overriding</h3>
+        <p>Don't like one default? Replace just that method in your child class and keep the rest.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>A family tree of classes</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 220" role="img" aria-label="Content parent class with Post and Page child classes" style="width:100%;max-width:640px;height:auto">
+        <rect x="220" y="14" width="200" height="78" rx="12" fill="none" stroke="var(--mod)" stroke-width="2.5"/>
+        <text x="320" y="38" text-anchor="middle" fill="currentColor" font-size="15" font-weight="600">Content (parent)</text>
+        <text x="320" y="60" text-anchor="middle" fill="var(--text-muted)" font-size="12">$title, $author</text>
+        <text x="320" y="78" text-anchor="middle" fill="var(--text-muted)" font-size="12">summary(), url()</text>
+        <g stroke="var(--text-muted)" stroke-width="2" fill="none">
+          <path d="M150 128 L150 112 L490 112 L490 128"/>
+          <path d="M320 92 L320 112"/>
+        </g>
+        <text x="335" y="108" fill="var(--text-muted)" font-size="11">extends</text>
+        <rect x="40" y="130" width="220" height="78" rx="12" fill="none" stroke="var(--mod)" stroke-width="2"/>
+        <text x="150" y="154" text-anchor="middle" fill="currentColor" font-size="15" font-weight="600">Post (child)</text>
+        <text x="150" y="176" text-anchor="middle" fill="var(--text-muted)" font-size="12">+ $tags, + publish()</text>
+        <text x="150" y="196" text-anchor="middle" fill="var(--text-muted)" font-size="12">overrides url()</text>
+        <rect x="380" y="130" width="220" height="78" rx="12" fill="none" stroke="var(--mod)" stroke-width="2"/>
+        <text x="490" y="154" text-anchor="middle" fill="currentColor" font-size="15" font-weight="600">Page (child)</text>
+        <text x="490" y="176" text-anchor="middle" fill="var(--text-muted)" font-size="12">+ $menuOrder</text>
+        <text x="490" y="196" text-anchor="middle" fill="var(--text-muted)" font-size="12">inherits url() as-is</text>
+      </svg>
+      <figcaption>A child "is a" kind of its parent: a <code>Post</code> is a <code>Content</code>. It gets every public and protected member automatically.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a small class family</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Extend a parent class</h3>
+        <p>The <code>extends</code> keyword makes one class the <strong>child</strong> (or <strong>subclass</strong>) of another, the <strong>parent</strong> (or <strong>superclass</strong>). The child gets the parent's properties and methods without writing them again.</p>
+        <pre><code class="lang-php" data-file="Content.php" data-hl="16">
+          &lt;?php
+
+          class Content
+          {
+              public function __construct(
+                  public string $title,
+                  public string $author,
+              ) {}
+
+              public function summary(): string
+              {
+                  return "{$this-&gt;title} by {$this-&gt;author}";
+              }
+          }
+
+          class Page extends Content {}
+
+          $about = new Page('About us', 'Ada');
+          echo $about-&gt;summary();   // About us by Ada  (inherited!)
+        </code></pre>
+        <p>PHP supports <strong>single inheritance</strong>: a class can extend only one parent. (You'll meet traits and interfaces as alternatives in <a href="abstraction.html">Abstraction &amp; Interfaces</a>.)</p>
+      </li>
+
+      <li class="step">
+        <h3>Add new members in the child</h3>
+        <p>A child can have extra properties and methods the parent knows nothing about.</p>
+        <pre><code class="lang-php" data-file="Post.php">
+          class Post extends Content
+          {
+              private bool $published = false;
+
+              public function publish(): void
+              {
+                  $this-&gt;published = true;
+              }
+          }
+
+          $post = new Post('Hello Laravel', 'Ada');
+          $post-&gt;publish();          // only posts can do this
+          echo $post-&gt;summary();     // still inherited from Content
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Override a method and call <code>parent::</code></h3>
+        <p>To <strong>override</strong> a method, define one with the same name in the child. Use <code>parent::method()</code> to run the parent's version too. PHP 8.3 adds the <code>#[\Override]</code> attribute, which errors if the parent method doesn't actually exist (great for catching typos).</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="3,6">
+          class Post extends Content
+          {
+              #[\Override]   // PHP 8.3+; remove on 8.2
+              public function summary(): string
+              {
+                  return '📝 ' . parent::summary();
+              }
+          }
+
+          echo (new Post('Hello Laravel', 'Ada'))-&gt;summary();
+          // 📝 Hello Laravel by Ada
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Extend the constructor</h3>
+        <p>If the child needs extra constructor data, write its own constructor and pass the shared parts up with <code>parent::__construct()</code>. Forget that call and the parent's properties are never set.</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="8">
+          class Post extends Content
+          {
+              public function __construct(
+                  string $title,
+                  string $author,
+                  public array $tags = [],
+              ) {
+                  parent::__construct($title, $author);
+              }
+          }
+
+          $post = new Post('Hello Laravel', 'Ada', tags: ['php', 'laravel']);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Share with children using <code>protected</code></h3>
+        <p><code>private</code> members are invisible even to children. Mark something <code>protected</code> when children should use or customise it, but outside code shouldn't. This is the classic <strong>hook</strong> pattern: the parent calls a protected method that children override.</p>
+        <pre><code class="lang-php" data-file="Content.php" data-hl="5,8,13">
+          class Content
+          {
+              public function url(): string
+              {
+                  return '/' . $this-&gt;prefix() . '/' . strtolower(str_replace(' ', '-', $this-&gt;title));
+              }
+
+              protected function prefix(): string { return 'pages'; }
+          }
+
+          class Post extends Content
+          {
+              protected function prefix(): string { return 'blog'; }
+          }
+
+          echo (new Post('Hello Laravel', 'Ada'))-&gt;url();   // /blog/hello-laravel
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Stop inheritance with <code>final</code></h3>
+        <p>A <code>final</code> class can't be extended, and a <code>final</code> method can't be overridden. Use it when a class isn't designed for children, so nobody builds on assumptions you never promised.</p>
+        <pre><code class="lang-php" data-file="Slugger.php">
+          final class Slugger
+          {
+              public function make(string $text): string { /* ... */ }
+          }
+
+          class FancySlugger extends Slugger {}   // Fatal error: cannot extend final class
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          class Post extends Mailer
+          {
+              // Post isn't a kind of Mailer,
+              // it just wants to send email
+          }
+        </code></pre>
+        <p>Extending only to borrow a few methods creates a confusing "is a" relationship.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          class PostPublisher
+          {
+              public function __construct(private Mailer $mailer) {}
+          }
+        </code></pre>
+        <p>If it's a "has a" or "uses a" relationship, pass the object in. This is called <strong>composition</strong>.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function __construct(public array $tags)
+          {
+              // parent never initialised!
+          }
+        </code></pre>
+        <p>Overriding the constructor without calling the parent leaves inherited properties unset.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function __construct(string $title, string $author, public array $tags)
+          {
+              parent::__construct($title, $author);
+          }
+        </code></pre>
+        <p>Pass the parent's data up with <code>parent::__construct()</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: keep trees shallow</div>
+      <p>One or two levels of inheritance are easy to follow. Five levels means hunting through five files to understand one method. Prefer composition once a hierarchy starts getting deep.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>User</code> class with promoted <code>name</code> and <code>email</code>, plus a <code>greeting(): string</code> method.</li>
+        <li>Create <code>Admin extends User</code> that overrides <code>greeting()</code> to prepend “👑 ” using <code>parent::greeting()</code>.</li>
+        <li>Give <code>Admin</code> an extra <code>array $permissions</code> constructor parameter and call <code>parent::__construct()</code>.</li>
+        <li>Add a <code>protected function role(): string</code> hook in <code>User</code> returning <code>'member'</code>, override it in <code>Admin</code>, and use it in a public <code>badge()</code> method.</li>
+        <li>Check: does <code>$admin instanceof User</code> return <code>true</code>? Why?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Models</strong>: <code>class Post extends Model</code> inherits <code>save()</code>, <code>find()</code>, <code>delete()</code> and hundreds more (see <a href="../05-database/models.html">Models</a>).</li>
+        <li><strong>Overriding protected properties</strong>: a model sets <code>protected $fillable</code> or <code>protected $table</code> to customise the parent's defaults.</li>
+        <li><strong>Users</strong>: <code>class User extends Authenticatable</code> gets login abilities for free (see <a href="../07-authentication/auth-concepts.html">How Authentication Works</a>).</li>
+        <li><strong>Tests</strong>: <code>class PostTest extends TestCase</code> inherits all of Laravel's testing helpers (see <a href="../11-testing/testing-basics.html">Testing Basics</a>).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>extends</code> makes a child class inherit the parent's public and protected members.</li>
+      <li>Children can add new members and override existing methods.</li>
+      <li><code>parent::method()</code> runs the parent's version; <code>parent::__construct()</code> sets up inherited data.</li>
+      <li><code>protected</code> is for "children may use or customise this".</li>
+      <li><code>final</code> blocks extending or overriding; PHP allows only one parent per class.</li>
+      <li>Use inheritance for real "is a" relationships, composition for "has a".</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `class Post extends Model` give `Post`?",
+          "options": ["A copy of the database table", "Nothing until you call `parent::__construct()`", "All public and protected members of `Model`", "Only `Model`'s private methods"],
+          "answer": 2,
+          "explain": "A child inherits every public and protected member. Private members stay private to the parent."
+        },
+        {
+          "q": "How does an overriding method run the parent's version?",
+          "options": ["`parent::summary()`", "`$this->summary()`", "`super.summary()`", "`Content->summary()`"],
+          "answer": 0,
+          "explain": "`parent::` refers to the parent class. `$this->summary()` would call the override itself, and `super` is Java/JavaScript."
+        },
+        {
+          "q": "A child defines its own constructor but never calls `parent::__construct()`. What happens?",
+          "options": ["PHP calls it automatically", "The parent's properties are never initialised", "It's a syntax error", "The child can't be created"],
+          "answer": 1,
+          "explain": "PHP doesn't call the parent constructor for you once the child defines one. Call it explicitly."
+        },
+        {
+          "q": "How many classes can a PHP class directly extend?",
+          "options": ["As many as you like", "Two", "None; PHP has no inheritance", "One"],
+          "answer": 3,
+          "explain": "PHP has single inheritance. Use interfaces and traits to share behaviour more widely."
+        },
+        {
+          "q": "An `Invoice` needs to send email. What's the better design?",
+          "options": ["`Invoice extends Mailer`", "Pass a `Mailer` into `Invoice` (composition)", "Copy the mail code into `Invoice`", "Make `Mailer extends Invoice`"],
+          "answer": 1,
+          "explain": "An invoice isn't a kind of mailer; it **uses** one. That's a \"has a\" relationship, so use composition."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

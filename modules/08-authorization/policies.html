@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Policies · Laravel Blueprint</title>
+  <meta name="description" content="Organise model permissions in Laravel policies: make:policy --model, auto-discovery, Gate::authorize in controllers, the can middleware on routes and @can in Blade.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="08" data-lesson="policies">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A policy is a class that holds every permission rule for one model, such as <code>view</code>, <code>create</code>, <code>update</code> and <code>delete</code> for a <code>Post</code>.</p>
+    <p class="analogy"><span>📘</span><span>If gates are individual sticky notes on the fridge, a policy is the house rulebook with one chapter per room. Want to know what's allowed in the kitchen? Open the kitchen chapter.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Rules grow up with your app</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🗂️</span>
+        <h3>Organised by model</h3>
+        <p><code>PostPolicy</code>, <code>CommentPolicy</code>… you always know where a rule lives.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔗</span>
+        <h3>Matches resource controllers</h3>
+        <p>Policy methods line up with the seven <a href="../06-crud/resource-controllers.html">resource actions</a>, so CRUD and permissions fit together naturally.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🪄</span>
+        <h3>Zero registration</h3>
+        <p>Name the class correctly and Laravel finds it automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>How Laravel finds the right rule</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">❓</span><strong>can('update', $post)</strong><small>ability + model</small></div>
+        <div class="flow-node"><span class="flow-icon">🔎</span><strong>$post is a Post</strong><small>App\Models\Post</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📘</span><strong>PostPolicy</strong><small>App\Policies\PostPolicy</small></div>
+        <div class="flow-node"><span class="flow-icon">⚖️</span><strong>update($user, $post)</strong><small>returns true / false</small></div>
+      </div>
+      <figcaption>Ability name → policy method. The model's class decides which policy is used.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Controller action</th><th>Policy method</th><th>Needs a model instance?</th></tr></thead>
+        <tbody>
+          <tr><td><code>index</code></td><td><code>viewAny(User $user)</code></td><td>No</td></tr>
+          <tr><td><code>show</code></td><td><code>view(User $user, Post $post)</code></td><td>Yes</td></tr>
+          <tr><td><code>create</code> / <code>store</code></td><td><code>create(User $user)</code></td><td>No, pass <code>Post::class</code></td></tr>
+          <tr><td><code>edit</code> / <code>update</code></td><td><code>update(User $user, Post $post)</code></td><td>Yes</td></tr>
+          <tr><td><code>destroy</code></td><td><code>delete(User $user, Post $post)</code></td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a <code>PostPolicy</code></h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate the policy</h3>
+        <p>The <code>--model</code> flag fills in all the standard methods for you.</p>
+        <pre><code class="lang-bash">
+          php artisan make:policy PostPolicy --model=Post
+        </code></pre>
+        <p>This creates <code>app/Policies/PostPolicy.php</code> with <code>viewAny</code>, <code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code>, <code>restore</code> and <code>forceDelete</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Write the rules</h3>
+        <p>Each method gets the logged-in user (and usually the post) and returns a boolean. Delete the methods you don't need.</p>
+        <pre><code class="lang-php" data-file="app/Policies/PostPolicy.php" data-hl="15-18,20-23">
+          &lt;?php
+
+          namespace App\Policies;
+
+          use App\Models\Post;
+          use App\Models\User;
+
+          class PostPolicy
+          {
+              public function create(User $user): bool
+              {
+                  return $user-&gt;email_verified_at !== null;
+              }
+
+              public function update(User $user, Post $post): bool
+              {
+                  return $user-&gt;id === $post-&gt;user_id;
+              }
+
+              public function delete(User $user, Post $post): bool
+              {
+                  return $user-&gt;id === $post-&gt;user_id;
+              }
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Auto-discovery</div>
+          <p>Laravel matches <code>App\Models\Post</code> to <code>App\Policies\PostPolicy</code> by name, so there's nothing to register. If you break the convention, register it by hand in <code>AppServiceProvider::boot()</code> with <code>Gate::policy(Post::class, PostPolicy::class)</code>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Authorize in the controller</h3>
+        <p>Call <code>Gate::authorize()</code> with the <strong>ability</strong> (the policy method name) and the model. For actions without a model, like <code>create</code>, pass the class name instead.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="5,11">
+          use Illuminate\Support\Facades\Gate;
+
+          public function store(Request $request)
+          {
+              Gate::authorize('create', Post::class);
+              // validate + save...
+          }
+
+          public function update(Request $request, Post $post)
+          {
+              Gate::authorize('update', $post);
+              // validate + update...
+          }
+        </code></pre>
+        <p>Prefer <code>$this-&gt;authorize('update', $post)</code>? In Laravel 11+ the base <code>Controller</code> is empty, so add <code>use AuthorizesRequests;</code> (from <code>Illuminate\Foundation\Auth\Access</code>) to <code>app/Http/Controllers/Controller.php</code> first.</p>
+      </li>
+
+      <li class="step">
+        <h3>Or protect the route with the <code>can</code> middleware</h3>
+        <p>You can authorize before the controller even runs. The second argument is the <strong>route parameter name</strong>, and route model binding turns it into a <code>Post</code>.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::put('/posts/{post}', [PostController::class, 'update'])
+              -&gt;middleware(['auth', 'can:update,post']);
+
+          // fluent version
+          Route::delete('/posts/{post}', [PostController::class, 'destroy'])
+              -&gt;middleware('auth')
+              -&gt;can('delete', 'post');
+
+          Route::post('/posts', [PostController::class, 'store'])
+              -&gt;can('create', App\Models\Post::class);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Use the policy in Blade</h3>
+        <p><code>@can</code> works exactly like it did with gates, but now it uses the policy.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          @can('update', $post)
+              &lt;a href="{{ route('posts.edit', $post) }}"&gt;Edit&lt;/a&gt;
+          @endcan
+
+          @can('delete', $post)
+              &lt;form method="POST" action="{{ route('posts.destroy', $post) }}"&gt;
+                  @csrf @method('DELETE')
+                  &lt;button&gt;Delete&lt;/button&gt;
+              &lt;/form&gt;
+          @endcan
+
+          @can('create', App\Models\Post::class)
+              &lt;a href="{{ route('posts.create') }}"&gt;New post&lt;/a&gt;
+          @endcan
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Admins first: the policy <code>before</code> method</h3>
+        <p>A <code>before()</code> method on the policy runs ahead of all its other methods. As with <code>Gate::before</code>, return <code>true</code> to allow or <code>null</code> to continue.</p>
+        <pre><code class="lang-php" data-file="app/Policies/PostPolicy.php">
+          public function before(User $user, string $ability): ?bool
+          {
+              return $user-&gt;is_admin ? true : null;
+          }
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Gate::authorize('create', new Post);
+          Gate::authorize('create');
+        </code></pre>
+        <p>Without a model or class, Laravel doesn't know which policy to use, and an empty model is misleading.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Gate::authorize('create', Post::class);
+        </code></pre>
+        <p>Pass the class name for actions that don't have a specific record yet.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          app/Policies/PostsPolicy.php
+          app/Policies/Post.php
+        </code></pre>
+        <p>Wrong names break auto-discovery, and every check silently returns false (403).</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          app/Policies/PostPolicy.php
+        </code></pre>
+        <p>Model name + <code>Policy</code>, in <code>app/Policies</code>. Let <code>make:policy</code> name it for you.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: friendlier denials</div>
+      <p>Return <code>Response::deny('You can only edit your own posts.')</code> (from <code>Illuminate\Auth\Access\Response</code>) instead of <code>false</code> to show a custom message, or <code>Response::denyAsNotFound()</code> to return a 404 so outsiders can't even tell the post exists.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Run <code>php artisan make:policy PostPolicy --model=Post</code> and fill in <code>update</code> and <code>delete</code>.</li>
+        <li>Replace any <code>update-post</code> gate from the <a href="gates.html">previous lesson</a> with <code>Gate::authorize('update', $post)</code>.</li>
+        <li>Protect the destroy route with <code>-&gt;can('delete', 'post')</code>.</li>
+        <li>Show Edit/Delete buttons only with <code>@can</code>, then test as two different users.</li>
+        <li>Create a <code>CommentPolicy</code> where both the comment author and the post author can delete a comment.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A <strong>policy</strong> groups all permission rules for one model.</li>
+      <li><code>make:policy PostPolicy --model=Post</code> scaffolds the standard methods.</li>
+      <li><code>App\Policies\PostPolicy</code> is <strong>auto-discovered</strong> for <code>App\Models\Post</code>.</li>
+      <li>Check with <code>Gate::authorize('update', $post)</code>, <code>-&gt;can('update', 'post')</code> on routes, or <code>@can</code> in Blade.</li>
+      <li>For “create”-style checks, pass <code>Post::class</code> instead of a model.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which command creates a policy with all the standard methods for `Post`?",
+          "options": ["`php artisan make:gate Post`", "`php artisan make:policy PostPolicy --model=Post`", "`php artisan policy:new Post`", "`php artisan make:controller PostPolicy`"],
+          "answer": 1,
+          "explain": "The `--model` flag scaffolds viewAny, view, create, update, delete, restore and forceDelete."
+        },
+        {
+          "q": "How does Laravel know that `PostPolicy` belongs to `Post`?",
+          "options": ["You must list it in `config/auth.php`", "It reads a comment in the model", "Auto-discovery by naming convention", "It guesses at random"],
+          "answer": 2,
+          "explain": "`App\\Models\\Post` maps to `App\\Policies\\PostPolicy` automatically. Use `Gate::policy()` only if you break the convention."
+        },
+        {
+          "q": "In `->middleware('can:update,post')`, what is `post`?",
+          "options": ["The name of the route parameter", "The policy class name", "The database table", "The HTTP method"],
+          "answer": 0,
+          "explain": "It refers to the `{post}` route parameter, which route model binding turns into a `Post` model."
+        },
+        {
+          "q": "What should you pass to check the `create` ability?",
+          "options": ["Nothing at all", "A new empty `Post`", "The user's ID", "`Post::class`"],
+          "answer": 3,
+          "explain": "There's no record yet, so pass the class name. Laravel uses it to find the right policy."
+        },
+        {
+          "q": "In a fresh Laravel 12 app, `$this->authorize()` in a controller throws \"method not found\". Why?",
+          "options": ["Policies are disabled by default", "The base Controller no longer includes the `AuthorizesRequests` trait", "You need to run `migrate`", "`authorize` only works in Blade"],
+          "answer": 1,
+          "explain": "The slim base Controller is empty. Use `Gate::authorize()`, or add `use AuthorizesRequests;` to the base Controller."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

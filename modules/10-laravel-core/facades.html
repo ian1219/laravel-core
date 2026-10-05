@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Facades · Laravel Blueprint</title>
+  <meta name="description" content="What Laravel facades really are: static-looking proxies that fetch real objects from the service container. Facades vs helpers vs injection, testing and real-time facades.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="facades">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A facade is a class with a static-looking interface (<code>Cache::get()</code>) that quietly fetches a real object from the service container and forwards your call to it.</p>
+    <p class="analogy"><span>📞</span><span>It's like a hotel's front-desk phone. You dial "0" without knowing which staff member is on shift. The desk routes your call to whoever is actually working, and they do the job.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>You already use facades everywhere</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔍</span>
+        <h3>Demystify the statics</h3>
+        <p><code>Route::get</code>, <code>DB::table</code>, <code>Auth::user</code>… They look static, but none of them are static methods underneath.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✍️</span>
+        <h3>Short, readable code</h3>
+        <p>One import and you can use the cache, mail or logger anywhere, with no constructor wiring.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>Still testable</h3>
+        <p>Because a facade resolves from the container, you can swap the real object for a fake in tests.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>What happens when you call <code>Cache::get('posts')</code></h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">✍️</span><strong>Cache::get('posts')</strong><small>your code</small></div>
+        <div class="flow-node"><span class="flow-icon">🪄</span><strong>__callStatic()</strong><small>no static <code>get</code> exists, so PHP calls this magic method on the <code>Facade</code> base class</small></div>
+        <div class="flow-node"><span class="flow-icon">🏷️</span><strong>getFacadeAccessor()</strong><small>returns the container key <code>'cache'</code></small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧰</span><strong>Container</strong><small><code>app('cache')</code> resolves the real object (and remembers it)</small></div>
+        <div class="flow-node"><span class="flow-icon">🎯</span><strong>CacheManager</strong><small><code>-&gt;get('posts')</code> runs on the real instance</small></div>
+      </div>
+      <figcaption>A facade is just a forwarding address. The real work always happens on a normal object that lives in the <a href="service-container.html">service container</a>.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Look inside a facade</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Using a facade</h3>
+        <p>Import the facade from <code>Illuminate\Support\Facades</code> and call methods as if they were static:</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          use Illuminate\Support\Facades\Cache;
+
+          public function index()
+          {
+              $posts = Cache::remember('posts.latest', 600, fn () =&gt;
+                  Post::latest()-&gt;take(10)-&gt;get()
+              );
+
+              return view('posts.index', compact('posts'));
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The whole facade class is tiny</h3>
+        <p>Here's (simplified) what Laravel's <code>Cache</code> facade contains. Its only job is to name a <strong>container key</strong>, called the <strong>facade accessor</strong>:</p>
+        <pre><code class="lang-php" data-file="Illuminate/Support/Facades/Cache.php" data-hl="5-8">
+          namespace Illuminate\Support\Facades;
+
+          class Cache extends Facade
+          {
+              protected static function getFacadeAccessor(): string
+              {
+                  return 'cache';
+              }
+          }
+        </code></pre>
+        <p>The base <code>Facade</code> class has a <code>__callStatic()</code> magic method. PHP calls it whenever you call a static method that doesn't exist. It looks up <code>app('cache')</code> and forwards your call, roughly like this:</p>
+        <pre><code class="lang-php" data-file="Illuminate/Support/Facades/Facade.php (simplified)">
+          public static function __callStatic($method, $args)
+          {
+              $instance = static::getFacadeRoot();   // app(static::getFacadeAccessor())
+
+              return $instance-&gt;$method(...$args);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Facades, helpers or injection?</h3>
+        <p>Most services can be reached three ways. They all end up at the <strong>same object</strong> in the container. The difference is style and visibility:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th>Facade</th><th>Helper</th><th>Injection</th></tr></thead>
+            <tbody>
+              <tr><td>Example</td><td><code>Cache::get('k')</code></td><td><code>cache('k')</code> or <code>cache()-&gt;get('k')</code></td><td><code>__construct(Repository $cache)</code></td></tr>
+              <tr><td>Import needed</td><td><code>use ...\Facades\Cache</code></td><td>None (global function)</td><td>The contract or class</td></tr>
+              <tr><td>Dependencies visible?</td><td>Hidden in method bodies</td><td>Hidden in method bodies</td><td>✅ Listed in the constructor</td></tr>
+              <tr><td>Testing</td><td><code>Cache::shouldReceive()</code>, <code>Mail::fake()</code></td><td>Same fakes (same object)</td><td>Pass a mock directly</td></tr>
+              <tr><td>Best for</td><td>Controllers, routes, quick code</td><td>Blade views, one-liners</td><td>Services and reusable classes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="lang-php">
+          use Illuminate\Contracts\Cache\Repository;
+
+          class PostStats
+          {
+              public function __construct(private Repository $cache) {}
+
+              public function views(Post $post): int
+              {
+                  return $this-&gt;cache-&gt;get("views.{$post-&gt;id}", 0);
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Find the real class behind a facade</h3>
+        <p>When your editor can't autocomplete a facade method, look up its real class. A few common ones:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Facade</th><th>Container key</th><th>Real class</th></tr></thead>
+            <tbody>
+              <tr><td><code>Cache</code></td><td><code>cache</code></td><td><code>Illuminate\Cache\CacheManager</code></td></tr>
+              <tr><td><code>DB</code></td><td><code>db</code></td><td><code>Illuminate\Database\DatabaseManager</code></td></tr>
+              <tr><td><code>Route</code></td><td><code>router</code></td><td><code>Illuminate\Routing\Router</code></td></tr>
+              <tr><td><code>Auth</code></td><td><code>auth</code></td><td><code>Illuminate\Auth\AuthManager</code></td></tr>
+              <tr><td><code>Log</code></td><td><code>log</code></td><td><code>Illuminate\Log\LogManager</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The full list is in the "Facade Class Reference" section of the Laravel docs.</p>
+      </li>
+
+      <li class="step">
+        <h3>Fake a facade in tests</h3>
+        <p>Because facades resolve through the container, Laravel can swap the real object for a fake or a mock:</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostIndexTest.php">
+          Cache::shouldReceive('remember')
+              -&gt;once()
+              -&gt;andReturn(collect());
+
+          $this-&gt;get('/posts')-&gt;assertOk();
+        </code></pre>
+        <p>Several facades have a ready-made fake: <code>Mail::fake()</code>, <code>Queue::fake()</code>, <code>Event::fake()</code>, <code>Storage::fake()</code>. More in <a href="../11-testing/feature-tests.html">Feature Tests</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Real-time facades (briefly)</h3>
+        <p>Want facade-style access to <strong>your own</strong> class without writing a facade? Prefix its namespace with <code>Facades\</code> in the import. Laravel generates the facade on the fly:</p>
+        <pre><code class="lang-php">
+          use Facades\App\Services\PostPublisher;
+
+          PostPublisher::publish($post);   // resolves App\Services\PostPublisher from the container
+        </code></pre>
+        <p>It's handy for quick scripts, but injection is usually clearer for your own services.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          class InvoiceService
+          {
+              public function send(Order $order)
+              {
+                  $pdf = Storage::get(...);
+                  Mail::to(...)-&gt;send(...);
+                  Log::info(...);
+                  Cache::forget(...);
+                  DB::transaction(...);
+              }
+          }
+        </code></pre>
+        <p>Facades make it easy to pile up hidden dependencies until a class quietly does far too much.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          class InvoiceService
+          {
+              public function __construct(
+                  private InvoicePdf $pdf,
+                  private Mailer $mailer,
+              ) {}
+          }
+        </code></pre>
+        <p>In reusable services, inject dependencies so the constructor tells you, honestly, what the class needs.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: facades are not "bad static code"</div>
+      <p>You may read that static methods are hard to test. That's true for <em>real</em> statics, but facades aren't real statics, so they can be swapped and faked. Use them freely in controllers and routes. Just keep an eye on how many each class uses.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>In <code>php artisan tinker</code>, run <code>get_class(Cache::getFacadeRoot())</code> and note the class name.</li>
+        <li>Compare <code>Cache::getFacadeRoot() === app('cache')</code>. Is it the same object?</li>
+        <li>Write a route that stores a value with <code>Cache::put()</code>, then read it back with the <code>cache()</code> helper.</li>
+        <li>Create <code>App\Services\Greeter</code> with a <code>hello()</code> method and call it through a real-time facade.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A facade is a <strong>proxy</strong>: its static call is forwarded to a real object in the container.</li>
+      <li><code>getFacadeAccessor()</code> names the container key; <code>__callStatic()</code> does the forwarding.</li>
+      <li>Facades, helpers and injection all reach the <strong>same</strong> underlying object.</li>
+      <li>Prefer injection in reusable services so dependencies stay visible.</li>
+      <li>Facades are testable with <code>shouldReceive()</code> and fakes like <code>Mail::fake()</code>.</li>
+      <li>Real-time facades: <code>use Facades\App\...</code> for any class.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `getFacadeAccessor()` return for the `Cache` facade?",
+          "options": ["The cached value", "The container key `'cache'`", "A new `CacheManager`", "The cache driver name from `.env`"],
+          "answer": 1,
+          "explain": "The accessor is just a key. The base Facade class uses it to resolve the real object from the container."
+        },
+        {
+          "q": "Which PHP feature lets `Cache::get()` work even though `get` isn't a static method?",
+          "options": ["Traits", "Interfaces", "The `__callStatic()` magic method", "Named arguments"],
+          "answer": 2,
+          "explain": "PHP calls `__callStatic()` when an undefined static method is called. The Facade base class forwards the call from there."
+        },
+        {
+          "q": "Are `Cache::get('k')` and `cache()->get('k')` using different cache objects?",
+          "options": ["No, both resolve the same object from the container", "Yes, helpers create a new instance", "Yes, facades use a static copy", "Only in tests"],
+          "answer": 0,
+          "explain": "Facades, helpers and injection are just different doors into the same container service."
+        },
+        {
+          "q": "In a reusable service class, why might you prefer constructor injection over facades?",
+          "options": ["Facades don't work outside controllers", "Injection is required for caching", "Facades can't be tested", "The constructor shows every dependency clearly"],
+          "answer": 3,
+          "explain": "Facades hide dependencies inside method bodies. Injection keeps them visible and helps you notice when a class does too much."
+        },
+        {
+          "q": "What does `use Facades\\App\\Services\\Greeter;` create?",
+          "options": ["A new Artisan command", "A real-time facade for `App\\Services\\Greeter`", "A config alias", "An error, since that namespace doesn't exist"],
+          "answer": 1,
+          "explain": "Prefixing a class's namespace with `Facades\\` makes Laravel generate a facade for it automatically."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

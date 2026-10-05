@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Relationships · Laravel Blueprint</title>
+  <meta name="description" content="Learn Eloquent relationships: hasOne, hasMany, belongsTo, belongsToMany with pivot tables, and hasManyThrough, using a blog with users, posts, categories, comments and tags.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="05" data-lesson="relationships">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A relationship is a method on a model that tells Eloquent how two tables are linked, so you can write <code>$user-&gt;posts</code> instead of a join.</p>
+    <p class="analogy"><span>👪</span><span>Think of a family tree. You don't memorise everyone's ID number; you just say "my mother", "my children" or "my cousins". Relationships give your models the same kind of names for their connections.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Real data is connected</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔗</span>
+        <h3>No hand-written joins</h3>
+        <p><code>$post-&gt;comments</code> fetches the right rows. You describe the link once, in the model.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✍️</span>
+        <h3>Create through the link</h3>
+        <p><code>$user-&gt;posts()-&gt;create([...])</code> fills in <code>user_id</code> for you, so ownership is never forgotten.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Code that reads like the domain</h3>
+        <p>"A post belongs to a user and has many comments" becomes two short methods that anyone can read.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The blog's tables and how they link</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 860 316" width="860" role="img" aria-label="Database diagram: users and categories each have many posts; posts have many comments; posts and tags are linked many-to-many through the post_tag pivot table." style="max-width:100%">
+        <g font-family="JetBrains Mono, monospace" font-size="13" transform="translate(0,14)">
+          <!-- links -->
+          <g fill="none" stroke="var(--mod)" stroke-width="2">
+            <path d="M170 62 C 210 62, 210 148, 250 148"/>
+            <path d="M170 242 C 210 242, 210 168, 250 168"/>
+            <path d="M400 132 C 440 132, 440 82, 480 82"/>
+            <path d="M400 132 C 440 132, 440 242, 480 242"/>
+            <path d="M630 262 C 660 262, 660 242, 690 242"/>
+            <path d="M95 20 V8 H555 V20" stroke-dasharray="5 4" stroke="var(--text-muted)"/>
+          </g>
+          <g fill="var(--mod)">
+            <circle cx="250" cy="148" r="4"/>
+            <circle cx="250" cy="168" r="4"/>
+            <circle cx="480" cy="82" r="4"/>
+            <circle cx="480" cy="242" r="4"/>
+            <circle cx="630" cy="262" r="4"/>
+          </g>
+          <!-- link labels -->
+          <g fill="var(--text-muted)" font-size="11">
+            <text x="176" y="50">1 → many</text>
+            <text x="176" y="262">1 → many</text>
+            <text x="410" y="70">1 → many</text>
+            <text x="560" y="294">many ↔ many (via pivot)</text>
+            <text x="300" y="4">a user writes many comments</text>
+          </g>
+
+          <!-- users -->
+          <rect x="20" y="20" width="150" height="96" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+          <rect x="20" y="20" width="150" height="28" rx="8" fill="var(--mod)" fill-opacity="0.18"/>
+          <text x="32" y="39" fill="currentColor" font-weight="600">users</text>
+          <g fill="currentColor"><text x="32" y="66">id</text><text x="32" y="86">name</text><text x="32" y="106">email</text></g>
+
+          <!-- categories -->
+          <rect x="20" y="200" width="150" height="96" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+          <rect x="20" y="200" width="150" height="28" rx="8" fill="var(--mod)" fill-opacity="0.18"/>
+          <text x="32" y="219" fill="currentColor" font-weight="600">categories</text>
+          <g fill="currentColor"><text x="32" y="246">id</text><text x="32" y="266">name</text><text x="32" y="286">slug</text></g>
+
+          <!-- posts -->
+          <rect x="250" y="90" width="150" height="136" rx="8" fill="none" stroke="var(--mod)" stroke-width="2"/>
+          <rect x="250" y="90" width="150" height="28" rx="8" fill="var(--mod)" fill-opacity="0.3"/>
+          <text x="262" y="109" fill="currentColor" font-weight="600">posts</text>
+          <text x="262" y="136" fill="currentColor">id</text>
+          <text x="262" y="156" fill="var(--mod)">user_id</text>
+          <text x="262" y="176" fill="var(--mod)">category_id</text>
+          <text x="262" y="196" fill="currentColor">title</text>
+          <text x="262" y="216" fill="currentColor">body</text>
+
+          <!-- comments -->
+          <rect x="480" y="20" width="150" height="116" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+          <rect x="480" y="20" width="150" height="28" rx="8" fill="var(--mod)" fill-opacity="0.18"/>
+          <text x="492" y="39" fill="currentColor" font-weight="600">comments</text>
+          <text x="492" y="66" fill="currentColor">id</text>
+          <text x="492" y="86" fill="var(--mod)">post_id</text>
+          <text x="492" y="106" fill="var(--mod)">user_id</text>
+          <text x="492" y="126" fill="currentColor">body</text>
+
+          <!-- post_tag pivot -->
+          <rect x="480" y="200" width="150" height="76" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.5" stroke-dasharray="5 4"/>
+          <text x="492" y="219" fill="currentColor" font-weight="600">post_tag</text>
+          <text x="492" y="246" fill="var(--mod)">post_id</text>
+          <text x="492" y="266" fill="var(--mod)">tag_id</text>
+
+          <!-- tags -->
+          <rect x="690" y="200" width="150" height="76" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+          <rect x="690" y="200" width="150" height="28" rx="8" fill="var(--mod)" fill-opacity="0.18"/>
+          <text x="702" y="219" fill="currentColor" font-weight="600">tags</text>
+          <g fill="currentColor"><text x="702" y="246">id</text><text x="702" y="266">name</text></g>
+        </g>
+      </svg>
+      <figcaption>Coloured columns are foreign keys. The dashed <code>post_tag</code> box is a <strong>pivot table</strong>: it only exists to link posts and tags.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Relationship</th><th>Meaning</th><th>Blog example</th><th>Foreign key lives on…</th></tr></thead>
+        <tbody>
+          <tr><td><code>hasOne</code></td><td>owns exactly one</td><td>User → Profile</td><td>the other table (<code>profiles.user_id</code>)</td></tr>
+          <tr><td><code>hasMany</code></td><td>owns many</td><td>User → Posts, Post → Comments</td><td>the other table (<code>posts.user_id</code>)</td></tr>
+          <tr><td><code>belongsTo</code></td><td>is owned by one</td><td>Post → User, Post → Category</td><td>this table (<code>posts.user_id</code>)</td></tr>
+          <tr><td><code>belongsToMany</code></td><td>many on both sides</td><td>Post ↔ Tags</td><td>a pivot table (<code>post_tag</code>)</td></tr>
+          <tr><td><code>hasManyThrough</code></td><td>reach across a middle table</td><td>Category → Comments (via Posts)</td><td>the middle and far tables</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Wire up the blog</h2>
+      <p>The tables come from the <a href="migrations.html">Migrations</a> lesson. Now we teach the models about each other.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3><code>hasMany</code> and <code>belongsTo</code>: the everyday pair</h3>
+        <p>Most links come in pairs. The side <em>without</em> the foreign key says <strong><code>hasMany</code></strong>; the side <em>with</em> the foreign key says <strong><code>belongsTo</code></strong>. Eloquent guesses the key name (<code>user_id</code>) from the method and model names.</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php">
+          use Illuminate\Database\Eloquent\Relations\HasMany;
+
+          public function posts(): HasMany
+          {
+              return $this-&gt;hasMany(Post::class);
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use Illuminate\Database\Eloquent\Relations\BelongsTo;
+          use Illuminate\Database\Eloquent\Relations\HasMany;
+
+          public function user(): BelongsTo
+          {
+              return $this-&gt;belongsTo(User::class);
+          }
+
+          public function category(): BelongsTo
+          {
+              return $this-&gt;belongsTo(Category::class);
+          }
+
+          public function comments(): HasMany
+          {
+              return $this-&gt;hasMany(Comment::class);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Property vs method: two ways to use a relationship</h3>
+        <p>Access it as a <strong>property</strong> to get the results. Call it as a <strong>method</strong> to get a query builder you can keep chaining or create through.</p>
+        <pre><code class="lang-php" data-hl="1,4,7">
+          $post-&gt;user-&gt;name;                     // the author (a User)
+          $post-&gt;comments;                       // Collection of Comments
+
+          $post-&gt;comments()-&gt;latest()-&gt;take(3)-&gt;get(); // a query you can refine
+
+          // Create through the relationship: user_id is filled in for you
+          $request-&gt;user()-&gt;posts()-&gt;create([
+              'title' =&gt; 'Relationships are neat',
+              'slug'  =&gt; 'relationships-are-neat',
+              'body'  =&gt; '...',
+          ]);
+        </code></pre>
+        <pre><code class="lang-sql">
+          select * from `users` where `users`.`id` = 1 limit 1;
+          select * from `comments` where `comments`.`post_id` = 7;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>hasOne</code>: exactly one</h3>
+        <p>Use <strong><code>hasOne</code></strong> when each parent has at most one child, like a user's profile. It works like <code>hasMany</code> but returns a single model (or <code>null</code>).</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php">
+          use Illuminate\Database\Eloquent\Relations\HasOne;
+
+          public function profile(): HasOne
+          {
+              return $this-&gt;hasOne(Profile::class); // profiles.user_id
+          }
+        </code></pre>
+        <pre><code class="lang-php">
+          $user-&gt;profile?-&gt;bio;  // ?-&gt; because the profile might not exist yet
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>belongsToMany</code>: many-to-many via a pivot</h3>
+        <p>A post has many tags, and a tag has many posts. Neither table can hold the foreign key, so a <strong>pivot table</strong> sits in between. Laravel expects it to be named after both models, singular and alphabetical: <code>post_tag</code>.</p>
+        <pre><code class="lang-php" data-file="database/migrations/..._create_post_tag_table.php">
+          Schema::create('post_tag', function (Blueprint $table) {
+              $table-&gt;foreignId('post_id')-&gt;constrained()-&gt;cascadeOnDelete();
+              $table-&gt;foreignId('tag_id')-&gt;constrained()-&gt;cascadeOnDelete();
+              $table-&gt;primary(['post_id', 'tag_id']); // no duplicate pairs
+          });
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+          public function tags(): BelongsToMany
+          {
+              return $this-&gt;belongsToMany(Tag::class);
+          }
+          // ...and in Tag.php: return $this-&gt;belongsToMany(Post::class);
+        </code></pre>
+        <p>Manage the links with <code>attach</code>, <code>detach</code> and <code>sync</code>:</p>
+        <pre><code class="lang-php">
+          $post-&gt;tags()-&gt;attach([1, 2]);   // add tags 1 and 2
+          $post-&gt;tags()-&gt;detach(2);        // remove tag 2
+          $post-&gt;tags()-&gt;sync([1, 3, 4]);  // make it EXACTLY these tags (great for forms)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>hasManyThrough</code>: a shortcut across tables</h3>
+        <p>Sometimes you want to skip a level. A category has many posts, and each post has many comments, so a category effectively "has many comments through posts".</p>
+        <pre><code class="lang-php" data-file="app/Models/Category.php">
+          use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+
+          public function comments(): HasManyThrough
+          {
+              return $this-&gt;hasManyThrough(Comment::class, Post::class);
+          }
+        </code></pre>
+        <pre><code class="lang-php">
+          $category-&gt;comments()-&gt;count();  // every comment on every post in this category
+        </code></pre>
+      </li>
+    </ol>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠️ Watch out for the N+1 problem</div>
+      <p>Looping over 20 posts and printing <code>$post-&gt;user-&gt;name</code> runs <strong>1 query for the posts + 20 queries for the users</strong>. Fix it by loading the relationship up front with <code>Post::with('user')-&gt;get()</code>, which needs just 2 queries. The full story is in <a href="../13-performance/eager-loading.html">Eager Loading &amp; N+1</a>.</p>
+    </div>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Post::create([
+              'title'   =&gt; $request-&gt;title,
+              'user_id' =&gt; $request-&gt;user_id,
+          ]);
+        </code></pre>
+        <p>Trusting a <code>user_id</code> from the form lets anyone post as someone else.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $request-&gt;user()-&gt;posts()-&gt;create([
+              'title' =&gt; $request-&gt;title,
+          ]);
+        </code></pre>
+        <p>Creating through the relationship sets <code>user_id</code> from the logged-in user.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function comments()
+          {
+              return $this-&gt;hasMany(Comment::class);
+          }
+          // ...then: $post-&gt;comments()-&gt;title
+        </code></pre>
+        <p>Calling the method gives you a query, not results, so <code>-&gt;title</code> fails.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function comments(): HasMany { /* ... */ }
+
+          foreach ($post-&gt;comments as $comment) { /* ... */ }
+        </code></pre>
+        <p>Add a return type, and use the property when you want the actual records.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: count without loading</div>
+      <p><code>Post::withCount('comments')-&gt;get()</code> adds a <code>comments_count</code> attribute to each post using one extra subquery, without loading any comment rows.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Add <code>comments()</code> (<code>hasMany</code>) to <code>User</code>, and <code>user()</code> + <code>post()</code> (<code>belongsTo</code>) to <code>Comment</code>.</li>
+        <li>Add <code>posts()</code> (<code>hasMany</code>) to <code>Category</code>.</li>
+        <li>Create the <code>post_tag</code> pivot migration and the <code>tags()</code> / <code>posts()</code> methods on both models.</li>
+        <li>In Tinker, attach two tags to a post, then <code>sync</code> to a different set and inspect <code>$post-&gt;tags</code>.</li>
+        <li>Print each post's title with its author's name, first with <code>Post::all()</code>, then with <code>Post::with('user')-&gt;get()</code>, and compare the query counts in Debugbar.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>The model whose table holds the foreign key uses <code>belongsTo</code>; the other side uses <code>hasOne</code> or <code>hasMany</code>.</li>
+      <li><code>belongsToMany</code> needs a pivot table named after both models alphabetically, like <code>post_tag</code>.</li>
+      <li><code>$post-&gt;comments</code> returns results; <code>$post-&gt;comments()</code> returns a query you can chain.</li>
+      <li><code>attach</code>, <code>detach</code> and <code>sync</code> manage many-to-many links.</li>
+      <li><code>hasManyThrough</code> reaches across a middle table, e.g. category → posts → comments.</li>
+      <li>Use <code>with()</code> to avoid N+1 queries when looping.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "The `posts` table has a `user_id` column. Which relationship goes on the `Post` model?",
+          "options": ["`hasOne(User::class)`", "`hasMany(User::class)`", "`belongsTo(User::class)`", "`belongsToMany(User::class)`"],
+          "answer": 2,
+          "explain": "The model whose table holds the foreign key `belongsTo` the other one."
+        },
+        {
+          "q": "What is the default pivot table name for a `Post` ↔ `Tag` many-to-many relationship?",
+          "options": ["`post_tag`", "`posts_tags`", "`tag_post`", "`post_tags`"],
+          "answer": 0,
+          "explain": "Singular model names, in alphabetical order, joined by an underscore: `post_tag`."
+        },
+        {
+          "q": "What's the difference between `$post->comments` and `$post->comments()`?",
+          "options": ["There is no difference", "The property runs the query and returns results; the method returns a query builder", "The method is faster", "The property only returns the first comment"],
+          "answer": 1,
+          "explain": "Use the method to keep chaining (`->latest()->get()`) or to create; use the property for the results."
+        },
+        {
+          "q": "A form submits tag ids `[2, 5]`. Which call makes the post have exactly those tags?",
+          "options": ["`$post->tags()->attach([2, 5])`", "`$post->tags = [2, 5]`", "`$post->tags()->detach([2, 5])`", "`$post->tags()->sync([2, 5])`"],
+          "answer": 3,
+          "explain": "`sync` adds missing ids and removes any not in the list. `attach` would only add."
+        },
+        {
+          "q": "Looping over 50 posts and printing `$post->user->name` without eager loading runs how many queries?",
+          "options": ["1", "2", "51", "100"],
+          "answer": 2,
+          "explain": "1 query for the posts + 1 per post for its user. `Post::with('user')` brings it down to 2."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

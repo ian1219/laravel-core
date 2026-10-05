@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Update &amp; Delete · Laravel Blueprint</title>
+  <meta name="description" content="Finish a Laravel CRUD: edit forms with @method('PUT'), update with validation, safe deletes with @method('DELETE'), flash messages and redirects.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="06" data-lesson="update-delete">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">The "U" and "D" of CRUD are three actions (edit, update, destroy) that show a pre-filled form, save the changes, and remove a record, using hidden fields to send PUT and DELETE from plain HTML forms.</p>
+    <p class="analogy"><span>✏️</span><span>Editing is like correcting a document with tracked changes: you start from what's already there, not a blank page. Deleting is shredding it, so you want a "are you sure?" before the shredder runs.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Close the loop on your first full feature</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔄</span>
+        <h3>Data changes over time</h3>
+        <p>Typos, new categories, outdated posts: users need to fix and remove what they created.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>HTML has limits</h3>
+        <p>Forms only support GET and POST. Laravel's <strong>method spoofing</strong> lets them trigger PUT and DELETE routes.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧯</span>
+        <h3>Deletes must be safe</h3>
+        <p>A delete should never be a plain link that a crawler or a stray click can trigger.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>How a form sends PUT and DELETE</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>&lt;form method="POST"&gt;</strong><small>the browser sends POST</small></div>
+        <div class="flow-node"><span class="flow-icon">🕵️</span><strong>_method=PUT</strong><small>hidden field from <code>@method</code></small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧭</span><strong>Laravel router</strong><small>treats it as PUT</small></div>
+        <div class="flow-node"><span class="flow-icon">💾</span><strong>update()</strong><small>saves, then redirects</small></div>
+      </div>
+      <figcaption><code>@method('PUT')</code> renders <code>&lt;input type="hidden" name="_method" value="PUT"&gt;</code>. Laravel reads it and routes the request as PUT.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Verb</th><th>URI</th><th>Form needs</th></tr></thead>
+        <tbody>
+          <tr><td><code>edit</code></td><td><code>GET</code></td><td><code>/posts/{post}/edit</code></td><td>Just a link</td></tr>
+          <tr><td><code>update</code></td><td><code>PUT/PATCH</code></td><td><code>/posts/{post}</code></td><td><code>method="POST"</code> + <code>@csrf</code> + <code>@method('PUT')</code></td></tr>
+          <tr><td><code>destroy</code></td><td><code>DELETE</code></td><td><code>/posts/{post}</code></td><td><code>method="POST"</code> + <code>@csrf</code> + <code>@method('DELETE')</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Finish the <code>PostController</code></h2>
+      <p>We continue from <a href="create-read.html">Create &amp; Read</a>: the layout already shows <code>session('status')</code>.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3><code>edit</code>: load the post into a form</h3>
+        <p>Route model binding gives us the post. We also pass the categories for the dropdown.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function edit(Post $post)
+          {
+              $categories = Category::orderBy('name')-&gt;get();
+
+              return view('posts.edit', compact('post', 'categories'));
+          }
+        </code></pre>
+        <p>Add an edit link on the show page: <code>&lt;a href="{{ route('posts.edit', $post) }}"&gt;Edit&lt;/a&gt;</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>The edit form: <code>@method('PUT')</code> and pre-filled values</h3>
+        <p><code>old('title', $post-&gt;title)</code> means "use what the user just typed if validation failed, otherwise the saved value". The form points at <code>posts.update</code> with the post.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/edit.blade.php" data-hl="4-6,8">
+          @extends('layouts.app')
+
+          @section('content')
+              &lt;form method="POST" action="{{ route('posts.update', $post) }}"&gt;
+                  @csrf
+                  @method('PUT')
+
+                  &lt;label&gt;Title &lt;input name="title" value="{{ old('title', $post-&gt;title) }}"&gt;&lt;/label&gt;
+                  @error('title') &lt;p class="error"&gt;{{ $message }}&lt;/p&gt; @enderror
+
+                  &lt;label&gt;Slug &lt;input name="slug" value="{{ old('slug', $post-&gt;slug) }}"&gt;&lt;/label&gt;
+                  @error('slug') &lt;p class="error"&gt;{{ $message }}&lt;/p&gt; @enderror
+
+                  &lt;select name="category_id"&gt;
+                      &lt;option value=""&gt;None&lt;/option&gt;
+                      @foreach ($categories as $category)
+                          &lt;option value="{{ $category-&gt;id }}" @selected(old('category_id', $post-&gt;category_id) == $category-&gt;id)&gt;
+                              {{ $category-&gt;name }}
+                          &lt;/option&gt;
+                      @endforeach
+                  &lt;/select&gt;
+
+                  &lt;textarea name="body"&gt;{{ old('body', $post-&gt;body) }}&lt;/textarea&gt;
+                  @error('body') &lt;p class="error"&gt;{{ $message }}&lt;/p&gt; @enderror
+
+                  &lt;button type="submit"&gt;Save changes&lt;/button&gt;
+              &lt;/form&gt;
+          @endsection
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Validate updates with a unique-but-ignore-me rule</h3>
+        <p>The slug must be unique, but the post's <em>own</em> slug shouldn't count as a clash. <code>Rule::unique(...)-&gt;ignore()</code> excludes the current post. Inside a Form Request, <code>$this-&gt;post</code> is the bound <code>Post</code> from the URL.</p>
+        <pre><code class="lang-bash">
+          php artisan make:request UpdatePostRequest
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Requests/UpdatePostRequest.php" data-hl="12">
+          use Illuminate\Validation\Rule;
+
+          public function authorize(): bool
+          {
+              return $this-&gt;user()?-&gt;id === $this-&gt;post-&gt;user_id; // only the author
+          }
+
+          public function rules(): array
+          {
+              return [
+                  'title'       =&gt; ['required', 'string', 'max:255'],
+                  'slug'        =&gt; ['required', 'alpha_dash', Rule::unique('posts', 'slug')-&gt;ignore($this-&gt;post)],
+                  'body'        =&gt; ['required', 'string', 'min:20'],
+                  'category_id' =&gt; ['nullable', 'exists:categories,id'],
+              ];
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>update</code>: save and redirect</h3>
+        <p>With validation done, <code>update()</code> writes only the validated fields and refreshes <code>updated_at</code>.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          use App\Http\Requests\UpdatePostRequest;
+
+          public function update(UpdatePostRequest $request, Post $post)
+          {
+              $post-&gt;update($request-&gt;validated());
+
+              return redirect()
+                  -&gt;route('posts.show', $post)
+                  -&gt;with('status', 'Post updated!');
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>destroy</code>: a delete button, not a link</h3>
+        <p>Deleting uses a tiny form with <code>@method('DELETE')</code>. A small JavaScript <code>confirm()</code> gives users a last chance to back out.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          &lt;form method="POST" action="{{ route('posts.destroy', $post) }}"
+                onsubmit="return confirm('Delete this post for good?')"&gt;
+              @csrf
+              @method('DELETE')
+              &lt;button type="submit"&gt;Delete&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function destroy(Post $post)
+          {
+              abort_unless(auth()-&gt;id() === $post-&gt;user_id, 403);
+
+              $post-&gt;delete();   // comments go too, thanks to cascadeOnDelete()
+
+              return redirect()
+                  -&gt;route('posts.index')
+                  -&gt;with('status', 'Post deleted.');
+          }
+        </code></pre>
+        <p>Redirect to the index, not the show page: the post no longer exists, so <code>posts.show</code> would 404.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Cleaner ownership checks are coming</div>
+          <p>The <code>abort_unless</code> and <code>authorize()</code> checks work, but they repeat. A <strong>policy</strong> puts "who can update or delete a post" in one class. See <a href="../08-authorization/policies.html">Policies</a>.</p>
+        </div>
+      </li>
+    </ol>
+
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;a href="/posts/{{ $post-&gt;id }}/delete"&gt;Delete&lt;/a&gt;
+        </code></pre>
+        <p>A GET link that deletes can be triggered by prefetching, crawlers or a malicious image tag, with no CSRF check.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;form method="POST" action="{{ route('posts.destroy', $post) }}"&gt;
+              @csrf @method('DELETE')
+              &lt;button&gt;Delete&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>A DELETE request with a CSRF token only happens when a real user clicks the button.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;form method="PUT" action="{{ route('posts.update', $post) }}"&gt;
+        </code></pre>
+        <p>Browsers don't support <code>method="PUT"</code>; they silently fall back to GET and you hit the wrong route.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;form method="POST" action="{{ route('posts.update', $post) }}"&gt;
+              @csrf
+              @method('PUT')
+        </code></pre>
+        <p>Use POST in the HTML and let <code>@method</code> tell Laravel the real verb.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Want an undo? Soft deletes</div>
+      <p>Add <code>$table-&gt;softDeletes();</code> to the migration and <code>use SoftDeletes;</code> to the model. Now <code>delete()</code> just sets <code>deleted_at</code>, queries hide the post automatically, and <code>$post-&gt;restore()</code> brings it back.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build <code>edit.blade.php</code> and the <code>edit</code> / <code>update</code> actions. Edit a post and see "Post updated!".</li>
+        <li>Submit the edit form with an empty title and confirm the other fields keep your changes.</li>
+        <li>Try saving a slug that another post already uses, then save the post's own unchanged slug. Only the first should fail.</li>
+        <li>Add the delete button and <code>destroy</code> action; check you land on the index with "Post deleted."</li>
+        <li>Bonus: switch <code>Post</code> to soft deletes and add a "Trash" page listing <code>Post::onlyTrashed()-&gt;get()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>HTML forms use <code>method="POST"</code>; <code>@method('PUT')</code> or <code>@method('DELETE')</code> sets the real verb.</li>
+      <li><code>old('field', $post-&gt;field)</code> pre-fills edit forms and survives failed validation.</li>
+      <li><code>Rule::unique('posts', 'slug')-&gt;ignore($post)</code> lets a record keep its own unique value.</li>
+      <li><code>$post-&gt;update($request-&gt;validated())</code>, then redirect with a <code>status</code> flash.</li>
+      <li>Delete with a form and a confirm, never a GET link; redirect to the index afterwards.</li>
+      <li>Check ownership before changing data. Policies make that tidy.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `@method('PUT')` output inside a form?",
+          "options": ["It changes the form's `method` attribute to PUT", "A hidden `_method` input with the value PUT", "A CSRF token", "Nothing, it's only a comment"],
+          "answer": 1,
+          "explain": "Browsers only send GET/POST, so Laravel reads the hidden `_method` field to know the intended verb."
+        },
+        {
+          "q": "In an edit form, what does `old('title', $post->title)` show on first load?",
+          "options": ["An empty string", "The previous request's title", "The literal text `$post->title`", "The post's saved title"],
+          "answer": 3,
+          "explain": "With no flashed input yet, `old()` falls back to its second argument: the saved value."
+        },
+        {
+          "q": "Why use `Rule::unique('posts', 'slug')->ignore($this->post)` when updating?",
+          "options": ["So the post's own current slug doesn't count as a duplicate", "To skip validation entirely", "To make the slug optional", "To ignore the CSRF token"],
+          "answer": 0,
+          "explain": "Without `ignore`, saving a post without changing its slug would fail the unique check against itself."
+        },
+        {
+          "q": "Where should `destroy()` redirect after deleting a post?",
+          "options": ["To `posts.show` for that post", "To `posts.edit`", "To `posts.index` (or another page that still exists)", "Nowhere, it should return JSON"],
+          "answer": 2,
+          "explain": "The post is gone, so its show page would 404. Send users to the list with a flash message."
+        },
+        {
+          "q": "Why is `<a href=\"/posts/5/delete\">` a bad way to delete?",
+          "options": ["Links can't contain numbers", "GET requests can be triggered without user intent and skip CSRF protection", "Laravel doesn't support links", "It's slower than a form"],
+          "answer": 1,
+          "explain": "GET should never change data. Use a POST form with `@csrf` and `@method('DELETE')`."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

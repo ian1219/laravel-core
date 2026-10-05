@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Middleware · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel middleware: the onion model, make:middleware, before and after middleware, registering in bootstrap/app.php, aliases, groups and parameters.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="middleware">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Middleware is code that wraps around your controller: every request passes through it on the way in, and every response passes back through it on the way out.</p>
+    <p class="analogy"><span>🛂</span><span>Think of airport security. Before you reach the gate (the controller), you pass a ticket check, then passport control, then the scanner. Any checkpoint can turn you away. On the way home, you pass through customs in reverse order.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>One check, every route</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔒</span>
+        <h3>Guard whole areas</h3>
+        <p>Login checks, admin-only sections, email verification. Write the rule once and attach it to many routes.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧹</span>
+        <h3>Keep controllers clean</h3>
+        <p>Controllers focus on their job; cross-cutting concerns like locale, headers and logging live in middleware.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Laravel relies on it</h3>
+        <p>Sessions, cookie encryption, CSRF protection and rate limiting are all middleware you already use.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The onion: layers around your controller</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 760 360" style="width:100%;max-width:760px" role="img" aria-label="Onion diagram: global middleware wraps the web group, which wraps route middleware, which wraps the controller. The request travels inward and the response travels back out." font-size="13" text-anchor="middle" fill="currentColor">
+        <defs>
+          <marker id="mw-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L10 5L0 10z" fill="var(--mod)"/>
+          </marker>
+        </defs>
+
+        <!-- Layers -->
+        <rect x="20" y="20" width="720" height="320" rx="30" fill="var(--mod)" fill-opacity="0.06" stroke="var(--mod)" stroke-opacity="0.5" stroke-width="1.5"/>
+        <rect x="80" y="70" width="600" height="220" rx="24" fill="var(--mod)" fill-opacity="0.08" stroke="var(--mod)" stroke-opacity="0.6" stroke-width="1.5"/>
+        <rect x="140" y="120" width="480" height="120" rx="18" fill="var(--mod)" fill-opacity="0.1" stroke="var(--mod)" stroke-opacity="0.75" stroke-width="1.5"/>
+        <rect x="270" y="150" width="220" height="60" rx="12" fill="var(--mod)"/>
+
+        <!-- Labels -->
+        <text x="380" y="50" font-weight="700">🌍 Global middleware <tspan font-weight="400" fill="var(--text-muted)">(every request: trim strings, maintenance mode…)</tspan></text>
+        <text x="380" y="100" font-weight="700">🍪 'web' group <tspan font-weight="400" fill="var(--text-muted)">(cookies, session, CSRF)</tspan></text>
+        <text x="380" y="140" font-weight="700">🔐 Route middleware <tspan font-weight="400" fill="var(--text-muted)">auth, admin</tspan></text>
+        <text x="380" y="178" fill="#fff" font-weight="700" font-size="15">🎯 Controller</text>
+        <text x="380" y="198" fill="#fff" font-size="12">PostController@store</text>
+        <text x="380" y="228" font-size="12" fill="var(--text-muted)">any layer can stop early, e.g. redirect to /login</text>
+
+        <!-- Request in / response out -->
+        <line x1="4" y1="180" x2="266" y2="180" stroke="var(--mod)" stroke-width="2.5" marker-end="url(#mw-arrow)"/>
+        <text x="50" y="172" font-size="12" font-weight="700" fill="var(--mod)">request</text>
+        <line x1="494" y1="180" x2="756" y2="180" stroke="var(--mod)" stroke-width="2.5" marker-end="url(#mw-arrow)"/>
+        <text x="712" y="172" font-size="12" font-weight="700" fill="var(--mod)">response</text>
+        <text x="380" y="320" font-size="12" fill="var(--text-muted)">Before-logic runs on the way in (outer → inner); after-logic runs on the way out (inner → outer).</text>
+      </svg>
+      <figcaption>Each layer receives the request, may do something, then calls <code>$next($request)</code> to pass it inward. The response then travels back out through the same layers.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Write, register and use middleware</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Generate a middleware class</h3>
+        <p>Let's protect the blog's admin area so only admins get in.</p>
+        <pre><code class="lang-bash">
+          php artisan make:middleware EnsureUserIsAdmin
+        </code></pre>
+        <p>This creates <code>app/Http/Middleware/EnsureUserIsAdmin.php</code> with a single <code>handle()</code> method:</p>
+        <pre><code class="lang-php" data-file="app/Http/Middleware/EnsureUserIsAdmin.php" data-hl="13-17">
+          &lt;?php
+
+          namespace App\Http\Middleware;
+
+          use Closure;
+          use Illuminate\Http\Request;
+          use Symfony\Component\HttpFoundation\Response;
+
+          class EnsureUserIsAdmin
+          {
+              public function handle(Request $request, Closure $next): Response
+              {
+                  if (! $request-&gt;user()?-&gt;is_admin) {
+                      abort(403, 'Admins only.');
+                  }
+
+                  return $next($request);
+              }
+          }
+        </code></pre>
+        <p><code>$next</code> is a <strong>closure</strong> that represents "the rest of the onion". Calling <code>$next($request)</code> passes the request to the next layer and gives you back the response. If you <em>don't</em> call it, the request stops right here.</p>
+      </li>
+
+      <li class="step">
+        <h3>Before vs after middleware</h3>
+        <p>Where you put your code relative to <code>$next()</code> decides when it runs:</p>
+        <div class="card-grid">
+          <div class="mini-card">
+            <span class="mini-icon">⬅️</span>
+            <h3>Before middleware</h3>
+            <p>Acts on the <strong>request</strong>, before the controller runs.</p>
+            <pre><code class="lang-php">
+              public function handle(Request $request, Closure $next): Response
+              {
+                  app()-&gt;setLocale($request-&gt;user()?-&gt;locale ?? 'en');
+
+                  return $next($request);
+              }
+            </code></pre>
+          </div>
+          <div class="mini-card">
+            <span class="mini-icon">➡️</span>
+            <h3>After middleware</h3>
+            <p>Acts on the <strong>response</strong>, after the controller has run.</p>
+            <pre><code class="lang-php">
+              public function handle(Request $request, Closure $next): Response
+              {
+                  $response = $next($request);
+
+                  $response-&gt;headers-&gt;set('X-Frame-Options', 'DENY');
+
+                  return $response;
+              }
+            </code></pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Register middleware in <code>bootstrap/app.php</code></h3>
+        <p>Laravel 11+ has no <code>Http/Kernel.php</code>. Middleware is configured in <code>bootstrap/app.php</code> through <code>-&gt;withMiddleware()</code>:</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php" data-hl="7">
+          use App\Http\Middleware\AddSecurityHeaders;
+          use App\Http\Middleware\EnsureUserIsAdmin;
+          use App\Http\Middleware\SetLocale;
+          use Illuminate\Foundation\Configuration\Middleware;
+
+          return Application::configure(basePath: dirname(__DIR__))
+              -&gt;withMiddleware(function (Middleware $middleware): void {
+                  // Global: runs on EVERY request
+                  $middleware-&gt;append(AddSecurityHeaders::class);
+
+                  // Add to the existing 'web' group
+                  $middleware-&gt;web(append: [SetLocale::class]);
+
+                  // A short name to use on routes
+                  $middleware-&gt;alias([
+                      'admin' =&gt; EnsureUserIsAdmin::class,
+                  ]);
+
+                  // Your own named group
+                  $middleware-&gt;group('editor-area', [
+                      'auth',
+                      'verified',
+                      EnsureUserIsAdmin::class,
+                  ]);
+              })
+              // -&gt;withRouting(...)  -&gt;withExceptions(...)  -&gt;create();
+        </code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>append()</code> / <code>prepend()</code></td><td>Add to the <strong>global</strong> stack (end / start)</td></tr>
+              <tr><td><code>web(append: [...])</code>, <code>api(...)</code></td><td>Add to the built-in <code>web</code> or <code>api</code> group</td></tr>
+              <tr><td><code>alias([...])</code></td><td>Give a class a short name like <code>'admin'</code></td></tr>
+              <tr><td><code>group('name', [...])</code></td><td>Bundle several middleware under one name</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Assign middleware to routes</h3>
+        <p>Attach by alias, by class name or by group. Groups of routes share middleware, just like in <a href="../04-laravel-basics/routing.html">Routing</a>:</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/admin', AdminDashboardController::class)
+              -&gt;middleware(['auth', 'admin']);
+
+          Route::middleware(['auth', EnsureUserIsAdmin::class])-&gt;group(function () {
+              Route::resource('categories', CategoryController::class);
+          });
+
+          // Skip one middleware for a single route
+          Route::post('/webhooks/stripe', StripeWebhookController::class)
+              -&gt;withoutMiddleware([ValidateCsrfToken::class]);
+        </code></pre>
+        <p>Built-in aliases you'll use constantly: <code>auth</code>, <code>guest</code>, <code>verified</code>, <code>can</code>, <code>throttle</code> and <code>signed</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Pass parameters to middleware</h3>
+        <p>Add a colon after the name, and separate several values with commas. They arrive as extra arguments after <code>$next</code>:</p>
+        <pre><code class="lang-php" data-file="app/Http/Middleware/EnsureUserHasRole.php" data-hl="1,3">
+          public function handle(Request $request, Closure $next, string ...$roles): Response
+          {
+              if (! in_array($request-&gt;user()?-&gt;role, $roles, true)) {
+                  abort(403);
+              }
+
+              return $next($request);
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::get('/drafts', [DraftController::class, 'index'])
+              -&gt;middleware('role:editor,admin');      // $roles = ['editor', 'admin']
+
+          Route::post('/comments', [CommentController::class, 'store'])
+              -&gt;middleware('throttle:10,1');          // built-in: 10 per minute
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function handle(Request $request, Closure $next): Response
+          {
+              if ($request-&gt;user()-&gt;is_admin) {
+                  $next($request);
+              }
+          }
+        </code></pre>
+        <p>Forgetting to <strong>return</strong> <code>$next($request)</code> (and calling <code>user()</code> on guests) leads to blank pages and null errors.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function handle(Request $request, Closure $next): Response
+          {
+              abort_unless($request-&gt;user()?-&gt;is_admin, 403);
+
+              return $next($request);
+          }
+        </code></pre>
+        <p>Always return a response, and use <code>?-&gt;</code> because the user might not be logged in.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $middleware-&gt;append(EnsureUserIsAdmin::class);
+        </code></pre>
+        <p>Global middleware runs on <em>every</em> request, including the login page, so nobody could ever log in.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $middleware-&gt;alias(['admin' =&gt; EnsureUserIsAdmin::class]);
+          // routes: -&gt;middleware(['auth', 'admin'])
+        </code></pre>
+        <p>Keep access rules on the routes that need them, after <code>auth</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: see which middleware a route runs</div>
+      <p>Add <code>-v</code> to the route list to print every middleware attached to each route:</p>
+      <pre><code class="lang-bash">
+        php artisan route:list -v
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>EnsureUserIsAdmin</code> and alias it as <code>admin</code> in <code>bootstrap/app.php</code>.</li>
+        <li>Protect a <code>/admin</code> route with <code>['auth', 'admin']</code> and test it as a guest, a normal user and an admin.</li>
+        <li>Write an <em>after</em> middleware that adds an <code>X-Response-Time</code> header, and append it globally. Check the header in your browser's dev tools.</li>
+        <li>Build a <code>role</code> middleware that accepts parameters, and use <code>role:editor,admin</code> on a drafts route.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Middleware wraps your controller like layers of an onion.</li>
+      <li><code>handle($request, Closure $next)</code> must <strong>return</strong> a response, usually <code>$next($request)</code>.</li>
+      <li>Code before <code>$next()</code> = before middleware; code after = after middleware.</li>
+      <li>Laravel 11+ registers middleware in <code>bootstrap/app.php</code> via <code>-&gt;withMiddleware()</code>: <code>append</code>, <code>alias</code>, <code>group</code>.</li>
+      <li>Attach to routes with <code>-&gt;middleware('alias')</code>; pass parameters as <code>'name:a,b'</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does calling `$next($request)` inside `handle()` do?",
+          "options": ["Ends the request immediately", "Redirects to the next route", "Passes the request to the next layer and returns its response", "Restarts the middleware stack"],
+          "answer": 2,
+          "explain": "`$next` represents the rest of the onion. You get the eventual response back, which you must return."
+        },
+        {
+          "q": "Where do you register middleware in a Laravel 11+ app?",
+          "options": ["`bootstrap/app.php` inside `->withMiddleware()`", "`app/Http/Kernel.php`", "`config/middleware.php`", "`routes/web.php` only"],
+          "answer": 0,
+          "explain": "The slim Laravel 11 skeleton removed the HTTP Kernel file. Middleware configuration lives in `bootstrap/app.php`."
+        },
+        {
+          "q": "Your middleware adds a header to the response. Where does that code go?",
+          "options": ["Before `$next($request)`", "In the constructor", "In `bootstrap/providers.php`", "After `$response = $next($request)`"],
+          "answer": 3,
+          "explain": "The response only exists after the inner layers run, so header changes belong after calling `$next`."
+        },
+        {
+          "q": "With `->middleware('role:editor,admin')`, what does `handle()` receive?",
+          "options": ["One string `\"editor,admin\"` as the request", "Extra arguments `editor` and `admin` after `$next`", "Nothing, parameters are ignored", "An array in `$request->roles`"],
+          "answer": 1,
+          "explain": "Values after the colon are split on commas and passed as extra arguments, e.g. `string ...$roles`."
+        },
+        {
+          "q": "Why shouldn't an admin-check middleware be appended globally?",
+          "options": ["Global middleware can't use `$request->user()`", "It's slower than route middleware", "It would run on every route, including login", "Global middleware runs after the response is sent"],
+          "answer": 2,
+          "explain": "Global middleware wraps every single request. Access rules belong on the specific routes that need them."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

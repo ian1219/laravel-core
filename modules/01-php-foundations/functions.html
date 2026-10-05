@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Functions · Laravel Blueprint</title>
+  <meta name="description" content="Learn PHP functions: parameters, return values, type declarations, default values, named arguments, closures and arrow functions.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="01" data-lesson="functions">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A function is a named, reusable block of code that takes inputs (parameters), does one job, and hands back a result (the return value).</p>
+    <p class="analogy"><span>☕</span><span>A function is like a coffee machine. You put in beans and water (the inputs), press one button (call it), and get coffee back (the output). You don't need to know how it works inside every time you want a cup.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Write it once, use it everywhere</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">♻️</span>
+        <h3>No copy-paste</h3>
+        <p>Logic lives in one place. Fix a bug once and every caller gets the fix.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏷️</span>
+        <h3>Names explain intent</h3>
+        <p><code>calculateTotal($cart)</code> tells the reader what happens without making them read the maths.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>Small pieces are testable</h3>
+        <p>A function with clear inputs and outputs is easy to check: give it X, expect Y.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Anatomy of a function</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📥</span><strong>Arguments</strong><small>values you pass in: 'Hello Laravel'</small></div>
+        <div class="flow-node accent"><span class="flow-icon">⚙️</span><strong>Function body</strong><small>slugify(string $title): string</small></div>
+        <div class="flow-node"><span class="flow-icon">📤</span><strong>Return value</strong><small>'hello-laravel'</small></div>
+      </div>
+      <figcaption>Parameters are the named slots in the definition; arguments are the actual values you pass when you call it.</figcaption>
+    </figure>
+    <pre><code class="lang-php" data-file="anatomy.php">
+      function slugify(string $title): string
+      //  ▲      ▲        ▲      ▲       ▲
+      //  │      name     type   param   return type
+      //  keyword
+      {
+          return strtolower(str_replace(' ', '-', $title));
+      }
+    </code></pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build your function skills</h2>
+      <p>Each step adds one idea. Put <code>declare(strict_types=1);</code> at the top of your file so type mistakes are caught.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Define and call a function</h3>
+        <p>Use the <code>function</code> keyword, a name, parentheses for <strong>parameters</strong>, and curly braces for the <strong>body</strong>. <code>return</code> sends a value back to whoever called it.</p>
+        <pre><code class="lang-php" data-file="functions.php" data-hl="5-8,10">
+          &lt;?php
+
+          declare(strict_types=1);
+
+          function greet(string $name): string
+          {
+              return "Hello, {$name}!";
+          }
+
+          echo greet('Ada');     // Hello, Ada!
+          echo greet('Taylor');  // Hello, Taylor!
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Add types for safety</h3>
+        <p><strong>Type declarations</strong> say what each parameter must be and what the function returns. A <code>?</code> before a type means "this type <em>or</em> null". A <strong>union type</strong> like <code>int|float</code> accepts either. <code>void</code> means "returns nothing".</p>
+        <pre><code class="lang-php" data-file="functions.php">
+          function excerpt(string $body, int $length): string
+          {
+              return substr($body, 0, $length) . '…';
+          }
+
+          function findAuthor(int $id): ?string      // string or null
+          {
+              return $id === 1 ? 'Ada' : null;
+          }
+
+          function double(int|float $n): int|float   // union type
+          {
+              return $n * 2;
+          }
+
+          function logVisit(string $page): void      // returns nothing
+          {
+              echo "Visited {$page}" . PHP_EOL;
+          }
+
+          excerpt('Hello', '3');  // TypeError with strict_types: '3' is a string
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Defaults and named arguments</h3>
+        <p>A parameter with a <strong>default value</strong> becomes optional. <strong>Named arguments</strong> (PHP 8.0+) let you pass values by parameter name, so you can skip optional ones and make calls self-explanatory.</p>
+        <pre><code class="lang-php" data-file="functions.php" data-hl="9">
+          function makePost(string $title, string $status = 'draft', bool $featured = false): array
+          {
+              return ['title' =&gt; $title, 'status' =&gt; $status, 'featured' =&gt; $featured];
+          }
+
+          makePost('Hello');                          // status: draft, featured: false
+          makePost('Hello', 'published');             // positional
+
+          makePost('Hello', featured: true);          // skip $status, set $featured by name
+        </code></pre>
+        <div class="callout tip">
+          <div class="callout-title">💡 Named arguments beat mystery booleans</div>
+          <p>Compare <code>makePost('Hi', 'draft', true)</code> with <code>makePost('Hi', featured: true)</code>. The second one tells you what <code>true</code> means.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Accept any number of arguments</h3>
+        <p>A <strong>variadic parameter</strong> (<code>...$name</code>) collects all remaining arguments into an array. The same <code>...</code> also <strong>spreads</strong> an array back out into arguments.</p>
+        <pre><code class="lang-php" data-file="functions.php">
+          function tagList(string ...$tags): string
+          {
+              return implode(', ', $tags);
+          }
+
+          echo tagList('php', 'laravel', 'tips');   // php, laravel, tips
+
+          $myTags = ['oop', 'testing'];
+          echo tagList(...$myTags);                 // oop, testing
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Scope: functions live in their own bubble</h3>
+        <p>Variables created outside a function aren't visible inside it, and vice versa. That's called <strong>scope</strong>. Pass what the function needs as parameters and return what it produces.</p>
+        <pre><code class="lang-php" data-file="functions.php">
+          $siteName = 'Blueprint';
+
+          function badTitle(): string
+          {
+              return $siteName;          // Warning: undefined variable $siteName
+          }
+
+          function goodTitle(string $siteName, string $page): string
+          {
+              return "{$page} · {$siteName}";
+          }
+
+          echo goodTitle($siteName, 'Home');   // Home · Blueprint
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Functions as values: closures and arrow functions</h3>
+        <p>A <strong>closure</strong> (anonymous function) is a function without a name that you can store in a variable or pass to another function. It borrows outside variables with <code>use</code>. An <strong>arrow function</strong> <code>fn () =&gt;</code> is a one-expression shortcut that captures outside variables automatically.</p>
+        <pre><code class="lang-php" data-file="functions.php" data-hl="3-5,8">
+          $taxRate = 0.2;
+
+          $withTax = function (float $price) use ($taxRate): float {
+              return $price * (1 + $taxRate);
+          };
+          echo $withTax(100);          // 120
+
+          $withTaxShort = fn (float $price): float =&gt; $price * (1 + $taxRate);
+
+          $prices = [10, 20, 30];
+          print_r(array_map($withTaxShort, $prices));  // [12, 24, 36]
+
+          usort($prices, fn ($a, $b) =&gt; $b &lt;=&gt; $a);    // sort descending
+        </code></pre>
+        <p>Passing a function into another function (like <code>array_map</code> or <code>usort</code>) is called a <strong>callback</strong>. You'll do this constantly in Laravel.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          function total($items) {
+              echo array_sum($items);
+          }
+        </code></pre>
+        <p>No types, and it <em>prints</em> instead of returning, so the caller can't reuse the result.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          function total(array $items): int|float
+          {
+              return array_sum($items);
+          }
+        </code></pre>
+        <p>Typed, and it returns the value. The caller decides whether to print, store or compare it.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          function saveAndEmailAndLog(array $post): void
+          {
+              // 80 lines doing three jobs...
+          }
+        </code></pre>
+        <p>A function that does many jobs is hard to name, test and reuse.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          savePost($post);
+          emailSubscribers($post);
+          logActivity('post.created');
+        </code></pre>
+        <p>One job per function. The calling code now reads like a to-do list.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: return early</div>
+      <p>Handle the edge case first and <code>return</code>, instead of wrapping the whole body in an <code>if</code>. For example: <code>if ($items === []) { return 0; }</code>. Flatter code is easier to read.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Write <code>readingTime(string $text, int $wordsPerMinute = 200): int</code> that returns the minutes needed (round up with <code>ceil</code>).</li>
+        <li>Call it once positionally and once with the named argument <code>wordsPerMinute: 100</code>.</li>
+        <li>Write a variadic <code>average(int|float ...$numbers): float</code>.</li>
+        <li>Use an arrow function with <code>array_filter</code> to keep only words longer than 4 letters from <code>explode(' ', $sentence)</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Route closures</strong>: <code>Route::get('/', function () { ... })</code> passes a closure as a callback (see <a href="../04-laravel-basics/routing.html">Routing</a>).</li>
+        <li><strong>Helper functions</strong> such as <code>view()</code>, <code>route()</code>, <code>config()</code> and <code>dd()</code> are plain global functions.</li>
+        <li><strong>Collections</strong>: <code>$posts-&gt;map(fn ($post) =&gt; $post-&gt;title)</code> uses arrow functions everywhere.</li>
+        <li><strong>Query scopes and callbacks</strong>: <code>-&gt;where(fn ($q) =&gt; ...)</code> in <a href="../05-database/eloquent.html">Eloquent Queries</a>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Functions take parameters, do one job, and <code>return</code> a value.</li>
+      <li>Type every parameter and return: <code>?string</code> allows null, <code>int|float</code> is a union, <code>void</code> returns nothing.</li>
+      <li>Default values make parameters optional; named arguments make calls readable.</li>
+      <li><code>...$args</code> collects many arguments, and <code>...$array</code> spreads them back out.</li>
+      <li>Functions have their own scope; pass data in instead of reaching outside.</li>
+      <li>Closures and <code>fn () =&gt;</code> arrow functions let you pass behaviour around as a value.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does the return type `?string` mean?",
+          "options": ["The function may return a string or null", "The function returns an optional parameter", "The return type is unknown", "The function returns a boolean"],
+          "answer": 0,
+          "explain": "A leading `?` makes a type **nullable**: either that type or `null`."
+        },
+        {
+          "q": "Given `function makePost(string $title, string $status = 'draft', bool $featured = false)`, which call sets only `featured`?",
+          "options": ["`makePost(true)`", "`makePost('Hi', , true)`", "`makePost('Hi', featured: true)`", "`makePost(featured = true)`"],
+          "answer": 2,
+          "explain": "Named arguments let you skip optional parameters and pass values by name."
+        },
+        {
+          "q": "Why does a function fail to read a `$siteName` variable defined outside it?",
+          "options": ["Variables must be constants", "Functions have their own scope", "Strings can't be used in functions", "You must call it twice"],
+          "answer": 1,
+          "explain": "Each function has its own scope. Pass the value in as a parameter."
+        },
+        {
+          "q": "What is the key difference between a `function () use ($x) {}` closure and `fn () => ...`?",
+          "options": ["Arrow functions can't take parameters", "Closures can't be stored in variables", "Arrow functions are slower", "Arrow functions capture outside variables automatically and hold a single expression"],
+          "answer": 3,
+          "explain": "`fn` captures outer variables by value automatically and returns its single expression. Full closures need `use` and can have many statements."
+        },
+        {
+          "q": "What does `function tagList(string ...$tags)` do with `tagList('a', 'b', 'c')`?",
+          "options": ["Only uses `'a'`", "Collects all three into the array `$tags`", "Throws an error", "Joins them into one string automatically"],
+          "answer": 1,
+          "explain": "A variadic parameter gathers all remaining arguments into an array."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

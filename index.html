@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Laravel Blueprint</title>
+  <meta name="description" content="A visual, hands-on learning kit that takes you from PHP basics to production-ready Laravel, one idea per page.">
+  <script src="assets/js/theme.js"></script>
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/tokens.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/home.css">
+</head>
+<body data-root="" data-page="home">
+
+<main class="home">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="pill"><span class="pulse"></span> Free · plain HTML · learn at your own pace</span>
+      <h1>From <code class="hero-code">&lt;?php</code><br>to <span class="grad">production.</span></h1>
+      <p class="lead">A visual Laravel learning kit with one idea per page. Diagrams, real code, common mistakes and a quick quiz guide you from your first variable to clean, tested, secure apps.</p>
+      <div class="hero-cta">
+        <a class="btn" href="modules/00-start-here/index.html">Start learning →</a>
+        <a class="btn ghost" href="#playground">🛰️ Try the live API</a>
+      </div>
+      <dl class="stats" data-stats></dl>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="float-badge b1">🐘 PHP 8.2+</div>
+      <div class="float-badge b2">🧭 Routing</div>
+      <div class="float-badge b3">🗄️ Eloquent</div>
+      <div class="float-badge b4">🧪 Tests</div>
+      <div class="window">
+        <div class="window-head"><i></i><i></i><i></i><span>routes/web.php</span></div>
+        <pre class="window-code" data-typing></pre>
+      </div>
+      <div class="window mini">
+        <div class="window-head"><i></i><i></i><i></i><span>Terminal</span></div>
+        <pre class="window-code"><span class="tok-function">php</span> <span class="tok-builtin">artisan</span> serve
+<span class="tok-output">  INFO  Server running on</span> <span class="tok-string">[http://127.0.0.1:8000]</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <div class="how-card reveal"><span>🎯</span><h3>One idea per page</h3><p>Short lessons that each teach one concept, and do it well.</p></div>
+    <div class="how-card reveal"><span>🗺️</span><h3>See it, then code it</h3><p>Every lesson opens with an analogy and a diagram before the code.</p></div>
+    <div class="how-card reveal"><span>⚠️</span><h3>Mistakes included</h3><p>“Avoid / Do” cards show the bugs everyone writes, and how to fix them.</p></div>
+    <div class="how-card reveal"><span>🧠</span><h3>Quiz to lock it in</h3><p>Finish every lesson with a quick check and instant feedback.</p></div>
+  </section>
+
+  <!-- Live playground teaser -->
+  <section class="teaser" id="playground">
+    <div class="teaser-head reveal">
+      <span class="eyebrow">Not your usual docs</span>
+      <h2>Don't just read it. <span class="grad">Click it.</span></h2>
+      <p>This is a real (pretend) Laravel API running in your browser. Create, update, PUT vs PATCH, delete, soft delete, restore… press the buttons and watch the database change.</p>
+    </div>
+    <div class="demo" data-demo="api-playground" data-title="Live CRUD API · try every button"></div>
+    <p class="teaser-more"><a class="btn" href="modules/00-start-here/crud-api.html">Learn how to build this →</a> <a class="btn ghost" href="modules/00-start-here/four-pillars.html">🏛️ The 4 pillars of OOP, with demos</a></p>
+  </section>
+
+  <!-- Roadmap -->
+  <section class="roadmap" id="roadmap">
+    <div class="roadmap-head">
+      <span class="eyebrow">The roadmap</span>
+      <h2><span data-stop-count>16</span> stops from zero to Laravel pro</h2>
+      <p>Follow the path in order. Each module builds on the one before.</p>
+      <div class="filters" role="group" aria-label="Filter by level" data-filters>
+        <button type="button" class="filter is-active" data-level="all">All</button>
+        <button type="button" class="filter" data-level="Start Here">✨ Start Here</button>
+        <button type="button" class="filter" data-level="Beginner">🌱 Beginner</button>
+        <button type="button" class="filter" data-level="Intermediate">🌿 Intermediate</button>
+        <button type="button" class="filter" data-level="Advanced">🌳 Advanced</button>
+        <button type="button" class="filter" data-level="Practice">🏗️ Projects</button>
+      </div>
+    </div>
+    <div class="path" data-path>
+      <div class="path-line"><span class="path-fill"></span></div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta reveal">
+    <h2>Ready to write your first line?</h2>
+    <p>Start with the plain-English module. You'll be building Laravel apps sooner than you think.</p>
+    <a class="btn" href="modules/00-start-here/four-pillars.html">Start with the 4 pillars of OOP →</a>
+  </section>
+
+</main>
+
+<script src="assets/js/curriculum.js"></script>
+<script src="assets/js/home.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/highlight.js"></script>
+<script src="assets/js/demos.js"></script>
+</body>
+</html>

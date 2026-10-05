@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Build a Simple CRUD API · Laravel Blueprint</title>
+  <meta name="description" content="Create, get all, get one, PUT vs PATCH, DELETE and soft delete in Laravel, explained simply, with a live API playground.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="crud-api">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- Chat intro -->
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Everyone keeps saying “just build a CRUD API”. What does that even mean?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble"><b>CRUD</b> is the 4 things you can do with any data: <b>C</b>reate it, <b>R</b>ead it, <b>U</b>pdate it, <b>D</b>elete it. Instagram posts, shop products, to-do items: it's all CRUD.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">And the “API” part?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Instead of web pages, your app answers with <b>JSON</b>, so a mobile app or a JavaScript frontend can use it. Let's build one for blog posts. But first… <b>play with it</b> 👇</div></div>
+    </div>
+  </section>
+
+  <!-- Play first -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Play first, learn after</span>
+      <h2>A live API, right in your browser</h2>
+      <p>This works just like the Laravel API you'll build on this page. Click the presets from left to right and watch the database table at the bottom.</p>
+    </div>
+    <div class="demo" data-demo="api-playground"></div>
+    <div class="memory">
+      <div class="memory-title">Did you notice?</div>
+      <p>After <b>Soft delete</b>, post #3 disappeared from <b>Get all</b>, but it's still in the table with a date in <code>deleted_at</code>. Then <b>Restore</b> brought it back. That's the whole idea of soft deletes, and you'll build it below.</p>
+    </div>
+  </section>
+
+  <!-- Cheat sheet -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The whole thing on one card</span>
+      <h2>CRUD ↔ HTTP ↔ Laravel</h2>
+      <p>Screenshot this table. It's 90% of every API you'll ever build.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>I want to…</th><th>Request</th><th>Controller method</th><th>Success reply</th></tr></thead>
+        <tbody>
+          <tr><td>➕ <strong>Create</strong> a post</td><td><span class="m post">POST</span> <code>/api/posts</code></td><td><code>store()</code></td><td>201 Created</td></tr>
+          <tr><td>📋 <strong>Get all</strong> posts</td><td><span class="m get">GET</span> <code>/api/posts</code></td><td><code>index()</code></td><td>200 OK</td></tr>
+          <tr><td>🔎 <strong>Get one</strong> post</td><td><span class="m get">GET</span> <code>/api/posts/1</code></td><td><code>show()</code></td><td>200 OK (or 404)</td></tr>
+          <tr><td>♻️ <strong>Replace</strong> a post</td><td><span class="m put">PUT</span> <code>/api/posts/1</code></td><td><code>update()</code></td><td>200 OK</td></tr>
+          <tr><td>✏️ <strong>Edit part</strong> of a post</td><td><span class="m patch">PATCH</span> <code>/api/posts/1</code></td><td><code>update()</code></td><td>200 OK</td></tr>
+          <tr><td>🗑️ <strong>Delete</strong> a post</td><td><span class="m delete">DELETE</span> <code>/api/posts/1</code></td><td><code>destroy()</code></td><td>204 No Content</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Setup -->
+  <section class="section">
+    <div class="topic-banner" style="--tc1:#6366f1;--tc2:#22d3ee">
+      <span class="tb-icon">🧰</span>
+      <div><h2>Step 0 · Set up the kitchen</h2><p>Four small files, then we cook.</p></div>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Turn on API routes</h3>
+        <p>New Laravel apps don't include an API file by default. One command adds <code>routes/api.php</code> (every URL in it automatically starts with <code>/api</code>).</p>
+        <pre><code class="lang-bash">
+          php artisan install:api
+          php artisan make:model Post -mc --api
+        </code></pre>
+        <p>The second command makes three things at once: a <strong>model</strong> (<code>-m</code> adds a migration, <code>-c</code> a controller), and <code>--api</code> fills the controller with the 5 API methods.</p>
+      </li>
+
+      <li class="step">
+        <h3>Describe the table (migration)</h3>
+        <p>A migration is a recipe for a database table. Notice the last line: <code>softDeletes()</code> adds a <code>deleted_at</code> column. We'll need it later.</p>
+        <pre><code class="lang-php" data-file="database/migrations/xxxx_create_posts_table.php" data-hl="7">
+          Schema::create('posts', function (Blueprint $table) {
+              $table-&gt;id();
+              $table-&gt;string('title');
+              $table-&gt;text('body');
+              $table-&gt;string('status')-&gt;default('draft');
+              $table-&gt;timestamps();
+              $table-&gt;softDeletes();   // adds a nullable "deleted_at" column
+          });
+        </code></pre>
+        <pre><code class="lang-bash">
+          php artisan migrate
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Prepare the model</h3>
+        <p><code>$fillable</code> is the <strong>guest list</strong>: only these fields may be saved from a request. <code>SoftDeletes</code> switches on the recycle bin.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          namespace App\Models;
+
+          use Illuminate\Database\Eloquent\Model;
+          use Illuminate\Database\Eloquent\SoftDeletes;
+
+          class Post extends Model
+          {
+              use SoftDeletes;
+
+              protected $fillable = ['title', 'body', 'status'];
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>One line = five routes</h3>
+        <p><code>apiResource</code> creates all five CRUD routes for you. Run <code>php artisan route:list</code> to see them.</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          use App\Http\Controllers\PostController;
+          use Illuminate\Support\Facades\Route;
+
+          Route::apiResource('posts', PostController::class);
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- CREATE -->
+  <section class="section" id="create">
+    <div class="topic-banner" style="--tc1:#65a30d;--tc2:#22c55e">
+      <span class="tb-icon">➕</span>
+      <div><h2>Create <span class="m post">POST</span></h2><p>Add a brand-new post.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">📝</div><p>Filling in a <strong>new form</strong> at the counter. The clerk checks it (validation), files it in a drawer (database), and hands you a ticket with your new number (id).</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-file="PostController.php">
+          public function store(Request $request)
+          {
+              $data = $request-&gt;validate([
+                  'title'  =&gt; 'required|string|max:255',
+                  'body'   =&gt; 'required|string',
+                  'status' =&gt; 'required|in:draft,published',
+              ]);
+
+              $post = Post::create($data);
+
+              return response()-&gt;json($post, 201);
+          }
+        </code></pre>
+      </div>
+    </div>
+
+    <p>Send it with any API tool (Postman, Insomnia, or curl):</p>
+    <pre><code class="lang-bash">
+      curl -X POST http://127.0.0.1:8000/api/posts \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -d '{"title":"Hello","body":"My first post","status":"draft"}'
+    </code></pre>
+    <pre><code class="lang-json" data-file="Response · 201 Created">
+      { "id": 4, "title": "Hello", "body": "My first post", "status": "draft",
+        "created_at": "2026-10-05T10:00:00Z", "updated_at": "2026-10-05T10:00:00Z" }
+    </code></pre>
+    <div class="callout tip">
+      <div class="callout-title">💡 Always send <code>Accept: application/json</code></div>
+      <p>Then, if validation fails, Laravel replies with a tidy <strong>422</strong> JSON list of errors instead of trying to redirect you to a web page.</p>
+    </div>
+  </section>
+
+  <!-- READ ALL -->
+  <section class="section" id="get-all">
+    <div class="topic-banner" style="--tc1:#0891b2;--tc2:#22d3ee">
+      <span class="tb-icon">📋</span>
+      <div><h2>Get all <span class="m get">GET</span></h2><p>The whole list.</p></div>
+    </div>
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">📖</div><p>Asking the waiter for <strong>the menu</strong>. You see every dish, but not the ones that were crossed out (soft-deleted).</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-file="PostController.php">
+          public function index()
+          {
+              return Post::latest()-&gt;paginate(10);
+          }
+        </code></pre>
+      </div>
+    </div>
+    <p><code>latest()</code> puts the newest first. <code>paginate(10)</code> sends 10 at a time, plus info about the next page. Use <code>Post::all()</code> only for small tables, because you don't want to send 100,000 posts in one reply.</p>
+  </section>
+
+  <!-- READ ONE -->
+  <section class="section" id="get-one">
+    <div class="topic-banner" style="--tc1:#2563eb;--tc2:#06b6d4">
+      <span class="tb-icon">🔎</span>
+      <div><h2>Get one <span class="m get">GET</span></h2><p>A specific post by its id.</p></div>
+    </div>
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🎫</div><p>Showing your <strong>ticket number</strong> at the counter: “I'd like order #42 please.” If #42 doesn't exist, you hear “not found”.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-file="PostController.php">
+          // GET /api/posts/42
+          public function show(Post $post)
+          {
+              return $post;
+          }
+        </code></pre>
+      </div>
+    </div>
+    <p>Wait, where's the database query? This is <strong>route model binding</strong>: because the parameter is typed <code>Post $post</code>, Laravel reads the <code>42</code> from the URL, finds that post for you, and returns a <strong>404</strong> automatically if it doesn't exist. Magic, but the good kind. ✨</p>
+  </section>
+
+  <!-- UPDATE -->
+  <section class="section" id="update">
+    <div class="topic-banner" style="--tc1:#d97706;--tc2:#a855f7">
+      <span class="tb-icon">🆚</span>
+      <div><h2>Update: <span class="m put">PUT</span> vs <span class="m patch">PATCH</span></h2><p>The question every beginner asks.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🍕 PUT = replace</span><div class="big-emoji">♻️</div><p>“Cancel my pizza order and here's the <strong>complete new order</strong>: large, pepperoni, thin crust.” You must say <strong>everything</strong>, because the old order is thrown away.</p></div>
+      <span class="equals">vs</span>
+      <div class="side code"><span class="side-tag">🧀 PATCH = adjust</span><div class="big-emoji">✏️</div><p>“Same order, but <strong>add extra cheese</strong>.” You only mention the <strong>change</strong>. Everything else stays as it was.</p></div>
+    </div>
+
+    <div class="demo" data-demo="put-patch"></div>
+
+    <p>In Laravel, <strong>both</strong> PUT and PATCH go to the same <code>update()</code> method. You decide how strict to be: PUT requires every field, while PATCH uses <code>sometimes</code> (“only check this field <em>if</em> it was sent”).</p>
+    <pre><code class="lang-php" data-file="PostController.php" data-hl="3-4">
+      public function update(Request $request, Post $post)
+      {
+          // PUT → every field required. PATCH → only validate what was sent.
+          $rule = $request-&gt;isMethod('put') ? 'required' : 'sometimes';
+
+          $data = $request-&gt;validate([
+              'title'  =&gt; [$rule, 'string', 'max:255'],
+              'body'   =&gt; [$rule, 'string'],
+              'status' =&gt; [$rule, 'in:draft,published'],
+          ]);
+
+          $post-&gt;update($data);
+
+          return $post;
+      }
+    </code></pre>
+
+    <div class="memory">
+      <div class="memory-title">Remember it like this</div>
+      <p><strong>PUT</strong> = <strong>P</strong>ut a whole new one in its place. <strong>PATCH</strong> = a small <strong>patch</strong> on your jeans: you fix one spot, not the whole pair.</p>
+    </div>
+  </section>
+
+  <!-- DELETE -->
+  <section class="section" id="delete">
+    <div class="topic-banner" style="--tc1:#e11d48;--tc2:#f472b6">
+      <span class="tb-icon">🗑️</span>
+      <div><h2>Delete <span class="m delete">DELETE</span></h2><p>Remove a post.</p></div>
+    </div>
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">✂️</div><p>Tearing a page out of your notebook. Done. Nothing to hand back, just a nod: “it's gone.”</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-file="PostController.php">
+          public function destroy(Post $post)
+          {
+              $post-&gt;delete();
+
+              return response()-&gt;noContent(); // 204
+          }
+        </code></pre>
+      </div>
+    </div>
+    <p><strong>204 No Content</strong> means “success, and I have nothing to show you”. That's perfect for a delete.</p>
+  </section>
+
+  <!-- SOFT DELETE -->
+  <section class="section" id="soft-delete">
+    <div class="topic-banner" style="--tc1:#7c3aed;--tc2:#f472b6">
+      <span class="tb-icon">👻</span>
+      <div><h2>Soft delete: the recycle bin</h2><p>Deleted… but not really.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🗂️</div><p>Your computer's <strong>Recycle Bin</strong>. “Deleted” files disappear from your folders, but you can still restore them, until you empty the bin (force delete).</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php">
+          $post-&gt;delete();        // 🗑️ into the bin (sets deleted_at)
+          Post::all();            // 👀 bin items are hidden
+          Post::withTrashed()-&gt;get();  // 👻 show everything
+          Post::onlyTrashed()-&gt;get();  // 🗂️ only the bin
+          $post-&gt;restore();       // ↩️ back from the bin
+          $post-&gt;forceDelete();   // 💥 gone forever
+        </code></pre>
+      </div>
+    </div>
+
+    <p>Remember the two setup lines? <code>$table-&gt;softDeletes()</code> in the migration and <code>use SoftDeletes;</code> in the model. With those in place, <strong>your <code>destroy()</code> method doesn't change at all</strong>: <code>$post-&gt;delete()</code> now fills in <code>deleted_at</code> instead of removing the row.</p>
+
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📄</span><strong>Active</strong><small>deleted_at = null</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🗑️</span><strong>Soft-deleted</strong><small>deleted_at = 2026-10-05</small></div>
+        <div class="flow-node"><span class="flow-icon">💥</span><strong>Gone forever</strong><small>forceDelete()</small></div>
+      </div>
+      <figcaption>restore() sends a soft-deleted post back to “Active”. forceDelete() can't be undone.</figcaption>
+    </figure>
+
+    <p>Want endpoints to restore or permanently delete? Add two routes. <code>-&gt;withTrashed()</code> lets route model binding find posts that are in the bin:</p>
+    <pre><code class="lang-php" data-file="routes/api.php">
+      Route::post('posts/{post}/restore', [PostController::class, 'restore'])-&gt;withTrashed();
+      Route::delete('posts/{post}/force', [PostController::class, 'forceDelete'])-&gt;withTrashed();
+    </code></pre>
+    <pre><code class="lang-php" data-file="PostController.php">
+      public function restore(Post $post)
+      {
+          $post-&gt;restore();
+          return $post;
+      }
+
+      public function forceDelete(Post $post)
+      {
+          $post-&gt;forceDelete();
+          return response()-&gt;noContent();
+      }
+    </code></pre>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ When should I use soft deletes?</div>
+      <ul>
+        <li><strong>Yes:</strong> orders, users, invoices and posts. Anything someone might say “oops, bring it back!” about, or that you need to keep for records.</li>
+        <li><strong>No need:</strong> temporary data like login tokens or cache entries.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Full controller -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">All together</span>
+      <h2>The complete controller</h2>
+      <p>Every method from this page in one file. Copy it, run it, and test it with the playground above or Postman.</p>
+    </div>
+    <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+      &lt;?php
+
+      namespace App\Http\Controllers;
+
+      use App\Models\Post;
+      use Illuminate\Http\Request;
+
+      class PostController extends Controller
+      {
+          public function index()                       // GET    /api/posts
+          {
+              return Post::latest()-&gt;paginate(10);
+          }
+
+          public function store(Request $request)       // POST   /api/posts
+          {
+              $data = $request-&gt;validate([
+                  'title'  =&gt; 'required|string|max:255',
+                  'body'   =&gt; 'required|string',
+                  'status' =&gt; 'required|in:draft,published',
+              ]);
+
+              return response()-&gt;json(Post::create($data), 201);
+          }
+
+          public function show(Post $post)              // GET    /api/posts/{post}
+          {
+              return $post;
+          }
+
+          public function update(Request $request, Post $post)  // PUT / PATCH
+          {
+              $rule = $request-&gt;isMethod('put') ? 'required' : 'sometimes';
+
+              $post-&gt;update($request-&gt;validate([
+                  'title'  =&gt; [$rule, 'string', 'max:255'],
+                  'body'   =&gt; [$rule, 'string'],
+                  'status' =&gt; [$rule, 'in:draft,published'],
+              ]));
+
+              return $post;
+          }
+
+          public function destroy(Post $post)           // DELETE /api/posts/{post}
+          {
+              $post-&gt;delete();                          // soft delete 👻
+
+              return response()-&gt;noContent();
+          }
+      }
+    </code></pre>
+  </section>
+
+  <!-- Mistakes -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Post::create($request-&gt;all());
+        </code></pre>
+        <p>This saves whatever the user sends, unchecked. Someone could sneak in fields you never meant to allow.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $data = $request-&gt;validate([...]);
+          Post::create($data);
+        </code></pre>
+        <p>Only checked, allowed fields reach the database.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::get('/posts/delete/{id}', ...);
+        </code></pre>
+        <p>Using GET to delete is dangerous. Browsers and link previews visit GET URLs automatically, and could delete your data!</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::delete('/posts/{post}', ...);
+        </code></pre>
+        <p>Use the verb that matches the action. GET only <em>reads</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>In the playground, send <span class="m put">PUT</span> to <code>/api/posts/1</code> but <strong>delete the <code>body</code> line</strong> first. Why do you get a 422?</li>
+        <li>Send the same request with <span class="m patch">PATCH</span>. Why does it work now?</li>
+        <li>Soft-delete post #1, then try <span class="m get">GET</span> <code>/api/posts/1</code>. What status do you get, and why?</li>
+        <li>Build the real thing: a <code>Product</code> API with <code>name</code>, <code>price</code> and soft deletes, using the controller above as your template.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>CRUD</strong> = Create (POST), Read (GET), Update (PUT/PATCH), Delete (DELETE).</li>
+      <li><code>Route::apiResource()</code> gives you all 5 routes in one line.</li>
+      <li><strong>PUT</strong> replaces the whole record; <strong>PATCH</strong> changes only the fields you send.</li>
+      <li>Route model binding (<code>Post $post</code>) finds the record, or returns 404, for you.</li>
+      <li><strong>Soft delete</strong> fills <code>deleted_at</code> instead of erasing, so you can <code>restore()</code> later.</li>
+      <li>Always validate input, and reply with the right status: 201, 200, 204, 404 or 422.</li>
+    </ul>
+  </section>
+
+  <!-- Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which HTTP method should you use to create a new post?",
+          "options": ["`GET`", "`POST`", "`PUT`", "`DELETE`"],
+          "answer": 1,
+          "explain": "**POST** creates. Laravel sends it to the controller's `store()` method, and a good reply is **201 Created**."
+        },
+        {
+          "q": "You send only `{\"status\": \"published\"}` to update a post. Which method fits best?",
+          "options": ["`PUT`, because it updates", "`PATCH`, because it changes only what you send", "`POST`", "`GET` with a query string"],
+          "answer": 1,
+          "explain": "**PATCH** is for partial changes. **PUT** means “here is the complete new version”, so every field is expected."
+        },
+        {
+          "q": "What does `$post->delete()` do when the model uses `SoftDeletes`?",
+          "options": ["Removes the row forever", "Fills in `deleted_at` and hides the post from normal queries", "Moves the post to another table", "Nothing until you run a migration"],
+          "answer": 1,
+          "explain": "Soft delete = recycle bin. The row stays, `deleted_at` gets a date, and `restore()` can bring it back."
+        },
+        {
+          "q": "How do you get soft-deleted posts back in your results?",
+          "options": ["`Post::all()`", "`Post::withTrashed()->get()`", "`Post::deleted()`", "`Post::find()->undo()`"],
+          "answer": 1,
+          "explain": "`withTrashed()` includes binned posts; `onlyTrashed()` returns only the binned ones."
+        },
+        {
+          "q": "Which status code is the usual success reply for a DELETE?",
+          "options": ["`200 OK` with the deleted post", "`201 Created`", "`204 No Content`", "`404 Not Found`"],
+          "answer": 2,
+          "explain": "**204 No Content** means “done, nothing to send back”. Laravel: `return response()->noContent();`"
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

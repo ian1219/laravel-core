@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Project 3 · REST API · Laravel Blueprint</title>
+  <meta name="description" content="Build a token-protected Laravel JSON API with Sanctum, API resources, versioning, consistent errors, rate limiting and feature tests.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="P" data-lesson="rest-api">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- What you'll build -->
+  <div class="one-liner">
+    <span class="one-liner-label">What you'll build</span>
+    <p class="big">A versioned JSON API for the blog (posts, comments and categories) that mobile apps and JavaScript frontends can use with Sanctum tokens, predictable errors, rate limits and a full test suite.</p>
+    <p class="analogy"><span>🔌</span><span>A website is a restaurant with tables and menus. An API is the takeaway window: no decoration, just a clear menu (endpoints), a ticket system (tokens) and a rule about how many orders one customer can place per minute (rate limits).</span></p>
+  </div>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>What the finished API does</h2>
+      <p>Builds on Projects 1–2 and adds Module 09, Module 11 testing and rate limiting from Module 12.</p>
+    </div>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">🎟️</span><h3>Token auth</h3><p>Register, log in to get a Sanctum token, log out to revoke it.</p></div>
+      <div class="mini-card"><span class="mini-icon">📦</span><h3>Clean JSON</h3><p>API Resources control every field, with consistent pagination meta.</p></div>
+      <div class="mini-card"><span class="mini-icon">🔁</span><h3>Full CRUD</h3><p>Posts and comments with the right verbs and status codes (200, 201, 204).</p></div>
+      <div class="mini-card"><span class="mini-icon">🧯</span><h3>Predictable errors</h3><p>401, 403, 404 and 422 all return the same JSON shape.</p></div>
+      <div class="mini-card"><span class="mini-icon">⏱️</span><h3>Rate limits</h3><p>60 requests/minute per user, 5 login attempts/minute per IP.</p></div>
+      <div class="mini-card"><span class="mini-icon">🧪</span><h3>Tested</h3><p>Every endpoint has feature tests for success and failure cases.</p></div>
+    </div>
+  </section>
+
+  <!-- Data model -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Data model</span>
+      <h2>Endpoints and the layers behind them</h2>
+      <p>Reuse the <code>User</code>, <code>Post</code>, <code>Category</code> and <code>Comment</code> models from Project 2. Sanctum adds a <code>personal_access_tokens</code> table.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Success</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/register</code>, <code>/api/v1/login</code></td><td>Guest</td><td>201 / 200 + token</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/logout</code></td><td>Token</td><td>204</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/posts</code>, <code>/api/v1/posts/{post}</code></td><td>Public</td><td>200</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/posts</code></td><td>Token</td><td>201</td></tr>
+          <tr><td>PUT / DELETE</td><td><code>/api/v1/posts/{post}</code></td><td>Token + policy</td><td>200 / 204</td></tr>
+          <tr><td>GET / POST</td><td><code>/api/v1/posts/{post}/comments</code></td><td>Public / Token</td><td>200 / 201</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/categories</code></td><td>Public</td><td>200</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📱</span><strong>Client</strong><small>Bearer token</small></div>
+        <div class="flow-node"><span class="flow-icon">⏱️</span><strong>Middleware</strong><small>throttle, auth:sanctum</small></div>
+        <div class="flow-node"><span class="flow-icon">🎛️</span><strong>Controller</strong><small>validate, authorize</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📦</span><strong>Resource</strong><small>shapes the JSON</small></div>
+      </div>
+      <figcaption>Every request passes rate limiting and authentication before a controller runs; every response leaves through an API Resource.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Milestones -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Build it</span>
+      <h2>Build it milestone by milestone</h2>
+      <p>Use an HTTP client (Postman, Insomnia, Bruno or <code>curl</code>) alongside your tests. Always send <code>Accept: application/json</code>.</p>
+    </div>
+
+    <ol class="milestones">
+      <li>
+        <h3>Design the endpoints first</h3>
+        <p>Before writing code, write the table above for your own API: nouns in URLs, verbs in methods, and the status code each endpoint returns.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../09-api-development/rest-basics.html">🔌 REST Basics</a>
+          <a class="chip-link" href="../03-web-fundamentals/http.html">🌐 How HTTP Works</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Install API routing and Sanctum</h3>
+        <p>One command creates <code>routes/api.php</code>, installs Sanctum and publishes its migration. Add the <code>HasApiTokens</code> trait to <code>User</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan install:api
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../09-api-development/api-routes-resources.html">📦 API Routes &amp; Resources</a>
+          <a class="chip-link" href="../09-api-development/sanctum.html">🎟️ Sanctum Authentication</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Register, log in and log out</h3>
+        <p>Issue a token on login, check the password with <code>Hash::check()</code>, and delete the current token on logout.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/Api/V1/AuthController.php">
+          public function login(LoginRequest $request)
+          {
+              $user = User::where('email', $request-&gt;email)-&gt;first();
+
+              if (! $user || ! Hash::check($request-&gt;password, $user-&gt;password)) {
+                  throw ValidationException::withMessages(['email' =&gt; 'Invalid credentials.']);
+              }
+
+              return ['token' =&gt; $user-&gt;createToken($request-&gt;device_name)-&gt;plainTextToken];
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../09-api-development/sanctum.html">🎟️ Sanctum Authentication</a>
+          <a class="chip-link" href="../12-security/hashing-encryption.html">🔑 Hashing &amp; Encryption</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Shape output with API Resources</h3>
+        <p>Create <code>PostResource</code>, <code>CommentResource</code> and <code>UserResource</code>. Never return raw models: resources hide columns like <code>email</code> and keep the format stable. Use <code>whenLoaded()</code> for relations.</p>
+        <pre><code class="lang-php" data-file="app/Http/Resources/PostResource.php">
+          return [
+              'id' =&gt; $this-&gt;id,
+              'title' =&gt; $this-&gt;title,
+              'slug' =&gt; $this-&gt;slug,
+              'author' =&gt; new UserResource($this-&gt;whenLoaded('author')),
+              'published_at' =&gt; $this-&gt;published_at?-&gt;toIso8601String(),
+          ];
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../09-api-development/api-routes-resources.html">📦 API Routes &amp; Resources</a>
+          <a class="chip-link" href="../13-performance/eager-loading.html">⚡ Eager Loading &amp; N+1</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>CRUD endpoints with policies</h3>
+        <p>Use <code>Route::apiResource()</code> under a <code>v1</code> prefix. Validate with Form Requests, return <code>201</code> on create and <code>204</code> on delete, and reuse the <code>PostPolicy</code> from Project 2.</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          Route::prefix('v1')-&gt;group(function () {
+              Route::apiResource('posts', PostController::class)-&gt;only(['index', 'show']);
+
+              Route::middleware('auth:sanctum')-&gt;group(function () {
+                  Route::apiResource('posts', PostController::class)-&gt;except(['index', 'show']);
+              });
+          });
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/resource-controllers.html">🛠️ Resource Controllers</a>
+          <a class="chip-link" href="../06-crud/forms-validation.html">🚦 Forms &amp; Validation</a>
+          <a class="chip-link" href="../08-authorization/policies.html">🛡️ Policies</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Make errors predictable</h3>
+        <p>In <code>bootstrap/app.php</code>, make API exceptions always render as JSON, and return a consistent shape for 404s instead of an HTML page.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php">
+          -&gt;withExceptions(function (Exceptions $exceptions) {
+              $exceptions-&gt;shouldRenderJsonWhen(
+                  fn (Request $request) =&gt; $request-&gt;is('api/*')
+              );
+          })
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../09-api-development/versioning-errors.html">🧯 Versioning &amp; Error Handling</a>
+          <a class="chip-link" href="../10-laravel-core/request-lifecycle.html">🔄 The Request Lifecycle</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Add rate limiting</h3>
+        <p>Define named limiters in <code>AppServiceProvider::boot()</code>: one per user (or IP for guests) for the whole API, and a strict one for login. Apply them with <code>throttle:</code> middleware and check the <code>429</code> response.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          RateLimiter::for('api', fn (Request $request) =&gt;
+              Limit::perMinute(60)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip())
+          );
+          RateLimiter::for('login', fn (Request $request) =&gt;
+              Limit::perMinute(5)-&gt;by($request-&gt;ip())
+          );
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../12-security/rate-limiting.html">⏱️ Rate Limiting</a>
+          <a class="chip-link" href="../10-laravel-core/middleware.html">🧱 Middleware</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Filtering, sorting and pagination</h3>
+        <p>Support <code>?category=laravel&amp;sort=-published_at&amp;per_page=20</code>. Whitelist sortable columns, cap <code>per_page</code> at 50, and return <code>PostResource::collection($posts)</code> to get <code>links</code> and <code>meta</code> automatically.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/eloquent.html">🔎 Eloquent Queries</a>
+          <a class="chip-link" href="../12-security/sql-injection-mass-assignment.html">💉 SQL Injection &amp; Mass Assignment</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Test every endpoint</h3>
+        <p>Use factories and <code>Sanctum::actingAs()</code> to test success paths, 401 without a token, 403 on someone else's post, 422 on bad input, and 429 when the limit is hit.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/Api/PostTest.php">
+          public function test_guests_cannot_create_posts(): void
+          {
+              $this-&gt;postJson('/api/v1/posts', [])-&gt;assertUnauthorized();
+          }
+
+          public function test_authors_can_create_posts(): void
+          {
+              Sanctum::actingAs(User::factory()-&gt;create());
+
+              $this-&gt;postJson('/api/v1/posts', [
+                  'title' =&gt; 'Hello API',
+                  'body' =&gt; 'First post',
+                  'category_id' =&gt; Category::factory()-&gt;create()-&gt;id,
+              ])
+                  -&gt;assertCreated()
+                  -&gt;assertJsonPath('data.title', 'Hello API');
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../11-testing/feature-tests.html">🧪 Feature Tests</a>
+          <a class="chip-link" href="../11-testing/factories-seeders.html">🌱 Factories &amp; Seeders</a>
+          <a class="chip-link" href="../11-testing/unit-tests.html">🔬 Unit Tests</a>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Stretch goals -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Stretch goals</div>
+      <ol>
+        <li>Add token abilities (<code>posts:write</code>) and check them with <code>tokenCan()</code>.</li>
+        <li>Create <code>/api/v2/posts</code> that renames a field, while v1 keeps working unchanged.</li>
+        <li>Cache the public posts index for 60 seconds and clear it when a post changes.</li>
+        <li>Document the API with an OpenAPI file, or generate docs with a package like Scribe.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Definition of done -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Definition of done</span>
+      <h2>You're finished when…</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Clients can register, log in for a token, use it as a <code>Bearer</code> header, and log out to revoke it.</li>
+      <li>Every response goes through an API Resource; no raw models or hidden columns leak.</li>
+      <li>Endpoints return the correct status codes: 200, 201, 204, 401, 403, 404, 422 and 429.</li>
+      <li>All errors on <code>/api/*</code> come back as JSON, never as an HTML page.</li>
+      <li>Rate limits are in place for the API and, more strictly, for login.</li>
+      <li><code>php artisan test</code> passes, with tests for both success and failure on every endpoint.</li>
+    </ul>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

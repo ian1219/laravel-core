@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Testing Basics · Laravel Blueprint</title>
+  <meta name="description" content="Why automated tests matter, the testing pyramid, Pest vs PHPUnit, the arrange/act/assert pattern, and running your first Laravel test with php artisan test.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="11" data-lesson="testing-basics">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">An automated test is a small piece of code that runs your app and checks it behaves the way you expect, so a machine can re-check everything in seconds.</p>
+    <p class="analogy"><span>✈️</span><span>Pilots run a pre-flight checklist every single time, even after thousands of flights. Tests are your app's checklist: fast, boring and repeatable, which is exactly why they catch problems people miss.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Clicking around doesn't scale</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🛟</span>
+        <h3>Change code fearlessly</h3>
+        <p>Refactor a controller, run the tests, and know within seconds whether you broke anything.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🐞</span>
+        <h3>Bugs stay fixed</h3>
+        <p>Write a test for each bug you fix. If it ever comes back, the test fails before your users notice.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📖</span>
+        <h3>Living documentation</h3>
+        <p>A test named <em>"guests cannot delete posts"</em> explains your rules better than a comment.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The testing pyramid</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 480 300" role="img" aria-label="Testing pyramid: many unit tests at the bottom, feature tests in the middle, few browser tests at the top" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto">
+        <polygon points="240,20 300,100 180,100" fill="var(--mod)" fill-opacity="0.25" stroke="var(--mod)" stroke-width="2"/>
+        <polygon points="180,108 300,108 360,188 120,188" fill="var(--mod)" fill-opacity="0.45" stroke="var(--mod)" stroke-width="2"/>
+        <polygon points="120,196 360,196 430,280 50,280" fill="var(--mod)" fill-opacity="0.55" stroke="var(--mod)" stroke-width="2"/>
+        <text x="240" y="80" text-anchor="middle" fill="currentColor" font-size="14" font-weight="600">Browser</text>
+        <text x="240" y="154" text-anchor="middle" fill="currentColor" font-size="15" font-weight="600">Feature tests</text>
+        <text x="240" y="244" text-anchor="middle" fill="currentColor" font-size="16" font-weight="600">Unit tests</text>
+        <text x="312" y="66" fill="var(--text-muted)" font-size="12">few · slow · realistic</text>
+        <text x="372" y="150" fill="var(--text-muted)" font-size="12">HTTP + DB</text>
+        <text x="240" y="268" text-anchor="middle" fill="currentColor" font-size="12" opacity="0.8">many · fast · focused</text>
+      </svg>
+      <figcaption>Write lots of fast unit tests, a solid layer of feature tests, and only a few slow end-to-end browser tests.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>Lives in</th><th>Checks</th><th>Speed</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Unit</strong></td><td><code>tests/Unit</code></td><td>One class or function on its own</td><td>Milliseconds</td></tr>
+          <tr><td><strong>Feature</strong></td><td><code>tests/Feature</code></td><td>A full request: route → controller → DB → response</td><td>Fast</td></tr>
+          <tr><td><strong>Browser</strong></td><td>e.g. <code>tests/Browser</code></td><td>A real browser clicking through pages (Dusk or Pest browser plugin)</td><td>Slow</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Run and write your first test</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Meet the test folder</h3>
+        <p>Every new Laravel app already contains tests. When you run <code>laravel new</code>, you choose a testing framework: <strong>Pest</strong> (the default) or <strong>PHPUnit</strong>. Pest is built on top of PHPUnit with a shorter syntax.</p>
+        <pre class="tree"><span class="dir">tests/</span>
+├── <span class="dir">Feature/</span>
+│   └── ExampleTest.php   <span class="note">← requests the home page</span>
+├── <span class="dir">Unit/</span>
+│   └── ExampleTest.php   <span class="note">← expects true to be true</span>
+├── Pest.php              <span class="note">← shared Pest setup</span>
+└── TestCase.php
+phpunit.xml               <span class="note">← test env settings (DB, cache…)</span></pre>
+      </li>
+
+      <li class="step">
+        <h3>Run the suite</h3>
+        <p>One Artisan command runs every test and prints a friendly report.</p>
+        <pre><code class="lang-bash">
+          php artisan test
+          php artisan test --filter=homepage     # only matching tests
+          php artisan test --parallel            # use all CPU cores
+        </code></pre>
+        <pre><code class="lang-text">
+             PASS  Tests\Unit\ExampleTest
+            ✓ that true is true                          0.01s
+
+             PASS  Tests\Feature\ExampleTest
+            ✓ the application returns a successful response  0.12s
+
+            Tests:    2 passed (2 assertions)
+            Duration: 0.31s
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Read a Pest test</h3>
+        <p>A Pest test is a call to <code>test()</code> (or <code>it()</code>) with a description and a closure. Inside, <strong>assertions</strong> check results. If any assertion is false, the test fails.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/ExampleTest.php">
+          &lt;?php
+
+          test('the application returns a successful response', function () {
+              $response = $this-&gt;get('/');
+
+              $response-&gt;assertStatus(200);
+          });
+        </code></pre>
+        <p>The same check with <strong>PHPUnit</strong> is a class whose method names start with <code>test</code>:</p>
+        <pre><code class="lang-php" data-file="tests/Feature/ExampleTest.php (PHPUnit)">
+          class ExampleTest extends TestCase
+          {
+              public function test_the_application_returns_a_successful_response(): void
+              {
+                  $this-&gt;get('/')-&gt;assertStatus(200);
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Structure every test as Arrange, Act, Assert</h3>
+        <p>Good tests have three parts. <strong>Arrange</strong>: set up the data. <strong>Act</strong>: do the one thing you're testing. <strong>Assert</strong>: check the outcome.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostPageTest.php" data-hl="8,11,14">
+          use App\Models\Post;
+          use Illuminate\Foundation\Testing\RefreshDatabase;
+
+          uses(RefreshDatabase::class);
+
+          test('a published post can be viewed', function () {
+              // Arrange
+              $post = Post::factory()-&gt;create(['title' =&gt; 'Hello tests']);
+
+              // Act
+              $response = $this-&gt;get("/posts/{$post-&gt;id}");
+
+              // Assert
+              $response-&gt;assertOk()-&gt;assertSee('Hello tests');
+          });
+        </code></pre>
+        <p><code>RefreshDatabase</code> resets the database for each test, so tests never see each other's data. You'll learn factories in <a href="factories-seeders.html">Factories &amp; Seeders</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Watch a test fail on purpose</h3>
+        <p>A test you've never seen fail might not be testing anything. Break the expectation and confirm the failure message makes sense.</p>
+        <pre><code class="lang-text">
+             FAIL  Tests\Feature\PostPageTest
+            ⨯ a published post can be viewed
+            Failed asserting that 'Hello tests' is contained in the response.
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Tests use their own environment</div>
+          <p><code>phpunit.xml</code> sets <code>APP_ENV=testing</code> and usually an in-memory SQLite database, so tests never touch your real data.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          test('posts work', function () {
+              // creates, edits, deletes,
+              // checks emails, logs out...
+          });
+        </code></pre>
+        <p>One giant test hides <em>which</em> behaviour broke when it fails.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          test('an author can create a post', ...);
+          test('guests cannot create posts', ...);
+        </code></pre>
+        <p>One behaviour per test, named like a sentence, makes failures self-explanatory.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: run tests constantly</div>
+      <p>Run <code>php artisan test</code> before every commit. Many teams also run it automatically on every push with CI (for example, GitHub Actions), so broken code can't be merged.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Run <code>php artisan test</code> in a fresh app and read the output.</li>
+        <li>Create a test with <code>php artisan make:test AboutPageTest</code> that checks <code>/about</code> returns 200.</li>
+        <li>Make it fail deliberately (expect 404), read the message, then fix it.</li>
+        <li>Rewrite the test with clear <code>// Arrange</code>, <code>// Act</code>, <code>// Assert</code> comments.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Automated tests let you change code confidently and keep bugs from returning.</li>
+      <li>The pyramid: many unit tests, a solid layer of feature tests, few browser tests.</li>
+      <li>New Laravel apps default to <strong>Pest</strong>; PHPUnit class-based tests work too.</li>
+      <li><code>php artisan test</code> runs everything; <code>--filter</code> narrows it down.</li>
+      <li>Structure tests as Arrange → Act → Assert, one behaviour per test.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which command runs your Laravel test suite?",
+          "options": ["`php artisan run:tests`", "`php artisan test`", "`composer test-all`", "`php test.php`"],
+          "answer": 1,
+          "explain": "`php artisan test` runs Pest or PHPUnit with a friendly report."
+        },
+        {
+          "q": "According to the testing pyramid, which tests should you have the most of?",
+          "options": ["Unit tests", "Browser tests", "Manual tests", "They should be equal"],
+          "answer": 0,
+          "explain": "Unit tests are fastest and most focused, so they form the wide base of the pyramid."
+        },
+        {
+          "q": "What are the three parts of a well-structured test?",
+          "options": ["Setup, Teardown, Retry", "Given, Wait, Check", "Arrange, Act, Assert", "Create, Read, Delete"],
+          "answer": 2,
+          "explain": "Arrange the data, Act once, then Assert the outcome."
+        },
+        {
+          "q": "What does the `RefreshDatabase` trait do?",
+          "options": ["Seeds production data", "Speeds up queries", "Deletes your `.env` file", "Resets the database so each test starts clean"],
+          "answer": 3,
+          "explain": "Each test runs against a clean database, so tests can't affect each other."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The 4 Pillars of OOP · Laravel Blueprint</title>
+  <meta name="description" content="Encapsulation, inheritance, abstraction and polymorphism explained in plain English, with live demos you can click.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="four-pillars">
+
+<main class="content">
+  <div data-hero></div>
+
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Everyone says Laravel is “object-oriented”. What does that mean, in normal words?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble"><b>OOP</b> (Object-Oriented Programming) means organising code like <b>things in real life</b>. A <b>car</b> has data (colour, speed) and actions (drive, honk). In code, that bundle is called an <b>object</b>.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">And the “4 pillars”?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">They're <b>4 good habits</b> for building those objects. Learn them once and you'll recognise them in every Laravel file. Each one has a demo you can click. 👇</div></div>
+    </div>
+  </section>
+
+  <!-- Class vs object -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Warm-up</span>
+      <h2>Class vs object in 10 seconds</h2>
+    </div>
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🍪</div><p>A <strong>class</strong> is a cookie cutter. <strong>Objects</strong> are the cookies. One cutter can make 100 cookies, each with its own sprinkles.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php">
+          class Cookie                  // the cutter
+          {
+              public function __construct(
+                  public string $sprinkles
+              ) {}
+          }
+
+          $a = new Cookie('rainbow');   // a cookie
+          $b = new Cookie('chocolate'); // another cookie
+        </code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pillar overview -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big four</span>
+      <h2>Tap a pillar to jump to it</h2>
+    </div>
+    <div class="pillars">
+      <a class="pillar" href="#encapsulation" style="--pc:#f472b6"><span class="p-num">01</span><span class="p-icon">🔒</span><strong>Encapsulation</strong><small>Hide the insides, show the buttons</small></a>
+      <a class="pillar" href="#inheritance" style="--pc:#22d3ee"><span class="p-num">02</span><span class="p-icon">🧬</span><strong>Inheritance</strong><small>Children get what parents have</small></a>
+      <a class="pillar" href="#abstraction" style="--pc:#a3e635"><span class="p-num">03</span><span class="p-icon">📺</span><strong>Abstraction</strong><small>Simple outside, complex inside</small></a>
+      <a class="pillar" href="#polymorphism" style="--pc:#fbbf24"><span class="p-num">04</span><span class="p-icon">🎭</span><strong>Polymorphism</strong><small>Same command, different results</small></a>
+    </div>
+  </section>
+
+  <!-- 1. ENCAPSULATION -->
+  <section class="section" id="encapsulation">
+    <div class="topic-banner" style="--tc1:#db2777;--tc2:#a855f7">
+      <span class="tb-icon">🔒</span>
+      <div><h2>1 · Encapsulation</h2><p>Protect your data. Only let people change it through safe buttons.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🏧</div><p>An <strong>ATM</strong>. You can deposit and withdraw using the buttons, but you can't open the machine and grab the cash. The machine also checks the rules: “not enough money? No cash for you.”</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-hl="3">
+          class BankAccount
+          {
+              private int $balance = 100;   // 🔒 locked inside
+
+              public function deposit(int $amount): void
+              {
+                  if ($amount &lt;= 0) throw new Exception('Amount must be positive.');
+                  $this-&gt;balance += $amount;
+              }
+
+              public function withdraw(int $amount): void
+              {
+                  if ($amount &gt; $this-&gt;balance) throw new Exception('Not enough money!');
+                  $this-&gt;balance -= $amount;
+              }
+
+              public function getBalance(): int
+              {
+                  return $this-&gt;balance;
+              }
+          }
+        </code></pre>
+      </div>
+    </div>
+
+    <p>The keywords are the locks: <code>public</code> means anyone can use it, <code>protected</code> means only this class and its children, and <code>private</code> means only this class. Data is usually <strong>private</strong>; the buttons (methods) are <strong>public</strong>.</p>
+
+    <div class="demo" data-demo="encapsulation"></div>
+
+    <div class="memory">
+      <div class="memory-title">Remember it like this</div>
+      <p><strong>Encapsulation = a capsule.</strong> The medicine (data) is sealed inside; you only interact with the outside.</p>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see it in Laravel</div>
+      <p>A model's <code>$fillable</code> list decides which fields can be filled from outside, and <code>$hidden</code> keeps the password out of JSON. Same idea: protect the inside.</p>
+    </div>
+  </section>
+
+  <!-- 2. INHERITANCE -->
+  <section class="section" id="inheritance">
+    <div class="topic-banner" style="--tc1:#0891b2;--tc2:#6366f1">
+      <span class="tb-icon">🧬</span>
+      <div><h2>2 · Inheritance</h2><p>Don't rewrite what a parent already has. Inherit it, then add your own extras.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🚙➜🏎️</div><p>Every <strong>car</strong> can drive and honk. A <strong>sports car</strong> <em>is a</em> car, so it gets those for free, and it adds a turbo button. Nobody re-invents the wheel. Literally. 😄</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php" data-hl="7">
+          class Car
+          {
+              public function drive() { return 'Vroom! Driving…'; }
+              public function honk()  { return 'Beep beep!'; }
+          }
+
+          class SportsCar extends Car   // 🧬 inherits drive() + honk()
+          {
+              public function turbo() { return '🔥 TURBO BOOST!'; }
+          }
+        </code></pre>
+      </div>
+    </div>
+
+    <p>The magic word is <code>extends</code>. The child (<code>SportsCar</code>) gets every public and protected method of the parent (<code>Car</code>). It can also <strong>override</strong> one by writing a method with the same name.</p>
+
+    <div class="demo" data-demo="inheritance"></div>
+
+    <div class="memory">
+      <div class="memory-title">Remember it like this</div>
+      <p>Ask: “Is a <strong>SportsCar</strong> a <strong>Car</strong>?” If the answer is <strong>“yes, it is a…”</strong>, inheritance fits.</p>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see it in Laravel</div>
+      <p><code>class Post extends Model</code>. That one word gives your tiny <code>Post</code> class hundreds of inherited powers: <code>save()</code>, <code>delete()</code>, <code>find()</code>, <code>where()</code>… you write none of them.</p>
+    </div>
+  </section>
+
+  <!-- 3. ABSTRACTION -->
+  <section class="section" id="abstraction">
+    <div class="topic-banner" style="--tc1:#65a30d;--tc2:#0891b2">
+      <span class="tb-icon">📺</span>
+      <div><h2>3 · Abstraction</h2><p>Show only what people need. Hide the complicated stuff.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🎮</div><p>A <strong>TV remote</strong> has a few simple buttons. You press “Volume +” without knowing about infrared signals, chips or amplifiers. The complexity exists, it's just <strong>hidden</strong>.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php">
+          interface Remote               // 📋 the buttons you get
+          {
+              public function power(): void;
+              public function volumeUp(): void;
+              public function nextChannel(): void;
+          }
+
+          // Some class does the hard work behind these buttons.
+          // You only ever talk to the buttons.
+        </code></pre>
+      </div>
+    </div>
+
+    <p>In PHP, abstraction usually means an <strong>interface</strong> (a list of buttons, with no wiring) or an <strong>abstract class</strong> (some buttons wired, some left for the child to finish). Both say <em>what</em> can be done, not <em>how</em>.</p>
+
+    <div class="demo" data-demo="abstraction"></div>
+
+    <div class="memory">
+      <div class="memory-title">Remember it like this</div>
+      <p><strong>Abstraction = the menu, not the kitchen.</strong> You order “pasta” without watching the chef cook.</p>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see it in Laravel</div>
+      <p><code>Mail::to($user)-&gt;send(new Welcome)</code> sends an email. You never touch SMTP servers or encoding. <code>Cache::put()</code> works the same whether the cache is a file, Redis or a database.</p>
+    </div>
+  </section>
+
+  <!-- 4. POLYMORPHISM -->
+  <section class="section" id="polymorphism">
+    <div class="topic-banner" style="--tc1:#d97706;--tc2:#db2777">
+      <span class="tb-icon">🎭</span>
+      <div><h2>4 · Polymorphism</h2><p>“Poly” = many, “morph” = shapes. One command, many behaviours.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🐶🐱🐮</div><p>Say “<strong>speak!</strong>” to a dog, a cat and a cow. Same command, but you get “woof”, “meow” and “moo”. You don't need a different command for each animal.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span>
+        <pre><code class="lang-php">
+          interface PaymentMethod
+          {
+              public function pay(int $amount): string;
+          }
+
+          class CardPayment implements PaymentMethod {
+              public function pay(int $amount): string { return "Charged card {$amount}"; }
+          }
+
+          class PayPalPayment implements PaymentMethod {
+              public function pay(int $amount): string { return "Paid {$amount} via PayPal"; }
+          }
+
+          function checkout(PaymentMethod $method, int $amount) {
+              return $method-&gt;pay($amount);   // 🎭 works for ANY method
+          }
+        </code></pre>
+      </div>
+    </div>
+
+    <p>The <code>checkout()</code> function doesn't care <em>which</em> payment it gets, only that it can <code>pay()</code>. Adding Apple Pay tomorrow? Write one new class. <strong>Checkout stays untouched.</strong></p>
+
+    <div class="demo" data-demo="polymorphism"></div>
+
+    <div class="memory">
+      <div class="memory-title">Remember it like this</div>
+      <p><strong>Polymorphism = a universal remote.</strong> The same “play” button works on the TV, the speaker and the projector. Each device plays in its own way.</p>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see it in Laravel</div>
+      <p>Change <code>MAIL_MAILER=smtp</code> to <code>MAIL_MAILER=log</code> in <code>.env</code> and your code keeps calling the same <code>send()</code>. A different “driver” class just handles it differently. That's polymorphism powering Laravel's drivers.</p>
+    </div>
+  </section>
+
+  <!-- Summary table -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Cheat sheet</span>
+      <h2>All four on one card</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pillar</th><th>In one line</th><th>Real life</th><th>PHP keyword</th></tr></thead>
+        <tbody>
+          <tr><td>🔒 <strong>Encapsulation</strong></td><td>Protect data; change it only through methods</td><td>ATM</td><td><code>private</code> / <code>public</code></td></tr>
+          <tr><td>🧬 <strong>Inheritance</strong></td><td>Reuse a parent's code and add extras</td><td>Car → Sports car</td><td><code>extends</code></td></tr>
+          <tr><td>📺 <strong>Abstraction</strong></td><td>Show simple buttons, hide the wiring</td><td>TV remote</td><td><code>interface</code> / <code>abstract</code></td></tr>
+          <tr><td>🎭 <strong>Polymorphism</strong></td><td>Same method name, different behaviour</td><td>“Speak!” to pets</td><td><code>implements</code> + same method</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Want the deeper version of each? Visit <a href="../02-oop/encapsulation.html">Encapsulation</a>, <a href="../02-oop/inheritance.html">Inheritance</a>, <a href="../02-oop/abstraction.html">Abstraction</a> and <a href="../02-oop/polymorphism.html">Polymorphism</a> in Module 02.</p>
+  </section>
+
+  <!-- Mistakes -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistake</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          if ($type === 'card') { /* … */ }
+          elseif ($type === 'paypal') { /* … */ }
+          elseif ($type === 'crypto') { /* … */ }
+        </code></pre>
+        <p>Every new payment method means editing this growing if-chain, and it's easy to break.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $method-&gt;pay($amount);
+        </code></pre>
+        <p>Let each class handle itself (polymorphism). New method? New class. Nothing else changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>In the bank demo, try the hack button. What protects the balance?</li>
+        <li>Write a <code>Dog</code> and a <code>Cat</code> class that both implement an <code>Animal</code> interface with <code>speak()</code>.</li>
+        <li>Create <code>ElectricCar extends Car</code> and override <code>honk()</code> to return “Beep (quietly)”.</li>
+        <li>Open any model in a Laravel project. Can you spot inheritance (<code>extends</code>) and encapsulation (<code>$fillable</code>, <code>$hidden</code>)?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Encapsulation</strong>: keep data private and change it through public methods that check the rules.</li>
+      <li><strong>Inheritance</strong>: <code>extends</code> lets a child reuse everything a parent has.</li>
+      <li><strong>Abstraction</strong>: interfaces show <em>what</em> you can do and hide <em>how</em>.</li>
+      <li><strong>Polymorphism</strong>: one method name, many behaviours, so your code works with any matching class.</li>
+      <li>Laravel uses all four everywhere: models, drivers, facades and contracts.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "An ATM lets you withdraw money with buttons but never lets you touch the cash inside. Which pillar is that?",
+          "options": ["Inheritance", "Encapsulation", "Polymorphism", "Abstraction"],
+          "answer": 1,
+          "explain": "**Encapsulation**: the data (cash) is private, and you can only change it through safe public methods (buttons)."
+        },
+        {
+          "q": "`class Post extends Model` is an example of…",
+          "options": ["Polymorphism", "Encapsulation", "Inheritance", "Dependency Injection"],
+          "answer": 2,
+          "explain": "`extends` means **inheritance**: `Post` gets all of `Model`'s methods for free."
+        },
+        {
+          "q": "You call `$method->pay(500)` and it works for cards, PayPal and crypto without any if-statements. Which pillar?",
+          "options": ["Polymorphism", "Inheritance", "Encapsulation", "None, it's just a function"],
+          "answer": 0,
+          "explain": "**Polymorphism**: the same call behaves differently depending on which object receives it."
+        },
+        {
+          "q": "An interface that lists `power()` and `volumeUp()` but doesn't say how they work is mainly about…",
+          "options": ["Inheritance", "Abstraction", "Encapsulation", "Caching"],
+          "answer": 1,
+          "explain": "**Abstraction**: show the buttons (what), hide the wiring (how)."
+        },
+        {
+          "q": "Which keyword makes a property usable ONLY inside its own class?",
+          "options": ["`public`", "`protected`", "`private`", "`static`"],
+          "answer": 2,
+          "explain": "`private` locks it to the class itself. `protected` also allows child classes, and `public` allows everyone."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Factories &amp; Seeders · Laravel Blueprint</title>
+  <meta name="description" content="Generate realistic fake data in Laravel with model factories, states and relationships (has/for), and fill your local database with seeders, db:seed and migrate:fresh --seed.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="11" data-lesson="factories-seeders">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A factory is a recipe for building fake models in one line, and a seeder uses those recipes to fill your database with realistic data.</p>
+    <p class="analogy"><span>🍪</span><span>A factory is a cookie cutter: one shape, as many cookies as you like, and you can add sprinkles (states) when needed. A seeder is the baker who fills the display case each morning before the shop opens.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Data on demand</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>Short, readable tests</h3>
+        <p><code>Post::factory()-&gt;create()</code> replaces ten lines of setup, so tests show only what matters.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏗️</span>
+        <h3>Realistic local apps</h3>
+        <p>Develop against 50 users and 300 posts instead of an empty screen.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">👥</span>
+        <h3>Same data for the team</h3>
+        <p>Anyone can rebuild an identical development database with one command.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>How the pieces fit</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📐</span><strong>Factory</strong><small>PostFactory::definition()</small></div>
+        <div class="flow-node"><span class="flow-icon">🌱</span><strong>Seeder</strong><small>PostSeeder::run()</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎛️</span><strong>DatabaseSeeder</strong><small>calls every seeder</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Database</strong><small>db:seed</small></div>
+      </div>
+      <figcaption>Factories describe <em>one</em> fake model. Seeders decide <em>how many</em> to create and in what order. Tests use factories directly.</figcaption>
+    </figure>
+    <pre class="tree"><span class="dir">database/</span>
+├── <span class="dir">factories/</span>
+│   ├── UserFactory.php      <span class="note">← ships with Laravel</span>
+│   └── PostFactory.php
+├── <span class="dir">migrations/</span>
+└── <span class="dir">seeders/</span>
+    ├── DatabaseSeeder.php   <span class="note">← entry point for db:seed</span>
+    └── PostSeeder.php</pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Fake a whole blog</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Define a factory</h3>
+        <p>Generate a factory for the model. In <code>definition()</code>, return default values. <code>fake()</code> gives you <strong>Faker</strong>, a library of realistic random data.</p>
+        <pre><code class="lang-bash">
+          php artisan make:factory PostFactory --model=Post
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/factories/PostFactory.php" data-hl="13-16">
+          &lt;?php
+
+          namespace Database\Factories;
+
+          use App\Models\User;
+          use Illuminate\Database\Eloquent\Factories\Factory;
+
+          class PostFactory extends Factory
+          {
+              public function definition(): array
+              {
+                  return [
+                      'user_id'      =&gt; User::factory(),
+                      'title'        =&gt; fake()-&gt;sentence(),
+                      'body'         =&gt; fake()-&gt;paragraphs(4, true),
+                      'published_at' =&gt; now(),
+                  ];
+              }
+          }
+        </code></pre>
+        <p>The model needs the <code>HasFactory</code> trait (models made with <code>make:model</code> already have it). <code>'user_id' =&gt; User::factory()</code> creates an author automatically when none is given.</p>
+      </li>
+
+      <li class="step">
+        <h3>Use it: make, create and count</h3>
+        <p><code>make()</code> builds models in memory only; <code>create()</code> also saves them. Override any field by passing an array.</p>
+        <pre><code class="lang-php">
+          $post  = Post::factory()-&gt;make();                       // not saved
+          $post  = Post::factory()-&gt;create();                     // saved + author created
+          $posts = Post::factory()-&gt;count(10)-&gt;create();          // 10 posts
+          $post  = Post::factory()-&gt;create(['title' =&gt; 'Pinned']); // override a field
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Add states for variations</h3>
+        <p>A <strong>state</strong> is a named tweak to the defaults, like a draft post. It keeps tests readable: <code>Post::factory()-&gt;draft()</code> says exactly what you mean.</p>
+        <pre><code class="lang-php" data-file="database/factories/PostFactory.php">
+          public function draft(): static
+          {
+              return $this-&gt;state(fn (array $attributes) =&gt; [
+                  'published_at' =&gt; null,
+              ]);
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="In a test">
+          test('drafts are hidden from the blog index', function () {
+              Post::factory()-&gt;draft()-&gt;create(['title' =&gt; 'Secret draft']);
+
+              $this-&gt;get('/posts')-&gt;assertDontSee('Secret draft');
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Build relationships with <code>has</code> and <code>for</code></h3>
+        <p>Factories understand your <a href="../05-database/relationships.html">Eloquent relationships</a>. Use <strong><code>has()</code></strong> to create children and <strong><code>for()</code></strong> to attach a parent.</p>
+        <pre><code class="lang-php">
+          // A user with 3 posts, each with 5 comments
+          $user = User::factory()
+              -&gt;has(Post::factory()-&gt;count(3)-&gt;has(Comment::factory()-&gt;count(5)))
+              -&gt;create();
+
+          // Magic shortcut for the same "has many" idea
+          $user = User::factory()-&gt;hasPosts(3)-&gt;create();
+
+          // A post that belongs to a specific user and category
+          $post = Post::factory()
+              -&gt;for($user)
+              -&gt;for(Category::factory()-&gt;state(['name' =&gt; 'Laravel']))
+              -&gt;create();
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Write seeders and wire up <code>DatabaseSeeder</code></h3>
+        <p>A <strong>seeder</strong> is a class with a <code>run()</code> method that creates data. <code>DatabaseSeeder</code> is the entry point; it calls the others in order.</p>
+        <pre><code class="lang-bash">
+          php artisan make:seeder PostSeeder
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/seeders/DatabaseSeeder.php" data-hl="5-8,10">
+          class DatabaseSeeder extends Seeder
+          {
+              public function run(): void
+              {
+                  User::factory()-&gt;create([
+                      'name'  =&gt; 'Test User',
+                      'email' =&gt; 'test@example.com',   // a known login for local dev
+                  ]);
+
+                  $this-&gt;call([CategorySeeder::class, PostSeeder::class]);
+              }
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/seeders/PostSeeder.php">
+          public function run(): void
+          {
+              User::factory(10)
+                  -&gt;has(Post::factory()-&gt;count(5)-&gt;for(Category::inRandomOrder()-&gt;first()))
+                  -&gt;create();
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Run the seeders</h3>
+        <p><code>db:seed</code> runs <code>DatabaseSeeder</code>. <code>migrate:fresh --seed</code> drops every table, re-runs all migrations, then seeds: a perfect reset button for local development.</p>
+        <pre><code class="lang-bash">
+          php artisan db:seed                          # run DatabaseSeeder
+          php artisan db:seed --class=PostSeeder       # run just one seeder
+          php artisan migrate:fresh --seed             # wipe, rebuild, seed
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Never run migrate:fresh in production</div>
+          <p>It deletes <strong>every table and all data</strong>. Laravel asks for confirmation in production, but treat it as a local-only command.</p>
+        </div>
+        <p>In tests, call <code>$this-&gt;seed()</code> (or <code>$this-&gt;seed(CategorySeeder::class)</code>) when you need reference data like categories.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $user = User::create([
+              'name' =&gt; 'A', 'email' =&gt; 'a@a.com',
+              'password' =&gt; bcrypt('x'),
+          ]);
+          $post = Post::create([...]);
+        </code></pre>
+        <p>Hand-built setup is long, repetitive and breaks whenever a required column is added.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $post = Post::factory()
+              -&gt;for(User::factory())
+              -&gt;create();
+        </code></pre>
+        <p>Factories fill in sensible defaults, so your test only states what's special.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          'published_at' =&gt; rand(0, 1) ? now() : null,
+        </code></pre>
+        <p>Random defaults make tests pass sometimes and fail other times ("flaky" tests).</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          'published_at' =&gt; now(),
+          // and a draft() state for null
+        </code></pre>
+        <p>Keep defaults predictable and express variations as named states.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: tinker with factories</div>
+      <p>Run <code>php artisan tinker</code> and type <code>Post::factory()-&gt;count(3)-&gt;make()</code> to preview what your factory produces without saving anything.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>CategoryFactory</code> and <code>CommentFactory</code> for the blog.</li>
+        <li>Add a <code>draft()</code> state and a <code>popular()</code> state (e.g. <code>views</code> over 1000) to <code>PostFactory</code>.</li>
+        <li>Seed 5 categories, 10 users and 50 posts, each with 0–5 comments.</li>
+        <li>Run <code>php artisan migrate:fresh --seed</code> and browse your filled-up blog.</li>
+        <li>Rewrite one feature test from the previous lesson to use <code>has()</code> and <code>for()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Factories define default fake attributes in <code>definition()</code> using <code>fake()</code>.</li>
+      <li><code>make()</code> builds in memory, <code>create()</code> saves; <code>count(n)</code> makes many.</li>
+      <li>States (<code>-&gt;draft()</code>) name common variations; keep defaults predictable.</li>
+      <li><code>has()</code> creates children and <code>for()</code> attaches a parent model.</li>
+      <li>Seeders fill the DB; <code>DatabaseSeeder</code> calls them; run with <code>db:seed</code> or <code>migrate:fresh --seed</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What's the difference between `make()` and `create()` on a factory?",
+          "options": ["`make()` saves, `create()` doesn't", "`make()` builds in memory; `create()` also saves to the database", "They're identical", "`create()` only works in seeders"],
+          "answer": 1,
+          "explain": "Use `make()` when you don't need a database row, for example in unit tests."
+        },
+        {
+          "q": "How would you create a user who has 3 posts?",
+          "options": ["`User::factory()->has(Post::factory()->count(3))->create()`", "`User::factory(3)->create()`", "`Post::factory()->for(3)->create()`", "`User::factory()->posts(3)`"],
+          "answer": 0,
+          "explain": "`has()` creates related child models. `hasPosts(3)` is a magic shortcut for the same thing."
+        },
+        {
+          "q": "What is a factory state used for?",
+          "options": ["Storing the factory in the session", "Running seeders in order", "Naming a variation of the defaults, like `draft()`", "Choosing the database connection"],
+          "answer": 2,
+          "explain": "States override some attributes, making tests read like plain English."
+        },
+        {
+          "q": "Which command drops all tables, re-runs migrations and seeds the database?",
+          "options": ["`php artisan db:seed --fresh`", "`php artisan migrate:rollback`", "`php artisan db:wipe`", "`php artisan migrate:fresh --seed`"],
+          "answer": 3,
+          "explain": "`migrate:fresh --seed` is the local reset button. Never run it in production."
+        },
+        {
+          "q": "Which class does `php artisan db:seed` run by default?",
+          "options": ["`DatabaseSeeder`", "Every seeder in alphabetical order", "`UserSeeder`", "`MainSeeder`"],
+          "answer": 0,
+          "explain": "`DatabaseSeeder` is the entry point; use `$this->call([...])` inside it to run other seeders."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

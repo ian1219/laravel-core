@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Eager Loading &amp; N+1 · Laravel Blueprint</title>
+  <meta name="description" content="Spot and fix the N+1 query problem in Laravel with with(), load(), withCount() and preventLazyLoading.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="13" data-lesson="eager-loading">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">The N+1 problem is when your code runs one query for a list and then one extra query <em>per item</em>; eager loading with <code>with()</code> fetches all the related data up front in a single extra query.</p>
+    <p class="analogy"><span>🛒</span><span>Imagine buying ingredients for 50 recipes by driving to the shop, buying one item, driving home, and repeating 50 times. Eager loading is writing one shopping list and making a single trip.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>The #1 Laravel performance bug</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🐌</span>
+        <h3>It hides in innocent code</h3>
+        <p><code>{{ $post-&gt;author-&gt;name }}</code> looks harmless, but in a loop it fires a query every single time.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📈</span>
+        <h3>It grows with your data</h3>
+        <p>Fast with 10 test posts, painfully slow with 1,000 real ones. The bug appears in production, not on your laptop.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🪄</span>
+        <h3>The fix is one word</h3>
+        <p>Adding <code>with('author')</code> usually turns hundreds of queries into two.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Counting the queries</h2>
+    </div>
+    <p>Say the blog home page lists 50 posts and shows each post's author. Here's what reaches the database:</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 250" role="img" aria-label="Lazy loading runs 51 queries; eager loading runs 2" style="width:100%;max-width:640px;height:auto">
+        <g font-family="inherit" font-size="13" fill="currentColor">
+          <text x="10" y="22" font-weight="600">Lazy loading (N+1)</text>
+          <text x="630" y="22" text-anchor="end" font-weight="600" fill="var(--mod)">1 + 50 = 51 queries</text>
+          <rect x="10" y="34" width="60" height="26" rx="5" fill="none" stroke="var(--mod)" stroke-width="2.5"/>
+          <text x="40" y="51" text-anchor="middle" font-size="11" fill="currentColor">posts</text>
+          <g fill="none" stroke="var(--mod)" stroke-width="1.5">
+            <rect x="78" y="34" width="8" height="26" rx="2"/><rect x="89" y="34" width="8" height="26" rx="2"/><rect x="100" y="34" width="8" height="26" rx="2"/><rect x="111" y="34" width="8" height="26" rx="2"/><rect x="122" y="34" width="8" height="26" rx="2"/>
+            <rect x="133" y="34" width="8" height="26" rx="2"/><rect x="144" y="34" width="8" height="26" rx="2"/><rect x="155" y="34" width="8" height="26" rx="2"/><rect x="166" y="34" width="8" height="26" rx="2"/><rect x="177" y="34" width="8" height="26" rx="2"/>
+            <rect x="188" y="34" width="8" height="26" rx="2"/><rect x="199" y="34" width="8" height="26" rx="2"/><rect x="210" y="34" width="8" height="26" rx="2"/><rect x="221" y="34" width="8" height="26" rx="2"/><rect x="232" y="34" width="8" height="26" rx="2"/>
+            <rect x="243" y="34" width="8" height="26" rx="2"/><rect x="254" y="34" width="8" height="26" rx="2"/><rect x="265" y="34" width="8" height="26" rx="2"/><rect x="276" y="34" width="8" height="26" rx="2"/><rect x="287" y="34" width="8" height="26" rx="2"/>
+            <rect x="298" y="34" width="8" height="26" rx="2"/><rect x="309" y="34" width="8" height="26" rx="2"/><rect x="320" y="34" width="8" height="26" rx="2"/><rect x="331" y="34" width="8" height="26" rx="2"/><rect x="342" y="34" width="8" height="26" rx="2"/>
+            <rect x="353" y="34" width="8" height="26" rx="2"/><rect x="364" y="34" width="8" height="26" rx="2"/><rect x="375" y="34" width="8" height="26" rx="2"/><rect x="386" y="34" width="8" height="26" rx="2"/><rect x="397" y="34" width="8" height="26" rx="2"/>
+            <rect x="408" y="34" width="8" height="26" rx="2"/><rect x="419" y="34" width="8" height="26" rx="2"/><rect x="430" y="34" width="8" height="26" rx="2"/><rect x="441" y="34" width="8" height="26" rx="2"/><rect x="452" y="34" width="8" height="26" rx="2"/>
+            <rect x="463" y="34" width="8" height="26" rx="2"/><rect x="474" y="34" width="8" height="26" rx="2"/><rect x="485" y="34" width="8" height="26" rx="2"/><rect x="496" y="34" width="8" height="26" rx="2"/><rect x="507" y="34" width="8" height="26" rx="2"/>
+            <rect x="518" y="34" width="8" height="26" rx="2"/><rect x="529" y="34" width="8" height="26" rx="2"/><rect x="540" y="34" width="8" height="26" rx="2"/><rect x="551" y="34" width="8" height="26" rx="2"/><rect x="562" y="34" width="8" height="26" rx="2"/>
+            <rect x="573" y="34" width="8" height="26" rx="2"/><rect x="584" y="34" width="8" height="26" rx="2"/><rect x="595" y="34" width="8" height="26" rx="2"/><rect x="606" y="34" width="8" height="26" rx="2"/><rect x="617" y="34" width="8" height="26" rx="2"/>
+          </g>
+          <text x="10" y="80" font-size="12" fill="var(--text-muted)">1 query for posts, then 50 tiny queries: SELECT * FROM users WHERE id = ? (once per post)</text>
+
+          <text x="10" y="132" font-weight="600">Eager loading with('author')</text>
+          <text x="630" y="132" text-anchor="end" font-weight="600" fill="var(--mod)">2 queries</text>
+          <rect x="10" y="144" width="60" height="26" rx="5" fill="none" stroke="var(--mod)" stroke-width="2.5"/>
+          <text x="40" y="161" text-anchor="middle" font-size="11" fill="currentColor">posts</text>
+          <rect x="78" y="144" width="60" height="26" rx="5" fill="none" stroke="var(--mod)" stroke-width="2.5"/>
+          <text x="108" y="161" text-anchor="middle" font-size="11" fill="currentColor">users</text>
+          <text x="10" y="190" font-size="12" fill="var(--text-muted)">1 query for posts, then 1 query: SELECT * FROM users WHERE id IN (3, 7, 12, ...)</text>
+          <text x="10" y="226" font-size="12" fill="var(--text-muted)">With 1,000 posts: lazy = 1,001 queries, eager = still 2.</text>
+        </g>
+      </svg>
+      <figcaption>Each outlined bar is a separate round trip to the database. Eager loading collapses all of them into one <code>WHERE IN</code> query.</figcaption>
+    </figure>
+    <dl class="terms">
+      <div><dt>Lazy loading</dt><dd>Eloquent's default: a relationship is queried the first time you access it, one model at a time.</dd></div>
+      <div><dt>Eager loading</dt><dd>Telling Eloquent in advance which relationships you'll need, so it loads them for the whole collection at once.</dd></div>
+      <div><dt>N+1</dt><dd>1 query for the list + N queries for the related data, where N is the number of items.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Find it, fix it, prevent it</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Recognise the N+1 pattern</h3>
+        <p>The controller fetches posts. The view loops and touches a <a href="../05-database/relationships.html">relationship</a> on each one. Nothing looks wrong.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          $posts = Post::latest()-&gt;take(50)-&gt;get();   // 1 query
+          return view('posts.index', compact('posts'));
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php" data-hl="3">
+          @foreach ($posts as $post)
+              &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+              &lt;p&gt;by {{ $post-&gt;author-&gt;name }}&lt;/p&gt;   {{-- +1 query each time --}}
+          @endforeach
+        </code></pre>
+        <p>To see it, install <strong>Laravel Debugbar</strong> (<code>composer require barryvdh/laravel-debugbar --dev</code>) and open the Queries tab, or use <strong>Laravel Telescope</strong>. Look for the same query repeated many times.</p>
+      </li>
+
+      <li class="step">
+        <h3>Fix it with <code>with()</code></h3>
+        <p>Name the relationships you'll use. You can load several, and nested ones with dot notation.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="1">
+          $posts = Post::with(['author', 'category', 'comments.author'])
+              -&gt;latest()
+              -&gt;take(50)
+              -&gt;get();
+        </code></pre>
+        <p>That's 1 query for posts + 1 each for authors, categories, comments and comment authors: <strong>5 queries total</strong>, no matter how many posts there are.</p>
+        <p>To load only some columns, list them (always include the keys): <code>with('author:id,name')</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Already have the models? Use <code>load()</code></h3>
+        <p><code>with()</code> goes on the query. <code>load()</code> does the same thing to models or a collection you already fetched, for example a route-model-bound post.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function show(Post $post)
+          {
+              $post-&gt;load('comments.author');
+              return view('posts.show', compact('post'));
+          }
+        </code></pre>
+        <p><code>loadMissing()</code> only loads relationships that aren't loaded yet.</p>
+      </li>
+
+      <li class="step">
+        <h3>Need just a number? Use <code>withCount()</code></h3>
+        <p>Showing “12 comments” doesn't need every comment row. <code>withCount()</code> adds a subquery and gives you a <code>{relation}_count</code> attribute.</p>
+        <pre><code class="lang-php">
+          $posts = Post::with('author')-&gt;withCount('comments')-&gt;get();
+        </code></pre>
+        <pre><code class="lang-blade">
+          &lt;span&gt;{{ $post-&gt;comments_count }} comments&lt;/span&gt;
+        </code></pre>
+        <p>Avoid <code>$post-&gt;comments-&gt;count()</code> in a loop (loads every comment) and <code>$post-&gt;comments()-&gt;count()</code> (one query per post). There's also <code>withSum</code>, <code>withAvg</code>, <code>withMax</code> and <code>withExists</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Make lazy loading throw an error in development</h3>
+        <p><code>Model::preventLazyLoading()</code> turns every accidental lazy load into an exception, so you catch N+1 bugs the moment you write them.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="5">
+          use Illuminate\Database\Eloquent\Model;
+
+          public function boot(): void
+          {
+              Model::preventLazyLoading(! $this-&gt;app-&gt;isProduction());
+          }
+        </code></pre>
+        <p>Passing <code>! isProduction()</code> keeps production users safe from crashes while developers see the error immediately. <code>Model::shouldBeStrict()</code> turns this on together with the other strict checks.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $posts = Post::all();
+          // view uses $post-&gt;author and $post-&gt;category
+        </code></pre>
+        <p>With 200 posts this runs 401 queries.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $posts = Post::with(['author', 'category'])-&gt;get();
+        </code></pre>
+        <p>3 queries, whether you have 200 posts or 20,000.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          {{ $category-&gt;posts-&gt;count() }} posts
+        </code></pre>
+        <p>Loads every post into memory just to count them.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Category::withCount('posts')-&gt;get();
+          // then: {{ $category-&gt;posts_count }}
+        </code></pre>
+        <p>The database does the counting, in one query.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: always eager load on a model</div>
+      <p>If a relationship is needed almost every time, add <code>protected $with = ['author'];</code> to the model. Use it sparingly, because it applies to <em>every</em> query on that model.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Seed 50 posts with authors using <a href="../11-testing/factories-seeders.html">factories</a>. Render a list showing each author's name.</li>
+        <li>Install Debugbar and note the query count. Then add <code>with('author')</code> and compare.</li>
+        <li>Show a comment count per post with <code>withCount('comments')</code>.</li>
+        <li>Enable <code>preventLazyLoading</code>, remove the <code>with()</code>, and read the exception message.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>N+1</strong> = 1 query for the list + 1 per item for a relationship accessed in a loop.</li>
+      <li><code>with()</code> eager loads on a query; <code>load()</code> eager loads on models you already have.</li>
+      <li>Eager loading uses one <code>WHERE IN</code> query per relationship, regardless of list size.</li>
+      <li>Use <code>withCount()</code> when you only need a number.</li>
+      <li><code>Model::preventLazyLoading(! app()-&gt;isProduction())</code> catches N+1 bugs during development.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "A page lists 30 posts and shows `$post->author->name` for each, with no eager loading. How many queries run?",
+          "options": ["1", "2", "31", "60"],
+          "answer": 2,
+          "explain": "1 query for the posts, plus 1 author query per post: 1 + 30 = 31."
+        },
+        {
+          "q": "Same page, but using `Post::with('author')->get()`. How many queries now?",
+          "options": ["2", "1", "31", "30"],
+          "answer": 0,
+          "explain": "One query for posts and one `WHERE id IN (...)` query for all their authors."
+        },
+        {
+          "q": "You already have `$post` from route model binding. How do you eager load its comments?",
+          "options": ["`Post::with('comments')`", "`$post->load('comments')`", "`$post->comments()->get()` in a loop", "`$post->withCount('comments')`"],
+          "answer": 1,
+          "explain": "`load()` eager loads relationships on models you've already retrieved."
+        },
+        {
+          "q": "What's the best way to show a comment count for each post in a list?",
+          "options": ["`$post->comments->count()`", "`$post->comments()->count()`", "`count($post->comments)`", "`Post::withCount('comments')` then `$post->comments_count`"],
+          "answer": 3,
+          "explain": "`withCount()` lets the database count in the same query, without loading comment rows."
+        },
+        {
+          "q": "What does `Model::preventLazyLoading(! app()->isProduction())` do?",
+          "options": ["Throws an exception on lazy loads, except in production", "Disables all relationships", "Speeds up queries in production", "Caches every relationship"],
+          "answer": 0,
+          "explain": "It turns accidental lazy loading into an error during development, so N+1 bugs are caught early."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

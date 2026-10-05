@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Caching · Laravel Blueprint</title>
+  <meta name="description" content="Speed up Laravel with Cache::remember, forget and flexible, choose a cache driver, and keep cached data fresh with invalidation.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="13" data-lesson="caching">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A cache stores the answer to an expensive question for a while, so the next request can reuse it instead of working it out again.</p>
+    <p class="analogy"><span>📝</span><span>It's the sticky note on your fridge with the pizza place's number. Looking it up online every time works, but the note is instant. You just need to update the note when the number changes.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Do the hard work once</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>Faster pages</h3>
+        <p>Reading a cached value takes around a millisecond. A heavy report query can take hundreds.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🗄️</span>
+        <h3>Less database load</h3>
+        <p>A popular sidebar shown on every page can hit the database once an hour instead of once per visitor.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🌐</span>
+        <h3>Fewer slow API calls</h3>
+        <p>Exchange rates or weather from an outside API can be reused for minutes, saving time and rate limits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Cache hit vs cache miss</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Request</strong><small>needs “popular posts”</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🗃️</span><strong>Check cache</strong><small>key: <code>posts.popular</code></small></div>
+        <div class="flow-node"><span class="flow-icon">⚡</span><strong>Hit</strong><small>return stored value (fast)</small></div>
+        <div class="flow-node"><span class="flow-icon">🐢</span><strong>Miss</strong><small>run the query, store it, return it</small></div>
+      </div>
+      <figcaption>Only the first request after the value expires pays the full cost. Everyone else gets the stored copy.</figcaption>
+    </figure>
+    <dl class="terms">
+      <div><dt>Key</dt><dd>The name a value is stored under, like <code>posts.popular</code>. Same key, same value.</dd></div>
+      <div><dt>TTL</dt><dd>“Time to live”: how long the value stays before it expires, in seconds or as a date.</dd></div>
+      <div><dt>Invalidation</dt><dd>Removing a cached value early because the underlying data changed.</dd></div>
+      <div><dt>Driver / store</dt><dd>Where the cache physically lives: database, Redis, files, memory, etc.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Cache like a pro</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Pick a cache driver</h3>
+        <p>The driver is set with <code>CACHE_STORE</code> in <code>.env</code>. New Laravel 11+ apps default to <code>database</code> (the migration for its <code>cache</code> table is included).</p>
+        <pre><code class="lang-env" data-file=".env">
+          CACHE_STORE=database
+        </code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Driver</th><th>Good for</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>database</code></td><td>Getting started, small apps</td><td>No extra software; shared across servers</td></tr>
+              <tr><td><code>redis</code></td><td>Production, high traffic</td><td>Very fast in-memory store; also great for queues</td></tr>
+              <tr><td><code>memcached</code></td><td>Production</td><td>Fast in-memory, simpler than Redis</td></tr>
+              <tr><td><code>file</code></td><td>Single-server apps</td><td>Stored in <code>storage/framework/cache</code>; not shared between servers</td></tr>
+              <tr><td><code>array</code></td><td>Tests</td><td>Lives only for the current request</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Use <code>Cache::remember</code></h3>
+        <p>This is the method you'll use 90% of the time. It returns the cached value if it exists; otherwise it runs your closure, stores the result for the TTL, and returns it.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/HomeController.php" data-hl="3-8">
+          use Illuminate\Support\Facades\Cache;
+
+          $popular = Cache::remember('posts.popular', now()-&gt;addMinutes(10), function () {
+              return Post::with('author')
+                  -&gt;withCount('comments')
+                  -&gt;orderByDesc('comments_count')
+                  -&gt;take(5)
+                  -&gt;get();
+          });
+        </code></pre>
+        <p>For things that rarely change, <code>Cache::rememberForever('categories', fn () =&gt; Category::all())</code> keeps the value until you remove it.</p>
+      </li>
+
+      <li class="step">
+        <h3>The basic building blocks</h3>
+        <p><code>remember</code> is built on a few simpler methods you can use directly.</p>
+        <pre><code class="lang-php">
+          Cache::put('site.banner', 'Sale ends Friday!', 3600);  // store for 3600 seconds
+          Cache::get('site.banner', 'Welcome!');                 // read, with a default
+          Cache::has('site.banner');                             // true / false
+          Cache::forget('site.banner');                          // delete one key
+          Cache::increment('downloads');                         // counters
+        </code></pre>
+        <p><code>php artisan cache:clear</code> empties the whole application cache.</p>
+      </li>
+
+      <li class="step">
+        <h3>Invalidate when the data changes</h3>
+        <p>A cache that's never cleared shows stale data: a new post won't appear in “popular posts” for 10 minutes. The fix is to <strong>forget the key whenever the source data changes</strong>. Model events are a tidy place to do it.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php" data-hl="5-6">
+          protected static function booted(): void
+          {
+              $clear = fn () =&gt; Cache::forget('posts.popular');
+
+              static::saved($clear);
+              static::deleted($clear);
+          }
+        </code></pre>
+        <p>Choose keys that include anything that changes the answer, for example <code>"user.{$user-&gt;id}.dashboard"</code> or <code>"posts.page.{$page}"</code>. Otherwise everyone sees the same cached result.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ The classic joke</div>
+          <p>“There are only two hard things in computer science: cache invalidation and naming things.” Decide <em>when</em> each cached value should be cleared at the same time you write the <code>remember</code> call.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Serve stale while refreshing with <code>Cache::flexible</code></h3>
+        <p>With <code>remember</code>, the unlucky visitor who arrives just after expiry waits for the slow query. <code>Cache::flexible</code> (Laravel 11.23+) takes two times: a <strong>fresh</strong> period and a <strong>stale</strong> period.</p>
+        <pre><code class="lang-php">
+          $stats = Cache::flexible('dashboard.stats', [300, 900], function () {
+              return Stats::calculate();   // slow
+          });
+        </code></pre>
+        <ul>
+          <li>0–5 minutes: the value is fresh and returned as-is.</li>
+          <li>5–15 minutes: the stale value is returned <em>immediately</em>, and Laravel recalculates it in the background after the response is sent.</li>
+          <li>After 15 minutes: it's recalculated like a normal miss.</li>
+        </ul>
+      </li>
+
+      <li class="step">
+        <h3>Group related keys with tags (Redis / Memcached)</h3>
+        <p><strong>Tags</strong> let you clear a whole family of keys at once. They're only supported by drivers like <code>redis</code> and <code>memcached</code>, not <code>file</code> or <code>database</code>.</p>
+        <pre><code class="lang-php">
+          Cache::tags(['posts'])-&gt;remember("posts.page.{$page}", 600, fn () =&gt; Post::paginate());
+
+          Cache::tags(['posts'])-&gt;flush();   // clears every page at once
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Cache::remember('dashboard', 3600,
+              fn () =&gt; auth()-&gt;user()-&gt;stats());
+        </code></pre>
+        <p>One key for every user: the first person's dashboard is shown to everyone.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Cache::remember("user.{$user-&gt;id}.dashboard", 3600,
+              fn () =&gt; $user-&gt;stats());
+        </code></pre>
+        <p>Include the user ID (and any filters) in the key.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          if (Cache::has('x')) {
+              $x = Cache::get('x');
+          } else {
+              $x = slow();
+              Cache::put('x', $x, 600);
+          }
+        </code></pre>
+        <p>Verbose, and easy to get subtly wrong.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $x = Cache::remember('x', 600, fn () =&gt; slow());
+        </code></pre>
+        <p>One line that does the same thing correctly.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: measure first</div>
+      <p>Don't cache everything “just in case”. Fix N+1 queries first (see <a href="eager-loading.html">Eager Loading</a>), measure with Debugbar or Telescope, and cache only what's genuinely slow or heavily repeated.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Cache the list of categories with <code>Cache::rememberForever('categories', ...)</code> and show it in your layout.</li>
+        <li>Add a <code>saved</code>/<code>deleted</code> hook on <code>Category</code> that forgets the key. Create a category and check that it appears.</li>
+        <li>Cache “popular posts” for 10 minutes and compare the query count with Debugbar on a first and second visit.</li>
+        <li>Rewrite it with <code>Cache::flexible</code> using <code>[300, 900]</code>.</li>
+        <li>Run <code>php artisan cache:clear</code> and confirm the next request is a miss.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>Cache::remember(key, ttl, fn)</code> returns the cached value or computes and stores it.</li>
+      <li>Set the driver with <code>CACHE_STORE</code>: <code>database</code> to start, <code>redis</code> for production at scale.</li>
+      <li>Clear stale data with <code>Cache::forget</code> when the source data changes (model events work well).</li>
+      <li>Put everything that changes the answer (user ID, page, filters) into the key.</li>
+      <li><code>Cache::flexible</code> serves stale values instantly while refreshing in the background.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `Cache::remember('k', 600, fn () => slow())` do on a cache miss?",
+          "options": ["Returns `null`", "Runs `slow()`, stores the result for 600 seconds, and returns it", "Throws an exception", "Runs `slow()` but doesn't store it"],
+          "answer": 1,
+          "explain": "On a miss it computes, stores and returns. On a hit it skips the closure entirely."
+        },
+        {
+          "q": "A new post is published but doesn't appear in the cached \"latest posts\" list. What's the best fix?",
+          "options": ["Set the TTL to 1 second", "Stop caching the list", "Run `cache:clear` by hand after each post", "Call `Cache::forget('posts.latest')` when a post is saved or deleted"],
+          "answer": 3,
+          "explain": "Invalidate the specific key when its source data changes, and keep the cache benefits the rest of the time."
+        },
+        {
+          "q": "Which `.env` setting chooses the cache driver in Laravel 11+?",
+          "options": ["`CACHE_STORE`", "`CACHE_DRIVER_NAME`", "`APP_CACHE`", "`QUEUE_CONNECTION`"],
+          "answer": 0,
+          "explain": "`CACHE_STORE` selects the default store, for example `database`, `redis` or `file`."
+        },
+        {
+          "q": "With `Cache::flexible('k', [300, 900], ...)`, what happens at minute 8?",
+          "options": ["The user waits for a fresh value", "An error is thrown", "The stale value is returned immediately and refreshed in the background", "The cache is cleared"],
+          "answer": 2,
+          "explain": "Between the fresh (5 min) and stale (15 min) limits, users get the old value instantly while Laravel recalculates after the response."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

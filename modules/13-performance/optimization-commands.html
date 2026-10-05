@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Production Optimisation · Laravel Blueprint</title>
+  <meta name="description" content="The Laravel deploy checklist: php artisan optimize, config/route/view/event caching, an optimised Composer autoloader, OPcache and APP_DEBUG=false.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="13" data-lesson="optimization-commands">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">In production, Laravel can pre-compile its config, routes, views and events into fast cached files, so each request skips work that only needs doing once per deploy.</p>
+    <p class="analogy"><span>🧳</span><span>It's like packing your suitcase the night before a trip. Instead of searching every drawer each morning, everything you need is already folded in one place, ready to grab.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Free speed, and fewer surprises</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🚀</span>
+        <h3>Faster every request</h3>
+        <p>Laravel stops re-reading dozens of config files and route definitions on every single hit.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔒</span>
+        <h3>Safer errors</h3>
+        <p><code>APP_DEBUG=false</code> hides stack traces, file paths and environment values from visitors.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📋</span>
+        <h3>Repeatable deploys</h3>
+        <p>A short checklist you run every time means production behaves the same after every release.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>What gets cached, and where</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>⚙️</span><strong>config:cache</strong><small>all <code>config/*.php</code> + <code>.env</code> → <code>bootstrap/cache/config.php</code></small></div>
+        <div class="layer"><span>🧭</span><strong>route:cache</strong><small>every route, pre-compiled → <code>bootstrap/cache/routes-v7.php</code></small></div>
+        <div class="layer"><span>🖼️</span><strong>view:cache</strong><small>all Blade templates compiled to PHP → <code>storage/framework/views</code></small></div>
+        <div class="layer"><span>📣</span><strong>event:cache</strong><small>event → listener map, so no folder scanning → <code>bootstrap/cache/events.php</code></small></div>
+        <div class="layer"><span>📦</span><strong>Composer classmap</strong><small><code>--optimize-autoloader</code>: class → file lookup table</small></div>
+        <div class="layer"><span>🧠</span><strong>OPcache</strong><small>PHP keeps compiled bytecode of every file in memory</small></div>
+      </div>
+      <figcaption>Each layer removes repeated work from every request. <code>php artisan optimize</code> builds the first four in one go.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>A production deploy, in order</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Set production environment values</h3>
+        <p>Before anything else, the server's <code>.env</code> must say it's production and must <strong>not</strong> show debug pages.</p>
+        <pre><code class="lang-env" data-file=".env (production)">
+          APP_ENV=production
+          APP_DEBUG=false
+          APP_URL=https://blog.example.com
+          LOG_LEVEL=warning
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ APP_DEBUG=true in production is a security hole</div>
+          <p>Debug error pages can reveal source code, file paths, database queries and environment variables to anyone who triggers an error.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Install dependencies the production way</h3>
+        <pre><code class="lang-bash">
+          composer install --optimize-autoloader --no-dev
+        </code></pre>
+        <ul>
+          <li><code>--no-dev</code> skips development-only packages like Debugbar, Pest/PHPUnit and Faker.</li>
+          <li><code>--optimize-autoloader</code> builds a <strong>classmap</strong>, a ready-made list of where every class lives, so PHP doesn't have to search folders.</li>
+        </ul>
+        <p>Build your frontend assets too, typically with <code>npm ci &amp;&amp; npm run build</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Migrate, then cache everything with <code>optimize</code></h3>
+        <pre><code class="lang-bash">
+          php artisan migrate --force
+          php artisan optimize
+        </code></pre>
+        <p><code>--force</code> confirms you really mean to migrate in production. <code>php artisan optimize</code> runs all of these for you:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Command</th><th>What it does</th><th>Clear with</th></tr></thead>
+            <tbody>
+              <tr><td><code>config:cache</code></td><td>Merges all config into one file</td><td><code>config:clear</code></td></tr>
+              <tr><td><code>route:cache</code></td><td>Pre-compiles route registration</td><td><code>route:clear</code></td></tr>
+              <tr><td><code>view:cache</code></td><td>Compiles every Blade view ahead of time</td><td><code>view:clear</code></td></tr>
+              <tr><td><code>event:cache</code></td><td>Saves the event/listener map</td><td><code>event:clear</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>To undo all of them at once: <code>php artisan optimize:clear</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Understand the config cache gotcha</h3>
+        <p>After <code>config:cache</code>, the <code>.env</code> file is <strong>not loaded</strong> anymore. Values are read from the cached config file. So calling <code>env()</code> outside a config file returns <code>null</code>.</p>
+        <pre><code class="lang-php" data-file="config/services.php">
+          'newsletter' =&gt; [
+              'key' =&gt; env('NEWSLETTER_KEY'),   // ✅ env() only inside config files
+          ],
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Services/Newsletter.php">
+          $key = config('services.newsletter.key');   // ✅ everywhere else
+        </code></pre>
+        <p>Also, after changing <code>.env</code> or any config on the server, re-run <code>php artisan config:cache</code> (or <code>optimize</code>) or the change won't take effect.</p>
+      </li>
+
+      <li class="step">
+        <h3>Restart workers and enable OPcache</h3>
+        <pre><code class="lang-bash">
+          php artisan queue:restart
+        </code></pre>
+        <p>Long-running <a href="queues-jobs.html">queue workers</a> keep old code in memory until restarted.</p>
+        <p><strong>OPcache</strong> is a PHP extension that stores compiled PHP in memory, so files aren't re-parsed on each request. It's often the single biggest win. Make sure it's enabled in your server's <code>php.ini</code>:</p>
+        <pre><code class="lang-text" data-file="php.ini">
+          opcache.enable=1
+          opcache.memory_consumption=256
+          opcache.max_accelerated_files=20000
+          opcache.validate_timestamps=0   ; fastest; restart PHP-FPM on each deploy
+        </code></pre>
+        <p>With <code>validate_timestamps=0</code>, PHP never checks for changed files, so reload PHP-FPM as part of every deploy.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Checklist -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Copy this</span>
+      <h2>The production checklist</h2>
+    </div>
+    <ul class="checklist">
+      <li><code>APP_ENV=production</code> and <code>APP_DEBUG=false</code></li>
+      <li><code>APP_KEY</code> set (and backed up somewhere safe)</li>
+      <li><code>composer install --optimize-autoloader --no-dev</code></li>
+      <li><code>npm ci &amp;&amp; npm run build</code></li>
+      <li><code>php artisan migrate --force</code></li>
+      <li><code>php artisan optimize</code> (config, route, view and event caches)</li>
+      <li><code>php artisan queue:restart</code></li>
+      <li>OPcache enabled; PHP-FPM reloaded</li>
+      <li>Cache and queue on a shared store (database or Redis) if you run several servers</li>
+      <li>Scheduler cron set up: <code>* * * * * php artisan schedule:run</code></li>
+    </ul>
+    <pre><code class="lang-bash" data-file="deploy.sh">
+      php artisan down
+      git pull origin main
+      composer install --optimize-autoloader --no-dev
+      npm ci &amp;&amp; npm run build
+      php artisan migrate --force
+      php artisan optimize
+      php artisan queue:restart
+      php artisan up
+    </code></pre>
+    <p>Hosting tools like <strong>Laravel Cloud</strong> and <strong>Laravel Forge</strong> run a script like this for you on every push.</p>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // in a controller
+          $key = env('NEWSLETTER_KEY');
+        </code></pre>
+        <p>Returns <code>null</code> once the config is cached, so it works locally and breaks in production.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $key = config('services.newsletter.key');
+        </code></pre>
+        <p>Read <code>env()</code> only in <code>config/*.php</code>, and use <code>config()</code> everywhere else.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-bash">
+          # on your laptop, during development
+          php artisan optimize
+        </code></pre>
+        <p>Then you edit a route or config value and nothing changes, because the cached copy is used.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-bash">
+          php artisan optimize:clear
+        </code></pre>
+        <p>Keep caches for production. Locally, clear them if something seems “stuck”.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: check your setup at a glance</div>
+      <p><code>php artisan about</code> shows your environment, debug mode, cache drivers and whether config, routes, views and events are cached.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Run <code>php artisan about</code> and note the “Cache” section.</li>
+        <li>Run <code>php artisan optimize</code>, then <code>about</code> again. Find the new files in <code>bootstrap/cache</code>.</li>
+        <li>Add a test route, refresh the browser and notice it's missing. Run <code>php artisan optimize:clear</code> and try again.</li>
+        <li>Search your <code>app/</code> folder for <code>env(</code> and move any matches into a config file.</li>
+        <li>Write your own <code>deploy.sh</code> based on the checklist above.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>php artisan optimize</code> runs <code>config:cache</code>, <code>route:cache</code>, <code>view:cache</code> and <code>event:cache</code>.</li>
+      <li><code>composer install --optimize-autoloader --no-dev</code> gives a fast autoloader without dev packages.</li>
+      <li>Always set <code>APP_DEBUG=false</code> in production.</li>
+      <li>After <code>config:cache</code>, <code>env()</code> only works inside config files: use <code>config()</code> in your code.</li>
+      <li>Enable OPcache, restart queue workers, and use <code>optimize:clear</code> when caches get in the way.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which caches does `php artisan optimize` build?",
+          "options": ["Only the application cache", "Config, routes, views and events", "Database query results", "Composer packages"],
+          "answer": 1,
+          "explain": "`optimize` bundles `config:cache`, `route:cache`, `view:cache` and `event:cache`."
+        },
+        {
+          "q": "After `config:cache`, a controller calls `env('NEWSLETTER_KEY')`. What does it return?",
+          "options": ["The correct value", "An exception", "The value from `.env.example`", "`null`"],
+          "answer": 3,
+          "explain": "Once config is cached, `.env` isn't loaded. Read the value via `config()` from a config file instead."
+        },
+        {
+          "q": "What does `--no-dev` do in `composer install --optimize-autoloader --no-dev`?",
+          "options": ["Skips development-only packages", "Disables debug mode", "Skips running migrations", "Removes the vendor folder"],
+          "answer": 0,
+          "explain": "Packages under `require-dev` (Debugbar, test tools, Faker) aren't installed in production."
+        },
+        {
+          "q": "Why must `APP_DEBUG` be `false` in production?",
+          "options": ["It makes the app slower", "It disables caching", "Debug pages can expose code, paths and secrets", "Laravel won't boot otherwise"],
+          "answer": 2,
+          "explain": "Detailed error pages are for developers. Visitors should see a generic error page."
+        },
+        {
+          "q": "You changed a route locally and it doesn't seem to exist. What should you try?",
+          "options": ["`php artisan migrate:fresh`", "`php artisan optimize:clear`", "`composer update`", "Restart the computer"],
+          "answer": 1,
+          "explain": "A cached route file means new routes aren't seen. `optimize:clear` removes all the framework caches."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The MVC Pattern · Laravel Blueprint</title>
+  <meta name="description" content="Understand Model-View-Controller: what each part does, how they talk, and where each one lives in a Laravel project.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="03" data-lesson="mvc">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">MVC splits an app into three jobs: Models handle data, Views handle what people see, and Controllers connect the two.</p>
+    <p class="analogy"><span>🍽️</span><span>Picture a restaurant. The waiter (Controller) takes your order, the kitchen (Model) prepares the food from what's in the pantry (the database), and the plated dish (View) is what you actually see. The waiter never cooks, and the chef never visits your table.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>A place for everything</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🗂️</span>
+        <h3>You'll always know where to look</h3>
+        <p>A bug in the page layout? Check the View. Wrong data? Check the Model. Every Laravel project follows the same layout.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">♻️</span>
+        <h3>Reuse instead of repeat</h3>
+        <p>One <code>Post</code> model serves the blog page, the admin panel and the API. Write the data logic once.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">👥</span>
+        <h3>Teams can split the work</h3>
+        <p>A designer can edit Blade views while a developer changes queries, and neither steps on the other's toes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The MVC triangle, mapped onto Laravel</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 400" role="img" aria-labelledby="mvc-title" style="width:100%;max-width:640px;height:auto;display:block;margin:0 auto">
+        <title id="mvc-title">Controller at the top talks to the Model and the View; the Model talks to the database</title>
+        <defs>
+          <marker id="mvc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--text-muted)"/>
+          </marker>
+        </defs>
+
+        <!-- arrows -->
+        <line x1="270" y1="120" x2="150" y2="250" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#mvc-arrow)" marker-start="url(#mvc-arrow)"/>
+        <line x1="370" y1="120" x2="490" y2="250" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#mvc-arrow)"/>
+        <line x1="150" y1="345" x2="150" y2="372" stroke="var(--text-muted)" stroke-width="2" stroke-dasharray="4 4"/>
+        <text x="180" y="180" font-size="13" fill="var(--text-muted)" text-anchor="end">asks for data</text>
+        <text x="460" y="180" font-size="13" fill="var(--text-muted)">passes data</text>
+
+        <!-- controller -->
+        <rect x="200" y="20" width="240" height="100" rx="16" fill="none" stroke="var(--mod)" stroke-width="3"/>
+        <text x="320" y="55" font-size="20" font-weight="700" fill="var(--mod)" text-anchor="middle">🧭 Controller</text>
+        <text x="320" y="80" font-size="13" fill="currentColor" text-anchor="middle">handles the request</text>
+        <text x="320" y="102" font-size="12" fill="var(--text-muted)" text-anchor="middle" font-family="monospace">app/Http/Controllers/</text>
+
+        <!-- model -->
+        <rect x="30" y="250" width="240" height="95" rx="16" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="150" y="283" font-size="20" font-weight="700" fill="currentColor" text-anchor="middle">🗄️ Model</text>
+        <text x="150" y="306" font-size="13" fill="currentColor" text-anchor="middle">data &amp; business rules</text>
+        <text x="150" y="328" font-size="12" fill="var(--text-muted)" text-anchor="middle" font-family="monospace">app/Models/</text>
+        <text x="150" y="392" font-size="12" fill="var(--text-muted)" text-anchor="middle">⬇ database</text>
+
+        <!-- view -->
+        <rect x="370" y="250" width="240" height="95" rx="16" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="490" y="283" font-size="20" font-weight="700" fill="currentColor" text-anchor="middle">🎨 View</text>
+        <text x="490" y="306" font-size="13" fill="currentColor" text-anchor="middle">the HTML people see</text>
+        <text x="490" y="328" font-size="12" fill="var(--text-muted)" text-anchor="middle" font-family="monospace">resources/views/</text>
+      </svg>
+      <figcaption>The Controller is the middleman. It asks the Model for data, then hands that data to the View. The Model and View never talk to each other directly.</figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Part</th><th>Its one job</th><th>Lives in</th><th>Blog example</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Model</strong></td><td>Represents data and talks to the database</td><td><code>app/Models/</code></td><td><code>Post.php</code></td></tr>
+          <tr><td><strong>View</strong></td><td>Turns data into HTML</td><td><code>resources/views/</code></td><td><code>posts/index.blade.php</code></td></tr>
+          <tr><td><strong>Controller</strong></td><td>Receives the request, coordinates, returns a response</td><td><code>app/Http/Controllers/</code></td><td><code>PostController.php</code></td></tr>
+          <tr><td>Route <em>(not a letter in MVC)</em></td><td>Sends a URL to the right controller</td><td><code>routes/web.php</code></td><td><code>/posts</code> → <code>PostController@index</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Follow <code>/posts</code> through MVC</h2>
+      <p>Don't worry about memorising the syntax yet. Each piece gets its own lesson later; this is the tour.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>The route points at a controller</h3>
+        <p>The route is the doorway. It doesn't do any work itself; it just says “for <code>GET /posts</code>, ask <code>PostController</code>'s <code>index</code> method”.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          use App\Http\Controllers\PostController;
+
+          Route::get('/posts', [PostController::class, 'index']);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The Model knows about data</h3>
+        <p>A <strong>Model</strong> is a PHP class that represents one table. <code>Post</code> maps to the <code>posts</code> table and gives you methods to query it, so you rarely write SQL by hand.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          &lt;?php
+
+          namespace App\Models;
+
+          use Illuminate\Database\Eloquent\Model;
+
+          class Post extends Model
+          {
+              protected $fillable = ['title', 'body'];
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The Controller coordinates</h3>
+        <p>The <strong>Controller</strong> asks the model for data and picks a view to show it. Notice how short it is. A good controller is a manager, not a worker.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="11-13">
+          &lt;?php
+
+          namespace App\Http\Controllers;
+
+          use App\Models\Post;
+
+          class PostController extends Controller
+          {
+              public function index()
+              {
+                  $posts = Post::latest()-&gt;get();       // ask the Model
+
+                  return view('posts.index', ['posts' =&gt; $posts]);   // hand to the View
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The View only displays</h3>
+        <p>The <strong>View</strong> is a Blade template: mostly HTML with a few placeholders. It receives <code>$posts</code> and loops over them. No database calls here.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          &lt;h1&gt;Latest posts&lt;/h1&gt;
+
+          @foreach ($posts as $post)
+              &lt;article&gt;
+                  &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+                  &lt;p&gt;{{ $post-&gt;body }}&lt;/p&gt;
+              &lt;/article&gt;
+          @endforeach
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Put it all together</h3>
+        <p>Here's the full round trip. Each box has one job and hands off to the next.</p>
+        <figure class="diagram">
+          <div class="flow">
+            <div class="flow-node"><span class="flow-icon">🌐</span><strong>Request</strong><small>GET /posts</small></div>
+            <div class="flow-node"><span class="flow-icon">🧭</span><strong>Route</strong><small>routes/web.php</small></div>
+            <div class="flow-node accent"><span class="flow-icon">🎛️</span><strong>Controller</strong><small>PostController@index</small></div>
+            <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Model</strong><small>Post::latest()-&gt;get()</small></div>
+            <div class="flow-node"><span class="flow-icon">🎨</span><strong>View</strong><small>posts/index.blade.php</small></div>
+          </div>
+          <figcaption>The controller calls the model, gets data back, then renders the view into the HTML response.</figcaption>
+        </figure>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          @foreach (\App\Models\Post::all() as $post)
+              &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+          @endforeach
+        </code></pre>
+        <p>Querying the database inside a view mixes jobs and hides slow queries where nobody looks.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // Controller
+          return view('posts.index', [
+              'posts' =&gt; Post::all(),
+          ]);
+        </code></pre>
+        <p>Fetch data in the controller (via the model) and pass it into the view.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function store(Request $request)
+          {
+              // 80 lines of pricing maths,
+              // emails, PDF generation...
+          }
+        </code></pre>
+        <p>A “fat controller” is hard to read, hard to test and impossible to reuse.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function store(Request $request)
+          {
+              $post = Post::create($request-&gt;validate([...]));
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+        <p>Keep controllers thin: receive, delegate, respond. Bigger logic moves to models or <a href="../14-architecture/service-classes.html">service classes</a>.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: the “one job” test</div>
+      <p>Before writing a line of code, ask “is this about <strong>data</strong>, <strong>display</strong> or <strong>coordination</strong>?” The answer tells you which file it belongs in.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>No code needed. Grab a piece of paper:</p>
+      <ol>
+        <li>For a page showing one blog post with its comments, name the route, the controller method, the model(s) and the view file.</li>
+        <li>Sort these into M, V or C: “format a date for display”, “find all published posts”, “redirect after saving”, “a post belongs to a user”.</li>
+        <li>Draw the request flow for <code>POST /comments</code>, from the browser to the redirect.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Model</strong> = data and rules (<code>app/Models</code>).</li>
+      <li><strong>View</strong> = presentation, HTML via Blade (<code>resources/views</code>).</li>
+      <li><strong>Controller</strong> = the coordinator between request, model and view (<code>app/Http/Controllers</code>).</li>
+      <li>Routes aren't part of the acronym, but they decide which controller runs.</li>
+      <li>Views never query the database; controllers stay thin.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which part of MVC is responsible for talking to the database?",
+          "options": ["View", "Controller", "Model", "Route"],
+          "answer": 2,
+          "explain": "Models represent data. In Laravel, an Eloquent model like `Post` maps to the `posts` table."
+        },
+        {
+          "q": "Where do Blade views live in a Laravel project?",
+          "options": ["`resources/views`", "`app/Views`", "`public/views`", "`app/Http/Views`"],
+          "answer": 0,
+          "explain": "Views live in `resources/views` and end in `.blade.php`."
+        },
+        {
+          "q": "What is the controller's main job?",
+          "options": ["Storing data", "Styling the page", "Coordinating: take the request, ask the model, return a view or response", "Defining URLs"],
+          "answer": 2,
+          "explain": "Controllers sit in the middle and keep the Model and View apart."
+        },
+        {
+          "q": "Which of these belongs in a view?",
+          "options": ["`Post::where('published', true)->get()`", "Looping over `$posts` to print titles", "Validating form input", "Sending an email"],
+          "answer": 1,
+          "explain": "Views only display data they're given. Queries, validation and emails belong elsewhere."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

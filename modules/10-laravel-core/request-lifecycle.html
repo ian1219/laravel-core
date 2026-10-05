@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Request Lifecycle · Laravel Blueprint</title>
+  <meta name="description" content="Follow one HTTP request through Laravel 11+: public/index.php, bootstrap/app.php, the HTTP kernel, service providers, the router, middleware, the controller, the response and terminate.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="request-lifecycle">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Every request enters through <code>public/index.php</code>, boots the application, travels through the kernel, router and middleware to your controller, and comes back out as a response.</p>
+    <p class="analogy"><span>📦</span><span>Think of a parcel at a sorting centre. It arrives at one loading dock, gets scanned, passes several checkpoints, reaches the right desk to be handled, and leaves through the same building as a reply, while the staff tidy up afterwards.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>See the whole machine at once</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Everything clicks together</h3>
+        <p>The <a href="service-container.html">container</a>, <a href="service-providers.html">providers</a>, <a href="middleware.html">middleware</a> and routes stop being separate topics; you see where each one fits.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🐞</span>
+        <h3>Debug with confidence</h3>
+        <p>"Why is my user null here?" Usually because that code runs before the session middleware. Knowing the order answers it.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎯</span>
+        <h3>Put code in the right place</h3>
+        <p>Bindings, app-wide config, request checks and post-response work each have a natural home in the lifecycle.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One request, top to bottom</h2>
+      <p>Let's follow <code>POST /posts</code> (saving a new blog post) through a Laravel 11+ app.</p>
+    </div>
+    <figure class="diagram">
+      <div class="flow vertical">
+        <div class="flow-node"><span class="flow-icon">🚪</span><strong>public/index.php</strong><small>the single entry point the web server sends every request to</small></div>
+        <div class="flow-node"><span class="flow-icon">🏗️</span><strong>bootstrap/app.php</strong><small>creates <code>Illuminate\Foundation\Application</code> (the container) with your routing, middleware and exception config</small></div>
+        <div class="flow-node"><span class="flow-icon">⚙️</span><strong>HTTP Kernel</strong><small><code>Illuminate\Foundation\Http\Kernel::handle()</code> runs the bootstrappers: .env, config, error handling, facades</small></div>
+        <div class="flow-node"><span class="flow-icon">🧰</span><strong>Service providers</strong><small><code>RegisterProviders</code> then <code>BootProviders</code>: every <code>register()</code>, then every <code>boot()</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🌍</span><strong>Global middleware</strong><small>sent through an <code>Illuminate\Pipeline\Pipeline</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🧭</span><strong>Router</strong><small><code>Illuminate\Routing\Router</code> matches <code>POST /posts</code> to a <code>Route</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🔐</span><strong>Route middleware</strong><small>the <code>web</code> group (session, CSRF) + <code>auth</code></small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎯</span><strong>Controller</strong><small><code>PostController@store</code>, with dependencies injected by the container</small></div>
+        <div class="flow-node"><span class="flow-icon">📤</span><strong>Response</strong><small>converted to <code>Illuminate\Http\Response</code>, passes back out through middleware, then <code>-&gt;send()</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🧹</span><strong>Terminate</strong><small><code>$kernel-&gt;terminate()</code> runs terminable middleware and <code>app()-&gt;terminating()</code> callbacks</small></div>
+      </div>
+      <figcaption>The same steps run for every single web request. Artisan commands follow a similar path through the <em>console</em> kernel instead.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Walk through the real files</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>The entry point: <code>public/index.php</code></h3>
+        <p>Your web server (Nginx, Apache or <code>php artisan serve</code>) is configured to send <strong>every</strong> request to this one file. It's short, and you'll never need to edit it:</p>
+        <pre><code class="lang-php" data-file="public/index.php" data-hl="13,16,18">
+          &lt;?php
+
+          use Illuminate\Foundation\Application;
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          // Maintenance mode? (php artisan down)
+          if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          require __DIR__.'/../vendor/autoload.php';
+
+          /** @var Application $app */
+          $app = require_once __DIR__.'/../bootstrap/app.php';
+
+          $app-&gt;handleRequest(Request::capture());
+        </code></pre>
+        <p>Three jobs: load Composer's autoloader, build the application, and hand it the incoming request. <code>Request::capture()</code> turns PHP's raw <code>$_GET</code>, <code>$_POST</code>, cookies and headers into one <code>Illuminate\Http\Request</code> object.</p>
+      </li>
+
+      <li class="step">
+        <h3>Building the app: <code>bootstrap/app.php</code></h3>
+        <p>This file creates the <strong>application instance</strong>, which <em>is</em> the service container (<code>Application</code> extends <code>Container</code>). It also records your configuration:</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php">
+          return Application::configure(basePath: dirname(__DIR__))
+              -&gt;withRouting(
+                  web: __DIR__.'/../routes/web.php',
+                  commands: __DIR__.'/../routes/console.php',
+                  health: '/up',
+              )
+              -&gt;withMiddleware(function (Middleware $middleware): void {
+                  //
+              })
+              -&gt;withExceptions(function (Exceptions $exceptions): void {
+                  //
+              })-&gt;create();
+        </code></pre>
+        <p>Nothing has handled the request yet. We've only built the machine.</p>
+      </li>
+
+      <li class="step">
+        <h3>The HTTP kernel boots the app</h3>
+        <p><code>handleRequest()</code> resolves the <strong>HTTP kernel</strong> (<code>Illuminate\Foundation\Http\Kernel</code>) from the container and calls its <code>handle()</code> method. Before touching your routes, the kernel runs a list of <strong>bootstrappers</strong>, in this order:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bootstrapper</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>LoadEnvironmentVariables</code></td><td>Reads your <code>.env</code> file</td></tr>
+              <tr><td><code>LoadConfiguration</code></td><td>Loads every file in <code>config/</code></td></tr>
+              <tr><td><code>HandleExceptions</code></td><td>Sets up error and exception handling</td></tr>
+              <tr><td><code>RegisterFacades</code></td><td>Makes <a href="facades.html">facades</a> work</td></tr>
+              <tr><td><code>RegisterProviders</code></td><td>Calls <code>register()</code> on every service provider</td></tr>
+              <tr><td><code>BootProviders</code></td><td>Calls <code>boot()</code> on every service provider</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>All of them live in <code>Illuminate\Foundation\Bootstrap</code>. This is the moment your <code>AppServiceProvider</code> runs: it's the most important step of the whole boot.</p>
+      </li>
+
+      <li class="step">
+        <h3>Middleware, router, controller</h3>
+        <p>Now the kernel sends the request through the <strong>global middleware</strong> using a <code>Pipeline</code> (the onion from the <a href="middleware.html">Middleware</a> lesson). At the centre of that pipeline sits the router:</p>
+        <ol>
+          <li><code>Router::dispatch()</code> finds the route matching the method and URL (or throws a 404).</li>
+          <li>The route's own middleware (<code>web</code> group, <code>auth</code>…) runs through a second pipeline.</li>
+          <li>The controller is <strong>resolved from the container</strong>, so its constructor dependencies and method arguments (like <code>StorePostRequest $request</code>) are injected.</li>
+        </ol>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function store(StorePostRequest $request, PostPublisher $publisher)
+          {
+              $post = $request-&gt;user()-&gt;posts()-&gt;create($request-&gt;validated());
+              $publisher-&gt;publish($post);
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Response, send, terminate</h3>
+        <p>Whatever the controller returns (a view, an array, a model, a redirect) is converted by <code>Router::toResponse()</code> into a proper response object. Arrays and models become JSON, strings become HTML.</p>
+        <p>The response travels back <strong>out</strong> through every middleware layer, then <code>-&gt;send()</code> writes headers and body to the browser. Finally <code>$kernel-&gt;terminate()</code> runs any work that should happen after the user already has their page:</p>
+        <pre><code class="lang-php" data-file="app/Http/Middleware/LogRequestDuration.php">
+          public function handle(Request $request, Closure $next): Response
+          {
+              return $next($request);
+          }
+
+          // Runs after the response was sent (on PHP-FPM)
+          public function terminate(Request $request, Response $response): void
+          {
+              Log::info('Request took '.round(microtime(true) - LARAVEL_START, 3).'s');
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Exceptions are part of the lifecycle too</div>
+          <p>If anything throws (a 404, a failed validation, a bug), the kernel catches it and passes it to the exception handler you configured in <code>-&gt;withExceptions()</code>. It turns the exception into an error page or JSON response, which then flows out like any other response.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // AppServiceProvider::boot()
+          View::share('user', auth()-&gt;user());
+        </code></pre>
+        <p>Providers boot <em>before</em> the session middleware runs, so the user isn't loaded yet and this is always <code>null</code>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // AppServiceProvider::boot()
+          View::composer('*', fn ($view) =&gt;
+              $view-&gt;with('user', auth()-&gt;user())
+          );
+        </code></pre>
+        <p>A view composer runs later, when the view renders, after middleware has started the session.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // public/index.php
+          ini_set('memory_limit', '1G');
+          $app-&gt;handleRequest(Request::capture());
+        </code></pre>
+        <p>Editing framework entry files makes upgrades painful, and your changes are easily lost.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // bootstrap/app.php, a provider, or middleware
+          -&gt;withMiddleware(...)
+        </code></pre>
+        <p>Use the extension points Laravel gives you: <code>bootstrap/app.php</code>, providers and middleware.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: read the source</div>
+      <p>Open <code>vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php</code> and find <code>sendRequestThroughRouter()</code>. It's only a few lines, and you'll recognise every step from this page.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open <code>public/index.php</code> and <code>bootstrap/app.php</code> in your project and match each line to a box in the diagram.</li>
+        <li>Add <code>Log::info('provider booted')</code> in <code>AppServiceProvider::boot()</code> and <code>Log::info('controller ran')</code> in a controller. Load the page and check the order in <code>storage/logs/laravel.log</code>.</li>
+        <li>Write a middleware with both <code>handle()</code> and <code>terminate()</code> that logs a message from each. Register it globally and confirm which logs first.</li>
+        <li>Run <code>php artisan down</code>, visit the site, then <code>php artisan up</code>. Which line of <code>index.php</code> handled that?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Every request enters through <code>public/index.php</code>.</li>
+      <li><code>bootstrap/app.php</code> builds the <code>Application</code>, which is the service container.</li>
+      <li>The HTTP kernel runs bootstrappers: env, config, exceptions, facades, then providers (<code>register</code> → <code>boot</code>).</li>
+      <li>Global middleware → router → route middleware → controller, all via pipelines.</li>
+      <li>The response flows back out through middleware, is sent, then <code>terminate()</code> runs.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which file receives every web request first?",
+          "options": ["`routes/web.php`", "`bootstrap/app.php`", "`public/index.php`", "`app/Http/Kernel.php`"],
+          "answer": 2,
+          "explain": "The web server points at `public/index.php`, which loads the autoloader, builds the app and handles the request."
+        },
+        {
+          "q": "What is the object created in `bootstrap/app.php`?",
+          "options": ["The `Illuminate\\Foundation\\Application`, which is also the service container", "A router instance", "The first controller", "A database connection"],
+          "answer": 0,
+          "explain": "`Application` extends `Container`. It's the same object you reach with `app()`."
+        },
+        {
+          "q": "Which happens **first**?",
+          "options": ["The controller method runs", "Route middleware runs", "The router matches the route", "Service providers boot"],
+          "answer": 3,
+          "explain": "Providers register and boot during the kernel's bootstrap phase, before any middleware or routing."
+        },
+        {
+          "q": "Why is `auth()->user()` null inside `AppServiceProvider::boot()`?",
+          "options": ["Auth is disabled in providers", "The session middleware hasn't run yet", "Providers run after the response", "`auth()` only works in Blade"],
+          "answer": 1,
+          "explain": "Providers boot before middleware. The session (and so the logged-in user) is only started by the `web` middleware group."
+        },
+        {
+          "q": "What runs **after** the response has been sent to the browser?",
+          "options": ["`BootProviders`", "The router", "Terminable middleware's `terminate()` method", "`Request::capture()`"],
+          "answer": 2,
+          "explain": "`$kernel->terminate()` calls `terminate()` on middleware that defines it, plus any `terminating` callbacks."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

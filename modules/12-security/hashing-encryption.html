@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hashing &amp; Encryption · Laravel Blueprint</title>
+  <meta name="description" content="Learn the difference between hashing and encryption in Laravel: Hash::make for passwords, Crypt for secrets, and why APP_KEY matters.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="12" data-lesson="hashing-encryption">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Hashing is a one-way scramble you can only <em>check</em> (perfect for passwords), while encryption is a two-way lock you can <em>open</em> with a key (for secrets you need to read again).</p>
+    <p class="analogy"><span>🥚</span><span>Hashing is like scrambling an egg: you can scramble another egg and compare, but you can never unscramble it. Encryption is like a locked diary: anyone with the key (your <code>APP_KEY</code>) can open it and read the original.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Assume your database will leak one day</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔑</span>
+        <h3>Passwords get reused</h3>
+        <p>If you store passwords readably, a leak exposes your users' email and bank accounts too, not just your app.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧰</span>
+        <h3>Right tool, right job</h3>
+        <p>Hash what you only need to verify. Encrypt what you need to read back, like an API token for a third-party service.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🗝️</span>
+        <h3>One key protects a lot</h3>
+        <p><code>APP_KEY</code> encrypts your cookies, sessions and encrypted columns. Losing or leaking it has real consequences.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One-way vs two-way</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 640 230" role="img" aria-label="Hashing goes one way only; encryption goes both ways with a key" style="width:100%;max-width:640px;height:auto">
+        <g font-family="inherit" font-size="14" fill="currentColor">
+          <text x="10" y="24" font-weight="600" fill="var(--mod)">Hashing (one-way)</text>
+          <rect x="10" y="40" width="150" height="44" rx="10" fill="none" stroke="currentColor"/>
+          <text x="85" y="67" text-anchor="middle">"secret123"</text>
+          <line x1="165" y1="62" x2="255" y2="62" stroke="var(--mod)" stroke-width="2"/>
+          <polygon points="255,56 267,62 255,68" fill="var(--mod)"/>
+          <text x="215" y="52" text-anchor="middle" font-size="12" fill="var(--text-muted)">Hash::make</text>
+          <rect x="272" y="40" width="250" height="44" rx="10" fill="none" stroke="currentColor"/>
+          <text x="397" y="67" text-anchor="middle" font-size="12">$2y$12$Kp9...e3Q (60 chars)</text>
+          <text x="560" y="67" font-size="20">🚫</text>
+          <text x="10" y="106" font-size="12" fill="var(--text-muted)">There is no way back. To log in, hash the attempt and compare with Hash::check.</text>
+
+          <text x="10" y="148" font-weight="600" fill="var(--mod)">Encryption (two-way)</text>
+          <rect x="10" y="164" width="150" height="44" rx="10" fill="none" stroke="currentColor"/>
+          <text x="85" y="191" text-anchor="middle">"sk_live_abc"</text>
+          <line x1="165" y1="180" x2="255" y2="180" stroke="var(--mod)" stroke-width="2"/>
+          <polygon points="255,174 267,180 255,186" fill="var(--mod)"/>
+          <text x="215" y="172" text-anchor="middle" font-size="12" fill="var(--text-muted)">encrypt 🔑</text>
+          <line x1="267" y1="196" x2="177" y2="196" stroke="var(--mod)" stroke-width="2"/>
+          <polygon points="177,190 165,196 177,202" fill="var(--mod)"/>
+          <text x="215" y="220" text-anchor="middle" font-size="12" fill="var(--text-muted)">decrypt 🔑</text>
+          <rect x="272" y="164" width="250" height="44" rx="10" fill="none" stroke="currentColor"/>
+          <text x="397" y="191" text-anchor="middle" font-size="12">eyJpdiI6Ik1...(uses APP_KEY)</text>
+        </g>
+      </svg>
+      <figcaption>A hash can only be compared. Encrypted text can be turned back into the original, but only with the same key.</figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Hashing</th><th>Encryption</th></tr></thead>
+        <tbody>
+          <tr><td>Reversible?</td><td>No</td><td>Yes, with the key</td></tr>
+          <tr><td>Laravel API</td><td><code>Hash::make()</code>, <code>Hash::check()</code></td><td><code>Crypt::encryptString()</code>, <code>Crypt::decryptString()</code></td></tr>
+          <tr><td>Algorithm</td><td>bcrypt (default) or Argon2</td><td>AES-256-CBC + a signature (MAC)</td></tr>
+          <tr><td>Use it for</td><td>Passwords, PINs</td><td>API tokens, private notes, anything you must display later</td></tr>
+          <tr><td>Depends on <code>APP_KEY</code>?</td><td>No</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Protect passwords and secrets the Laravel way</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Hash a password with <code>Hash::make</code></h3>
+        <p>bcrypt adds a random <strong>salt</strong> (extra random characters) to each password before hashing, so two users with the same password get different hashes. It's also deliberately slow, which makes guessing billions of passwords impractical.</p>
+        <pre><code class="lang-php">
+          use Illuminate\Support\Facades\Hash;
+
+          $hash = Hash::make('secret123');
+          // $2y$12$Kp9....  (different every time you run it)
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Verify with <code>Hash::check</code></h3>
+        <p>You can't decrypt a hash, so you check a login attempt by comparing. <code>Hash::check</code> re-hashes the attempt using the salt stored inside the hash.</p>
+        <pre><code class="lang-php">
+          if (Hash::check($request-&gt;input('password'), $user-&gt;password)) {
+              // correct password
+          }
+        </code></pre>
+        <p>In practice <code>Auth::attempt()</code> does this for you (see <a href="../07-authentication/sessions-guards.html">Sessions &amp; Guards</a>). You'll use <code>Hash::check</code> directly for things like "confirm your current password".</p>
+      </li>
+
+      <li class="step">
+        <h3>Let the <code>'hashed'</code> cast do it automatically</h3>
+        <p>New Laravel apps ship with this cast on the <code>User</code> model. Any plain password you assign is hashed before it's saved, and an already-hashed value is left alone.</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php" data-hl="5">
+          protected function casts(): array
+          {
+              return [
+                  'email_verified_at' =&gt; 'datetime',
+                  'password' =&gt; 'hashed',
+              ];
+          }
+        </code></pre>
+        <pre><code class="lang-php">
+          User::create([
+              'name' =&gt; 'Ada',
+              'email' =&gt; 'ada@example.com',
+              'password' =&gt; $request-&gt;validated('password'), // hashed by the cast
+          ]);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Encrypt secrets you need to read back</h3>
+        <p>Say each user connects their own newsletter service and you must store their API key. You need the real value later, so hash won't work. Use the <code>Crypt</code> facade.</p>
+        <pre><code class="lang-php">
+          use Illuminate\Support\Facades\Crypt;
+          use Illuminate\Contracts\Encryption\DecryptException;
+
+          $stored = Crypt::encryptString('sk_live_abc');
+
+          try {
+              $apiKey = Crypt::decryptString($stored);
+          } catch (DecryptException $e) {
+              // tampered with, or encrypted with a different APP_KEY
+          }
+        </code></pre>
+        <p>Even simpler: the <code>'encrypted'</code> cast encrypts on save and decrypts on read.</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php">
+          'newsletter_api_key' =&gt; 'encrypted',
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Column size</div>
+          <p>Encrypted values are much longer than the original. Use a <code>text</code> column for encrypted attributes.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Look after <code>APP_KEY</code></h3>
+        <p><code>APP_KEY</code> is a random 32-byte key in your <code>.env</code> file. Laravel uses it for <strong>encryption</strong>: encrypted casts, <code>Crypt</code>, and encrypted cookies (which carry your session ID).</p>
+        <pre><code class="lang-env" data-file=".env">
+          APP_KEY=base64:7v2Jw0b3...44-char-random-string...=
+        </code></pre>
+        <pre><code class="lang-bash">
+          php artisan key:generate
+        </code></pre>
+        <ul>
+          <li>Generate it once per environment. Never commit <code>.env</code> to git.</li>
+          <li>If it leaks, anyone can decrypt your data and forge cookies. Rotate it.</li>
+          <li>If you change it carelessly, existing encrypted data can't be decrypted and everyone is logged out. To rotate safely, put the old key in <code>APP_PREVIOUS_KEYS</code> so Laravel can still decrypt old values.</li>
+          <li>Changing <code>APP_KEY</code> does <strong>not</strong> affect password hashes.</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $user-&gt;password = Crypt::encryptString($pw);
+          // or md5($pw), sha1($pw)
+        </code></pre>
+        <p>Encrypted passwords can be decrypted by anyone with the key, and md5/sha1 are fast enough to brute-force.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $user-&gt;password = Hash::make($pw);
+          // or rely on the 'hashed' cast
+        </code></pre>
+        <p>A slow, salted one-way hash means even you can't recover the password, and that's the point.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          if (Hash::make($input) === $user-&gt;password) {
+              // never true!
+          }
+        </code></pre>
+        <p>Each <code>Hash::make</code> uses a new random salt, so the strings never match.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          if (Hash::check($input, $user-&gt;password)) {
+              // ...
+          }
+        </code></pre>
+        <p><code>Hash::check</code> reads the salt from the stored hash and compares safely.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: hashes upgrade themselves</div>
+      <p>The work factor is set by <code>BCRYPT_ROUNDS</code> in <code>.env</code> (default 12). When you raise it, Laravel's login automatically re-hashes each user's password the next time they log in, thanks to <code>Hash::needsRehash()</code>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>In <code>php artisan tinker</code>, run <code>Hash::make('secret')</code> twice and compare the results.</li>
+        <li>Check that <code>Hash::check('secret', $hash)</code> returns <code>true</code> for both hashes.</li>
+        <li>Encrypt a string with <code>Crypt::encryptString</code>, then decrypt it back.</li>
+        <li>Add a <code>newsletter_api_key</code> text column with the <code>'encrypted'</code> cast. Save a value and look at the raw database row.</li>
+        <li>Confirm your <code>User</code> model has <code>'password' =&gt; 'hashed'</code> in <code>casts()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Hashing</strong> is one-way: use <code>Hash::make</code> and <code>Hash::check</code> for passwords.</li>
+      <li><strong>Encryption</strong> is two-way: use <code>Crypt::encryptString</code> or the <code>'encrypted'</code> cast for secrets you must read back.</li>
+      <li>The <code>'hashed'</code> cast hashes passwords automatically when you assign them.</li>
+      <li>Never store passwords encrypted, plain, or with md5/sha1.</li>
+      <li><code>APP_KEY</code> powers encryption and cookies: keep it secret, back it up, rotate with <code>APP_PREVIOUS_KEYS</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which should you use to store a user's login password?",
+          "options": ["`Crypt::encryptString()`", "`Hash::make()`", "`base64_encode()`", "`md5()`"],
+          "answer": 1,
+          "explain": "Passwords only need to be verified, never read back, so a slow salted one-way hash is the right tool."
+        },
+        {
+          "q": "Why does `Hash::make('a') === Hash::make('a')` return false?",
+          "options": ["Each hash includes a new random salt", "bcrypt is broken", "Strings can't be compared in PHP", "The hash depends on the current time zone"],
+          "answer": 0,
+          "explain": "The random salt makes every hash unique. Use `Hash::check()` to compare a plain value with a stored hash."
+        },
+        {
+          "q": "You store users' third-party API tokens and must send them later. What fits?",
+          "options": ["`Hash::make()`", "Plain text with a hidden column", "The `'encrypted'` cast or `Crypt::encryptString()`", "The `'hashed'` cast"],
+          "answer": 2,
+          "explain": "You need the original value back, so encryption (two-way) is required."
+        },
+        {
+          "q": "What happens to existing password hashes if you change `APP_KEY`?",
+          "options": ["They all become invalid", "They are re-encrypted", "Users must reset passwords", "Nothing, hashes don't use `APP_KEY`"],
+          "answer": 3,
+          "explain": "Hashing doesn't use `APP_KEY`. Encrypted data and cookies do, which is why rotating needs `APP_PREVIOUS_KEYS`."
+        },
+        {
+          "q": "What does the `'password' => 'hashed'` cast do?",
+          "options": ["Hashes a plain password automatically when it's assigned", "Hides the password from JSON", "Encrypts the password with `APP_KEY`", "Validates password strength"],
+          "answer": 0,
+          "explain": "The cast hashes plain values on assignment and leaves already-hashed values alone. Use `$hidden` to keep it out of JSON."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

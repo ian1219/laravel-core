@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Abstraction &amp; Interfaces · Laravel Blueprint</title>
+  <meta name="description" content="Learn abstraction in PHP: abstract classes, interfaces, when to choose each, and traits for sharing code across unrelated classes.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="02" data-lesson="abstraction">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Abstraction means describing <em>what</em> something must be able to do while leaving <em>how</em> it does it to the classes that fill in the details.</p>
+    <p class="analogy"><span>🔌</span><span>A wall socket is an abstraction. It promises "two pins, 230 volts". Your lamp, laptop charger and kettle all plug in without caring whether the power comes from solar panels or a coal plant.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Code against promises, not details</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📜</span>
+        <h3>Clear contracts</h3>
+        <p>An interface lists exactly which methods a class must have. Anyone reading it knows what to expect.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔄</span>
+        <h3>Swappable parts</h3>
+        <p>Code that depends on a contract works with any class that keeps the promise: a real mailer, a fake one for tests, a new provider next year.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧱</span>
+        <h3>Shared code without copying</h3>
+        <p>Abstract classes and traits let related or unrelated classes reuse logic instead of duplicating it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Three tools, three jobs</h2>
+    </div>
+    <figure class="diagram">
+      <div class="card-grid">
+        <div class="mini-card">
+          <span class="mini-icon">📜</span>
+          <h3>Interface</h3>
+          <p>A pure promise: method signatures, no code. A class can implement <strong>many</strong>.</p>
+          <pre><code class="lang-php">
+            interface Notifier
+            {
+                public function send(string $to, string $msg): void;
+            }
+          </code></pre>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🧩</span>
+          <h3>Abstract class</h3>
+          <p>A half-built parent: some real code, some "fill this in" methods. A class extends only <strong>one</strong>.</p>
+          <pre><code class="lang-php">
+            abstract class Report
+            {
+                abstract protected function rows(): array;
+            }
+          </code></pre>
+        </div>
+        <div class="mini-card">
+          <span class="mini-icon">🧰</span>
+          <h3>Trait</h3>
+          <p>A bundle of methods pasted into any class with <code>use</code>. No "is a" relationship at all.</p>
+          <pre><code class="lang-php">
+            trait HasSlug
+            {
+                public function slug(): string { /* ... */ }
+            }
+          </code></pre>
+        </div>
+      </div>
+      <figcaption>Interfaces define <em>what</em>, abstract classes share <em>some how</em> with related children, traits share <em>how</em> with anyone.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>From promise to implementation</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Write an interface</h3>
+        <p>An <strong>interface</strong> is a list of public method signatures with no bodies. It's a <strong>contract</strong>: "any class that signs this must have these methods".</p>
+        <pre><code class="lang-php" data-file="Notifier.php">
+          &lt;?php
+
+          interface Notifier
+          {
+              public function send(string $to, string $message): void;
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Implement it in real classes</h3>
+        <p>A class <strong>implements</strong> an interface by providing every method it lists. Miss one, or get a type wrong, and PHP refuses to load the class.</p>
+        <pre><code class="lang-php" data-file="Notifiers.php" data-hl="1,9">
+          class EmailNotifier implements Notifier
+          {
+              public function send(string $to, string $message): void
+              {
+                  echo "📧 Emailing {$to}: {$message}" . PHP_EOL;
+              }
+          }
+
+          class SmsNotifier implements Notifier
+          {
+              public function send(string $to, string $message): void
+              {
+                  echo "📱 Texting {$to}: {$message}" . PHP_EOL;
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Depend on the interface, not the class</h3>
+        <p>Here's the payoff. Type-hint the <strong>interface</strong>, and your code accepts any class that implements it. It has no idea, and doesn't care, which one it gets.</p>
+        <pre><code class="lang-php" data-file="CommentAlert.php" data-hl="3">
+          class CommentAlert
+          {
+              public function __construct(private Notifier $notifier) {}
+
+              public function newComment(string $author, string $postTitle): void
+              {
+                  $this-&gt;notifier-&gt;send($author, "New comment on {$postTitle}");
+              }
+          }
+
+          (new CommentAlert(new EmailNotifier()))-&gt;newComment('ada@example.com', 'Hello Laravel');
+          (new CommentAlert(new SmsNotifier()))-&gt;newComment('+15550100', 'Hello Laravel');
+        </code></pre>
+        <p>A class can implement <strong>several</strong> interfaces at once: <code>class Post implements JsonSerializable, Countable</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Share code with an abstract class</h3>
+        <p>An <strong>abstract class</strong> can't be created with <code>new</code>. It holds shared code and declares <strong>abstract methods</strong> that each child must fill in. This "parent runs the recipe, children supply one ingredient" shape is called the <strong>template method</strong> pattern.</p>
+        <pre><code class="lang-php" data-file="Report.php" data-hl="1,3,7">
+          abstract class Report
+          {
+              abstract protected function rows(): array;
+
+              public function toCsv(): string
+              {
+                  return implode(PHP_EOL, array_map(fn (array $r) =&gt; implode(',', $r), $this-&gt;rows()));
+              }
+          }
+
+          class PopularPostsReport extends Report
+          {
+              protected function rows(): array
+              {
+                  return [['Hello Laravel', 1250], ['Arrays 101', 830]];
+              }
+          }
+
+          echo (new PopularPostsReport())-&gt;toCsv();
+          new Report();   // Error: Cannot instantiate abstract class Report
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Choose: interface or abstract class?</h3>
+        <p>They overlap, so here's a rule of thumb. You can also combine them: an abstract class can implement an interface and leave some methods for its children.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th>Interface</th><th>Abstract class</th></tr></thead>
+            <tbody>
+              <tr><td>Contains code?</td><td>No (only signatures and constants)</td><td>Yes, plus abstract methods</td></tr>
+              <tr><td>Properties?</td><td>No</td><td>Yes</td></tr>
+              <tr><td>How many per class?</td><td>Many (<code>implements A, B</code>)</td><td>One (<code>extends</code>)</td></tr>
+              <tr><td>Use it when…</td><td>Unrelated classes share a capability</td><td>Related classes share real code</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Reuse code anywhere with traits</h3>
+        <p>A <strong>trait</strong> is a reusable chunk of methods (and properties) that you "copy in" with <code>use</code> inside a class. It solves "I want this behaviour in classes that don't share a parent".</p>
+        <pre><code class="lang-php" data-file="HasSlug.php" data-hl="13,20">
+          trait HasSlug
+          {
+              public function slug(): string
+              {
+                  return strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $this-&gt;slugSource()), '-'));
+              }
+
+              abstract protected function slugSource(): string;
+          }
+
+          class Post
+          {
+              use HasSlug;
+              public function __construct(public string $title) {}
+              protected function slugSource(): string { return $this-&gt;title; }
+          }
+
+          class Category
+          {
+              use HasSlug;
+              public function __construct(public string $name) {}
+              protected function slugSource(): string { return $this-&gt;name; }
+          }
+
+          echo (new Category('PHP Tips'))-&gt;slug();   // php-tips
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Traits aren't types</div>
+          <p>You can't type-hint a trait (<code>function x(HasSlug $s)</code> won't work). If code needs to <em>accept</em> "anything with a slug", pair the trait with an interface, such as <code>class Post implements Sluggable { use HasSlug; }</code>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function __construct(private EmailNotifier $notifier) {}
+        </code></pre>
+        <p>Hard-wired to one concrete class. Switching to SMS, or a fake in tests, means editing this class.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function __construct(private Notifier $notifier) {}
+        </code></pre>
+        <p>Depend on the interface, and any implementation can be plugged in from outside.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          interface PostManager
+          {
+              public function create(); public function publish();
+              public function email(); public function exportPdf();
+              public function tweet(); // ...12 more
+          }
+        </code></pre>
+        <p>A giant interface forces every implementer to write methods it doesn't need.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          interface Publishable { public function publish(): void; }
+          interface Exportable  { public function export(): string; }
+        </code></pre>
+        <p>Keep interfaces small and focused. Classes implement only the ones that apply.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: name the capability</div>
+      <p>Good interface names describe what a class <em>can do</em> or <em>is</em>: <code>Notifier</code>, <code>Publishable</code>, <code>Cache</code>. Avoid suffixes like <code>PostInterface</code> unless your team already uses them.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Write an interface <code>Shape</code> with <code>area(): float</code> and <code>name(): string</code>.</li>
+        <li>Implement it in <code>Circle</code> and <code>Rectangle</code> using promoted constructor properties.</li>
+        <li>Create an abstract class <code>Exporter</code> with a concrete <code>export(array $shapes): string</code> that calls an abstract <code>format(Shape $shape): string</code>. Make <code>CsvExporter</code> and <code>JsonExporter</code> children.</li>
+        <li>Write a trait <code>Timestamps</code> with a <code>touch()</code> method that sets a <code>?DateTimeImmutable $updatedAt</code>, and use it in both shapes.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Contracts</strong>: Laravel's core services are defined as interfaces in <code>Illuminate\Contracts</code>, such as <code>Cache\Repository</code> and <code>Mail\Mailer</code>. The <a href="../10-laravel-core/service-container.html">Service Container</a> decides which class fills each contract.</li>
+        <li><strong>Traits on models</strong>: <code>use HasFactory, Notifiable, SoftDeletes;</code> mixes features into your <code>User</code> and <code>Post</code> models.</li>
+        <li><strong>Marker interfaces</strong>: <code>class SendNewsletter implements ShouldQueue</code> tells Laravel to run a job in the background (see <a href="../13-performance/queues-jobs.html">Queues &amp; Jobs</a>).</li>
+        <li><strong>Abstract bases</strong>: <code>Illuminate\Database\Eloquent\Model</code> is itself an abstract class you extend.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Abstraction separates <em>what</em> must happen from <em>how</em> it happens.</li>
+      <li>Interfaces are contracts of method signatures; a class can implement many.</li>
+      <li>Abstract classes share real code and force children to fill in abstract methods; they can't be instantiated.</li>
+      <li>Type-hint interfaces so implementations can be swapped freely.</li>
+      <li>Traits copy reusable methods into unrelated classes with <code>use</code>, but they aren't types.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What can an interface contain?",
+          "options": ["Method signatures (and constants), but no method bodies or properties", "Full methods and properties", "Only properties", "Only static methods with code"],
+          "answer": 0,
+          "explain": "An interface is a pure contract. The implementing class supplies all the code."
+        },
+        {
+          "q": "What happens when you run `new Report()` and `Report` is abstract?",
+          "options": ["It works but methods return null", "PHP creates a child class automatically", "An Error: cannot instantiate an abstract class", "It returns false"],
+          "answer": 2,
+          "explain": "Abstract classes exist only to be extended. Create one of their concrete children instead."
+        },
+        {
+          "q": "Which line is valid PHP?",
+          "options": ["`class Post extends Model, Searchable`", "`class Post implements Publishable, Exportable`", "`class Post uses HasSlug`", "`class Post implements Model extends Publishable`"],
+          "answer": 1,
+          "explain": "A class can implement many interfaces but extend only one class. Traits are added with `use` **inside** the class body."
+        },
+        {
+          "q": "Why type-hint `Notifier` instead of `EmailNotifier` in a constructor?",
+          "options": ["It runs faster", "It's required by PHP", "Interfaces can't be passed as arguments", "Any implementation can be swapped in, like SMS or a test fake"],
+          "answer": 3,
+          "explain": "Depending on the contract keeps the class flexible and easy to test."
+        },
+        {
+          "q": "What's the best description of a trait?",
+          "options": ["A reusable set of methods copied into classes with `use`", "A type you can use in parameter hints", "Another name for an interface", "A class that can be instantiated"],
+          "answer": 0,
+          "explain": "Traits share code horizontally across unrelated classes. They aren't types, so pair them with an interface when you need a type hint."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

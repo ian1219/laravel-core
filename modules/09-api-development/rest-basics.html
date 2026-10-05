@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>REST Basics · Laravel Blueprint</title>
+  <meta name="description" content="Learn REST API basics: resources as nouns in URLs, HTTP methods as verbs, JSON bodies and status codes like 200, 201, 204, 404 and 422.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="09" data-lesson="rest-basics">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A REST API lets other programs work with your data by sending HTTP requests to predictable URLs and getting JSON back.</p>
+    <p class="analogy"><span>🍽️</span><span>Think of a restaurant menu. The dishes are the <em>nouns</em> (posts, users), and what you can do with them is a short, fixed list of <em>verbs</em> (order, change, cancel). Every customer uses the same menu, so the kitchen always knows what you mean.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Your app is more than web pages</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📱</span>
+        <h3>Many clients, one backend</h3>
+        <p>A mobile app, a React frontend and a partner's server can all use the same Laravel API.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Predictable by design</h3>
+        <p>REST follows conventions, so developers can guess your URLs before they read the docs.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🚦</span>
+        <h3>Clear success and failure</h3>
+        <p>Status codes tell the client exactly what happened, with no guesswork and no parsing of error text.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One API round trip</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📱</span><strong>Client</strong><small>GET /api/posts/7</small></div>
+        <div class="flow-node"><span class="flow-icon">🧭</span><strong>Route</strong><small>routes/api.php</small></div>
+        <div class="flow-node"><span class="flow-icon">⚙️</span><strong>Controller</strong><small>finds Post #7</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📦</span><strong>JSON</strong><small>200 OK + body</small></div>
+      </div>
+      <figcaption>Same request/response cycle as a web page, but the answer is JSON data instead of HTML.</figcaption>
+    </figure>
+    <p>A <strong>resource</strong> is any "thing" your API exposes, such as posts or comments. REST maps each action on a resource to an <strong>HTTP method</strong> plus a <strong>URL</strong>:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>URL</th><th>Meaning</th><th>Typical status</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/posts</code></td><td>List posts</td><td><code>200 OK</code></td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/posts</code></td><td>Create a post</td><td><code>201 Created</code></td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/posts/7</code></td><td>Show one post</td><td><code>200</code> or <code>404</code></td></tr>
+          <tr><td><code>PUT/PATCH</code></td><td><code>/api/posts/7</code></td><td>Update a post</td><td><code>200 OK</code></td></tr>
+          <tr><td><code>DELETE</code></td><td><code>/api/posts/7</code></td><td>Delete a post</td><td><code>204 No Content</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Think like a REST designer</h2>
+      <p>Each step adds one rule. By the end you can design clean endpoints for the blog example.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Nouns in URLs, verbs in methods</h3>
+        <p>URLs name <strong>things</strong>, always as plural nouns. The HTTP method says <strong>what to do</strong> with them. Never put the action in the URL.</p>
+        <pre><code class="lang-text">
+          GET    /api/posts            ✅ list posts
+          POST   /api/posts            ✅ create a post
+          DELETE /api/posts/7          ✅ delete post 7
+
+          GET    /api/getAllPosts      ❌ verb in the URL
+          POST   /api/posts/7/delete   ❌ action in the URL
+        </code></pre>
+        <p>Related things can be nested one level deep: <code>GET /api/posts/7/comments</code> lists the comments of post 7.</p>
+      </li>
+
+      <li class="step">
+        <h3>Send and receive JSON</h3>
+        <p><strong>JSON</strong> (JavaScript Object Notation) is the shared language of APIs. Clients send it in the request <strong>body</strong> and receive it in the response.</p>
+        <pre><code class="lang-json" data-file="Response body">
+          {
+              "id": 7,
+              "title": "Hello REST",
+              "body": "APIs are just URLs that return data.",
+              "author": { "id": 1, "name": "Ada" },
+              "created_at": "2026-10-05T09:30:00Z"
+          }
+        </code></pre>
+        <p>Laravel turns arrays and models into JSON automatically when you return them from a route.</p>
+      </li>
+
+      <li class="step">
+        <h3>Use headers to talk about the format</h3>
+        <p><strong>Headers</strong> are labels on the request. <code>Accept: application/json</code> tells Laravel "I want JSON back, even for errors". <code>Content-Type</code> says what format the body is in.</p>
+        <pre><code class="lang-bash">
+          curl -X POST http://127.0.0.1:8000/api/posts \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Hello REST","body":"My first API post"}'
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Always send Accept: application/json</div>
+          <p>Without it, a failed validation may answer with a <em>redirect</em> meant for browsers instead of a JSON error.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Answer with the right status code</h3>
+        <p>A <strong>status code</strong> is a three-digit number that summarises the result. Clients check it before reading the body.</p>
+        <dl class="terms">
+          <div><dt><code>200 OK</code></dt><dd>It worked, and here is the data.</dd></div>
+          <div><dt><code>201 Created</code></dt><dd>A new resource was saved.</dd></div>
+          <div><dt><code>204 No Content</code></dt><dd>It worked, and there is nothing to return (typical after delete).</dd></div>
+          <div><dt><code>401 Unauthorized</code></dt><dd>You are not logged in, or your token is missing.</dd></div>
+          <div><dt><code>403 Forbidden</code></dt><dd>Logged in, but not allowed to do this.</dd></div>
+          <div><dt><code>404 Not Found</code></dt><dd>That resource doesn't exist.</dd></div>
+          <div><dt><code>422 Unprocessable Content</code></dt><dd>The data failed validation.</dd></div>
+        </dl>
+      </li>
+
+      <li class="step">
+        <h3>Your first JSON endpoint in Laravel</h3>
+        <p>After <code>php artisan install:api</code> (next lesson), routes in <code>routes/api.php</code> get an automatic <code>/api</code> prefix. Returning a model or collection gives you JSON for free.</p>
+        <pre><code class="lang-php" data-file="routes/api.php" data-hl="6-8,10-13">
+          &lt;?php
+
+          use App\Models\Post;
+          use Illuminate\Support\Facades\Route;
+
+          Route::get('/posts/{post}', function (Post $post) {
+              return $post;                       // 200 + JSON, or 404 if missing
+          });
+
+          Route::post('/posts', function () {
+              $post = Post::create(request()-&gt;validate(['title' =&gt; 'required']));
+              return response()-&gt;json($post, 201); // 201 Created
+          });
+        </code></pre>
+        <pre><code class="lang-bash">
+          curl http://127.0.0.1:8000/api/posts/7 -H "Accept: application/json"
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          return response()-&gt;json([
+              'error' =&gt; 'Post not found',
+          ], 200);
+        </code></pre>
+        <p>A <code>200</code> with an error inside lies to the client. Its code thinks everything worked.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          return response()-&gt;json([
+              'message' =&gt; 'Post not found.',
+          ], 404);
+        </code></pre>
+        <p>Match the status code to the outcome, so clients can branch on it reliably.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          POST /api/createPost
+          GET  /api/post/7/remove
+        </code></pre>
+        <p>Verbs in URLs multiply endpoints and make GET requests change data, which is dangerous.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          POST   /api/posts
+          DELETE /api/posts/7
+        </code></pre>
+        <p>Plural nouns plus the right method keep the API small and guessable.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: GET must be safe</div>
+      <p>A <code>GET</code> request should never change data. Browsers, proxies and crawlers may repeat GET requests freely, so anything that writes belongs in POST, PUT, PATCH or DELETE.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <p>On paper (or in a text file), design the API for blog <strong>comments</strong>:</p>
+      <ol>
+        <li>Write the method + URL to list all comments of post 3.</li>
+        <li>Write the method + URL to add a comment to post 3, and the status code you'd return.</li>
+        <li>Write the method + URL to delete comment 12, and the status code you'd return.</li>
+        <li>Sketch the JSON body a client would send to create a comment.</li>
+        <li>Which status code would you return if the comment text is empty?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A REST API exposes <strong>resources</strong> at predictable URLs and speaks JSON.</li>
+      <li>URLs are plural nouns; HTTP methods (<code>GET</code>, <code>POST</code>, <code>PUT/PATCH</code>, <code>DELETE</code>) are the verbs.</li>
+      <li>Status codes summarise the result: <code>200</code>, <code>201</code>, <code>204</code>, <code>404</code>, <code>422</code> are the everyday ones.</li>
+      <li>Clients should send <code>Accept: application/json</code> to always get JSON back.</li>
+      <li>Laravel converts returned models and arrays into JSON automatically.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which endpoint follows REST conventions for creating a post?",
+          "options": ["`GET /api/createPost`", "`POST /api/posts`", "`POST /api/posts/create`", "`PUT /api/newPost`"],
+          "answer": 1,
+          "explain": "The URL names the resource (plural noun) and the `POST` method says \"create\"."
+        },
+        {
+          "q": "What status code fits a successful DELETE with nothing to return?",
+          "options": ["`200 OK`", "`201 Created`", "`404 Not Found`", "`204 No Content`"],
+          "answer": 3,
+          "explain": "`204` means success with an empty body, which is exactly what a delete usually needs."
+        },
+        {
+          "q": "A client sends a post with an empty title. Which status code should come back?",
+          "options": ["`422`", "`500`", "`201`", "`301`"],
+          "answer": 0,
+          "explain": "`422 Unprocessable Content` means the request was understood but the data failed validation."
+        },
+        {
+          "q": "Why should API clients send `Accept: application/json`?",
+          "options": ["It makes requests faster", "It's required for GET requests", "So Laravel answers with JSON, including for errors", "It encrypts the body"],
+          "answer": 2,
+          "explain": "Laravel checks this header to decide whether to respond with JSON or browser-style redirects and HTML."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

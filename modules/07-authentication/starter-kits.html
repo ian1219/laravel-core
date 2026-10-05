@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Starter Kits · Laravel Blueprint</title>
+  <meta name="description" content="Scaffold login, registration and profile pages with Laravel 12 starter kits (React, Vue, Livewire) or the classic Breeze, and see what files they generate.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="07" data-lesson="starter-kits">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A starter kit generates complete, tested login, registration, password reset and profile pages for you, so you start from working auth instead of a blank screen.</p>
+    <p class="analogy"><span>🏠</span><span>It's like moving into a flat that already has locks, a doorbell and a key cabinet installed. You can repaint the doors however you like, but you don't have to build the locks yourself.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Auth is easy to get almost right</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⏱️</span>
+        <h3>Hours become minutes</h3>
+        <p>Login, register, forgot password, email verification and profile settings all appear after one install.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Secure defaults</h3>
+        <p>Session regeneration, rate limiting and CSRF protection are already wired in, which are the details beginners often miss.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📖</span>
+        <h3>It's your code</h3>
+        <p>The files are copied into your app, not hidden in a package. Read them, learn from them and change them freely.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Pick a flavour</h2>
+    </div>
+    <p>When you run <code>laravel new</code> in Laravel 12, the installer asks which <strong>starter kit</strong> you want. Each one gives you the same auth features, but the frontend technology is different.</p>
+    <div class="card-grid">
+      <div class="mini-card">
+        <span class="mini-icon">⚛️</span>
+        <h3>React</h3>
+        <p>An Inertia + React 19 + TypeScript frontend with shadcn/ui components. Good if you already know React.</p>
+      </div>
+      <div class="mini-card">
+        <span class="mini-icon">💚</span>
+        <h3>Vue</h3>
+        <p>The same idea with Vue 3 + TypeScript via Inertia. Pages are <code>.vue</code> files.</p>
+      </div>
+      <div class="mini-card">
+        <span class="mini-icon">⚡</span>
+        <h3>Livewire</h3>
+        <p>Interactive pages written in PHP + Blade, styled with Flux UI. A great fit if you'd rather stay in PHP.</p>
+      </div>
+      <div class="mini-card">
+        <span class="mini-icon">🌬️</span>
+        <h3>Breeze (classic)</h3>
+        <p>The well-known minimal kit from Laravel 8–11, with simple Blade + Tailwind views. Still installable, and still great for learning.</p>
+      </div>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">💻</span><strong>laravel new blog</strong><small>installer asks questions</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧩</span><strong>Choose a kit</strong><small>React · Vue · Livewire</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>migrate</strong><small>users, sessions, reset tokens</small></div>
+        <div class="flow-node"><span class="flow-icon">🎨</span><strong>npm run build</strong><small>compile the frontend</small></div>
+        <div class="flow-node"><span class="flow-icon">✅</span><strong>Register!</strong><small>/register works</small></div>
+      </div>
+      <figcaption>From an empty folder to a working sign-up page in a few minutes.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Install a kit and register your first user</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Create the project with a starter kit</h3>
+        <p>Run the installer (see <a href="../04-laravel-basics/installation.html">Installation</a> if you haven't installed it yet) and answer the prompts.</p>
+        <pre><code class="lang-bash">
+          laravel new blog
+        </code></pre>
+        <pre><code class="lang-text">
+          Which starter kit would you like to install?
+            None
+            React
+            Vue
+          › Livewire
+
+          Which authentication provider do you prefer?
+          › Laravel's built-in authentication
+            WorkOS (Requires WorkOS account)
+        </code></pre>
+        <p>Pick <strong>Laravel's built-in authentication</strong>. WorkOS is a hosted service that adds social login and passkeys, but you don't need it while you're learning.</p>
+      </li>
+
+      <li class="step">
+        <h3>Look at what was generated</h3>
+        <p>The exact files depend on the kit. This is the rough shape of a Livewire kit:</p>
+        <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Http/Controllers/Auth/</span>     <span class="note">← e.g. VerifyEmailController</span>
+├── <span class="dir">Livewire/Actions/Logout.php</span>
+└── <span class="dir">Models/User.php</span>            <span class="note">← already existed</span>
+<span class="dir">resources/views/</span>
+├── <span class="dir">livewire/auth/</span>             <span class="note">← login, register, forgot-password…</span>
+├── <span class="dir">livewire/settings/</span>         <span class="note">← profile, password, appearance</span>
+└── dashboard.blade.php
+<span class="dir">routes/</span>
+├── web.php                    <span class="note">← home + dashboard</span>
+├── auth.php                   <span class="note">← all login/register routes</span>
+└── settings.php               <span class="note">← profile settings routes</span>
+<span class="dir">tests/Feature/Auth/</span>            <span class="note">← ready-made tests for every screen</span></pre>
+        <p>React and Vue kits put their pages in <code>resources/js/pages/auth/</code> and use controllers in <code>app/Http/Controllers/Auth/</code> instead of Livewire components.</p>
+      </li>
+
+      <li class="step">
+        <h3>Migrate the users table</h3>
+        <p>Every new Laravel app ships with a migration that creates three tables: <code>users</code>, <code>password_reset_tokens</code> and <code>sessions</code>. The installer usually runs it for you on SQLite. If you changed your database in <code>.env</code>, run it yourself:</p>
+        <pre><code class="lang-bash">
+          php artisan migrate
+        </code></pre>
+        <pre><code class="lang-php" data-file="database/migrations/0001_01_01_000000_create_users_table.php" data-hl="4-6">
+          Schema::create('users', function (Blueprint $table) {
+              $table-&gt;id();
+              $table-&gt;string('name');
+              $table-&gt;string('email')-&gt;unique();
+              $table-&gt;timestamp('email_verified_at')-&gt;nullable();
+              $table-&gt;string('password');
+              $table-&gt;rememberToken();
+              $table-&gt;timestamps();
+          });
+        </code></pre>
+        <p>Need extra columns, like <code>username</code>? Add a new migration (see <a href="../05-database/migrations.html">Migrations</a>), then add the field to the register form and to <code>$fillable</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Build the frontend and run it</h3>
+        <p>The kits use Vite to compile CSS and JavaScript. <code>composer run dev</code> starts the PHP server, the Vite dev server and the queue worker together.</p>
+        <pre><code class="lang-bash">
+          npm install
+          npm run build
+          composer run dev
+        </code></pre>
+        <p>Visit <code>http://localhost:8000/register</code>, create an account and you'll land on <code>/dashboard</code>. You're logged in.</p>
+      </li>
+
+      <li class="step">
+        <h3>The classic option: Breeze</h3>
+        <p>Many tutorials (and older projects) use <strong>Laravel Breeze</strong>. It still works and its plain Blade views are very readable. Install it into a project created <em>without</em> a starter kit:</p>
+        <pre><code class="lang-bash">
+          composer require laravel/breeze --dev
+          php artisan breeze:install blade
+          php artisan migrate
+          npm install &amp;&amp; npm run dev
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Which should I choose?</div>
+          <p>For new Laravel 12 apps, the official kits are the recommended path. Choose <strong>Livewire</strong> if you want to stay in PHP and Blade, and <strong>React/Vue</strong> if you already know them. Breeze is fine for learning and for maintaining existing apps.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-bash">
+          # Existing app with lots of custom routes…
+          php artisan breeze:install blade
+        </code></pre>
+        <p>Starter kits overwrite files such as <code>routes/web.php</code> and layouts. Running one on a grown-up app can wipe your work.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-bash">
+          laravel new blog   # choose a kit up front
+          git init &amp;&amp; git add -A &amp;&amp; git commit -m "Starter kit"
+        </code></pre>
+        <p>Install the kit on day one and commit straight away, so you can always see what you've changed since.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: read the generated tests</div>
+      <p>Run <code>php artisan test</code> right after installing. Every auth screen comes with a test, and reading them is one of the fastest ways to understand how the kit works.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a new app with <code>laravel new</code> and choose the Livewire (or React/Vue) kit.</li>
+        <li>Run <code>php artisan route:list --path=login</code> and find the controller or component behind <code>/login</code>.</li>
+        <li>Register two users, then check the <code>users</code> table and confirm the passwords are hashed.</li>
+        <li>Change the dashboard heading, reload and see your change.</li>
+        <li>Run <code>php artisan test</code> and count how many auth tests pass.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>laravel new</code> offers <strong>React</strong>, <strong>Vue</strong> and <strong>Livewire</strong> starter kits in Laravel 12.</li>
+      <li><strong>Breeze</strong> is the classic minimal kit, and it's still useful for learning and older apps.</li>
+      <li>Kits copy real files into your app: controllers or components, views, <code>routes/auth.php</code> and tests.</li>
+      <li>The <code>users</code>, <code>password_reset_tokens</code> and <code>sessions</code> tables come from the default migration. Run <code>php artisan migrate</code>.</li>
+      <li>Install a kit at the start of a project, never on top of a mature one.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which starter kits does `laravel new` offer in Laravel 12?",
+          "options": ["React, Vue and Livewire", "Only Breeze", "Jetstream and Fortify", "Angular and Svelte"],
+          "answer": 0,
+          "explain": "Laravel 12 ships React, Vue and Livewire kits. Breeze is the older classic option you can still install with Composer."
+        },
+        {
+          "q": "Where do most of a kit's auth routes live?",
+          "options": ["`config/auth.php`", "Inside the vendor folder", "`routes/auth.php`", "`bootstrap/app.php`"],
+          "answer": 2,
+          "explain": "Kits put login, register and password routes in `routes/auth.php`, which is loaded from `routes/web.php`."
+        },
+        {
+          "q": "Which three tables does the default users migration create?",
+          "options": ["users, roles, permissions", "users, password_reset_tokens, sessions", "users, logins, cookies", "users, tokens, jobs"],
+          "answer": 1,
+          "explain": "The `0001_01_01_000000_create_users_table` migration creates all three."
+        },
+        {
+          "q": "Why is running a starter kit on an existing, customised app risky?",
+          "options": ["It deletes the database", "It only works on Linux", "It uninstalls Laravel", "It can overwrite files like routes and layouts"],
+          "answer": 3,
+          "explain": "Kits publish files into your app. Install them on a fresh project and commit straight away."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

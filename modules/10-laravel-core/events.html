@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Events &amp; Listeners · Laravel Blueprint</title>
+  <meta name="description" content="Decouple Laravel code with events and listeners: make:event, make:listener, auto-discovery, dispatching, queued listeners, model events and observers.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="events">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">An event announces that something happened ("a post was published"), and any number of listeners can react to it without the original code knowing they exist.</p>
+    <p class="analogy"><span>📻</span><span>It's like a radio broadcast. The station announces the news once. Whoever has tuned in reacts in their own way, and the station doesn't need a list of listeners or care how many there are.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Side effects without the spaghetti</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Decoupled code</h3>
+        <p>Publishing a post shouldn't need to know about emails, sitemaps and analytics. Each reaction lives in its own small class.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">➕</span>
+        <h3>Add features safely</h3>
+        <p>New reaction? Write a new listener. You never touch the working code that fires the event.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>Faster responses</h3>
+        <p>Slow listeners (like emailing 1,000 subscribers) can run on a queue, so the user isn't kept waiting.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One event, many listeners</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 760 270" style="width:100%;max-width:760px" role="img" aria-label="PostPublished is dispatched to the event dispatcher, which calls three listeners; one of them is queued" font-size="14" text-anchor="middle" fill="currentColor">
+        <defs>
+          <marker id="ev-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L10 5L0 10z" fill="var(--text-muted)"/>
+          </marker>
+        </defs>
+
+        <!-- Event -->
+        <rect x="10" y="105" width="210" height="62" rx="12" fill="var(--mod)"/>
+        <text x="115" y="132" fill="#fff" font-weight="700">📣 PostPublished</text>
+        <text x="115" y="152" fill="#fff" font-size="12" font-family="monospace">::dispatch($post)</text>
+
+        <line x1="220" y1="136" x2="270" y2="136" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#ev-arrow)"/>
+
+        <!-- Dispatcher -->
+        <rect x="274" y="105" width="170" height="62" rx="12" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="359" y="132" font-weight="700">Event dispatcher</text>
+        <text x="359" y="152" font-size="12" fill="var(--text-muted)">finds every listener</text>
+
+        <line x1="444" y1="126" x2="516" y2="52" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#ev-arrow)"/>
+        <line x1="444" y1="136" x2="516" y2="136" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#ev-arrow)"/>
+        <line x1="444" y1="146" x2="516" y2="220" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#ev-arrow)"/>
+
+        <!-- Listeners -->
+        <rect x="520" y="20" width="230" height="62" rx="10" fill="none" stroke="var(--mod)" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="635" y="46" font-weight="700">📨 NotifySubscribers</text>
+        <text x="635" y="66" font-size="12" fill="var(--mod)">ShouldQueue → runs on a worker</text>
+
+        <rect x="520" y="105" width="230" height="62" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="635" y="131" font-weight="700">🗺️ RefreshSitemap</text>
+        <text x="635" y="151" font-size="12" fill="var(--text-muted)">runs right away</text>
+
+        <rect x="520" y="190" width="230" height="62" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="635" y="216" font-weight="700">📝 LogPublication</text>
+        <text x="635" y="236" font-size="12" fill="var(--text-muted)">runs right away</text>
+      </svg>
+      <figcaption>The code that publishes a post fires <strong>one</strong> event. It doesn't know (or care) that three listeners react, or that one of them is queued.</figcaption>
+    </figure>
+
+    <dl class="terms">
+      <div><dt>Event</dt><dd>A simple class describing <em>what happened</em>, carrying the relevant data (e.g. the <code>Post</code>). Named in the past tense.</dd></div>
+      <div><dt>Listener</dt><dd>A class with a <code>handle()</code> method that reacts to one event.</dd></div>
+      <div><dt>Dispatch</dt><dd>Firing an event so its listeners run.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Fire your first event</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Create the event</h3>
+        <pre><code class="lang-bash">
+          php artisan make:event PostPublished
+        </code></pre>
+        <p>An event is just a data container. Use a promoted constructor property for the post:</p>
+        <pre><code class="lang-php" data-file="app/Events/PostPublished.php" data-hl="13">
+          &lt;?php
+
+          namespace App\Events;
+
+          use App\Models\Post;
+          use Illuminate\Foundation\Events\Dispatchable;
+          use Illuminate\Queue\SerializesModels;
+
+          class PostPublished
+          {
+              use Dispatchable, SerializesModels;
+
+              public function __construct(public Post $post) {}
+          }
+        </code></pre>
+        <p><code>SerializesModels</code> stores just the post's ID when the event is queued, and re-fetches the fresh model later.</p>
+      </li>
+
+      <li class="step">
+        <h3>Create a listener (auto-discovered)</h3>
+        <pre><code class="lang-bash">
+          php artisan make:listener RefreshSitemap --event=PostPublished
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Listeners/RefreshSitemap.php" data-hl="5">
+          use App\Events\PostPublished;
+
+          class RefreshSitemap
+          {
+              public function handle(PostPublished $event): void
+              {
+                  Cache::forget('sitemap.xml');   // rebuilt on next visit
+              }
+          }
+        </code></pre>
+        <p>There's no registration step. Laravel's <strong>event discovery</strong> scans <code>app/Listeners</code> and connects each listener to the event type-hinted in its <code>handle()</code> method. Check the wiring with:</p>
+        <pre><code class="lang-bash">
+          php artisan event:list
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Registering manually</div>
+          <p>Listeners outside <code>app/Listeners</code>, or closures, can be registered in <code>AppServiceProvider::boot()</code> with <code>Event::listen(PostPublished::class, RefreshSitemap::class)</code>. In production, run <code>php artisan event:cache</code> (part of <code>optimize</code>) so discovery doesn't rescan on every request.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Dispatch the event</h3>
+        <p>Fire it where the thing actually happens. Both forms are equivalent:</p>
+        <pre><code class="lang-php" data-file="app/Services/PostPublisher.php" data-hl="5">
+          public function publish(Post $post): void
+          {
+              $post-&gt;update(['published_at' =&gt; now()]);
+
+              PostPublished::dispatch($post);      // via the Dispatchable trait
+              // event(new PostPublished($post));  // helper, same result
+          }
+        </code></pre>
+        <p>Your service is now done. Emails, sitemaps and logs are the listeners' business.</p>
+      </li>
+
+      <li class="step">
+        <h3>Queue slow listeners with <code>ShouldQueue</code></h3>
+        <p>Emailing every subscriber is slow. Implement <code>ShouldQueue</code> and the listener is pushed to the <a href="../13-performance/queues-jobs.html">queue</a> instead of running during the request:</p>
+        <pre><code class="lang-php" data-file="app/Listeners/NotifySubscribers.php" data-hl="4">
+          use Illuminate\Contracts\Queue\ShouldQueue;
+          use Illuminate\Queue\InteractsWithQueue;
+
+          class NotifySubscribers implements ShouldQueue
+          {
+              use InteractsWithQueue;
+
+              public $tries = 3;
+
+              public function handle(PostPublished $event): void
+              {
+                  $event-&gt;post-&gt;author-&gt;subscribers-&gt;each-&gt;notify(
+                      new NewPostNotification($event-&gt;post)
+                  );
+              }
+          }
+        </code></pre>
+        <p>A queue worker (<code>php artisan queue:work</code>) must be running for queued listeners to execute.</p>
+      </li>
+
+      <li class="step">
+        <h3>Model events and observers</h3>
+        <p>Eloquent fires its own events automatically as models change: <code>creating</code>, <code>created</code>, <code>updating</code>, <code>updated</code>, <code>saving</code>, <code>saved</code>, <code>deleting</code>, <code>deleted</code> and more. An <strong>observer</strong> groups your reactions to one model:</p>
+        <pre><code class="lang-bash">
+          php artisan make:observer PostObserver --model=Post
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Observers/PostObserver.php">
+          class PostObserver
+          {
+              public function creating(Post $post): void
+              {
+                  $post-&gt;slug ??= Str::slug($post-&gt;title);
+              }
+
+              public function deleted(Post $post): void
+              {
+                  $post-&gt;comments()-&gt;delete();
+              }
+          }
+        </code></pre>
+        <p>Attach it to the model with the <code>ObservedBy</code> attribute:</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use App\Observers\PostObserver;
+          use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+
+          #[ObservedBy([PostObserver::class])]
+          class Post extends Model
+          {
+              // ...
+          }
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Mass queries skip model events</div>
+          <p><code>Post::where(...)-&gt;update([...])</code> and <code>-&gt;delete()</code> on a query run straight SQL. No models are loaded, so <strong>no model events fire</strong>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $post-&gt;update(['published_at' =&gt; now()]);
+          $this-&gt;mailer-&gt;notifySubscribers($post);
+          $this-&gt;sitemap-&gt;add($post);
+          $this-&gt;search-&gt;index($post);
+          $this-&gt;slack-&gt;announce($post);
+        </code></pre>
+        <p>Every new side effect means editing this method and injecting another dependency.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $post-&gt;update(['published_at' =&gt; now()]);
+          PostPublished::dispatch($post);
+        </code></pre>
+        <p>Announce once; each side effect becomes its own listener that you can add, remove or queue independently.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // Core logic hidden in a listener
+          class ChargeCustomer
+          {
+              public function handle(OrderPlaced $e) { ... }
+          }
+        </code></pre>
+        <p>If the step <em>must</em> happen for the action to succeed, hiding it in a listener makes the flow hard to follow.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $payment = $this-&gt;gateway-&gt;charge($order);
+          OrderPlaced::dispatch($order);
+        </code></pre>
+        <p>Call essential steps directly; use events for <em>optional</em> reactions that can happen around it.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: when do events beat direct calls?</div>
+      <ul>
+        <li><strong>Use an event</strong> when several independent things react, when reactions may grow over time, or when they can run later on a queue.</li>
+        <li><strong>Call directly</strong> when there's one essential step, when you need its return value, or when readers must see the flow top to bottom.</li>
+        <li>In tests, <code>Event::fake()</code> stops listeners running and lets you <code>Event::assertDispatched(PostPublished::class)</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>CommentPosted</code> event that carries a <code>Comment</code>.</li>
+        <li>Create a <code>NotifyPostAuthor</code> listener for it that writes to the log, and confirm it appears in <code>php artisan event:list</code>.</li>
+        <li>Dispatch the event from your comment controller's <code>store()</code> method and check <code>storage/logs/laravel.log</code>.</li>
+        <li>Make the listener implement <code>ShouldQueue</code>, set <code>QUEUE_CONNECTION=database</code>, and run <code>php artisan queue:work</code> to see it processed.</li>
+        <li>Add a <code>PostObserver</code> that fills in the slug on <code>creating</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Events say <em>what happened</em>; listeners decide <em>what to do about it</em>.</li>
+      <li><code>make:event</code> and <code>make:listener --event=</code> generate the classes; listeners in <code>app/Listeners</code> are auto-discovered.</li>
+      <li>Dispatch with <code>PostPublished::dispatch($post)</code> or <code>event(new PostPublished($post))</code>.</li>
+      <li>Implement <code>ShouldQueue</code> to move slow listeners to the queue.</li>
+      <li>Eloquent fires model events; observers group them, attached with <code>#[ObservedBy]</code>.</li>
+      <li>Use events for optional, growing side effects; call essential steps directly.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "How does Laravel know that `RefreshSitemap` listens to `PostPublished`?",
+          "options": ["You must list it in `config/events.php`", "Event discovery reads the type-hint in its `handle()` method", "The class names must match", "It is registered in `routes/web.php`"],
+          "answer": 1,
+          "explain": "Listeners in `app/Listeners` are auto-discovered from the event type-hinted in `handle()`. Check with `php artisan event:list`."
+        },
+        {
+          "q": "Which two lines dispatch the event the same way?",
+          "options": ["`PostPublished::dispatch($post)` and `event(new PostPublished($post))`", "`PostPublished::fire()` and `Event::run()`", "`new PostPublished($post)` and `dispatch_sync()`", "`Event::fake()` and `event()`"],
+          "answer": 0,
+          "explain": "The `Dispatchable` trait adds a static `dispatch()` method. The `event()` helper does exactly the same thing."
+        },
+        {
+          "q": "What does implementing `ShouldQueue` on a listener do?",
+          "options": ["Runs it before other listeners", "Stops the event from firing", "Pushes it to a queue so a worker runs it later", "Caches its result"],
+          "answer": 2,
+          "explain": "Queued listeners don't slow down the request. A running queue worker processes them in the background."
+        },
+        {
+          "q": "Why didn't your `PostObserver::deleted()` run after `Post::where('draft', true)->delete()`?",
+          "options": ["Observers only run in production", "`deleted` should be named `onDelete`", "The observer must be queued", "Mass queries run raw SQL without loading models, so no model events fire"],
+          "answer": 3,
+          "explain": "Model events need model instances. Load the models and delete each, or handle the side effects separately."
+        },
+        {
+          "q": "When is a direct method call better than an event?",
+          "options": ["When the step is essential and you need its result", "When several unrelated features react", "When the reaction can happen later on a queue", "When you expect to add more reactions over time"],
+          "answer": 0,
+          "explain": "Events shine for optional, independent reactions. Essential steps with return values are clearer as direct calls."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

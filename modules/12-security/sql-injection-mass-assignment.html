@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SQL Injection &amp; Mass Assignment · Laravel Blueprint</title>
+  <meta name="description" content="Prevent SQL injection with query bindings and mass assignment with $fillable and validated() in Laravel.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="12" data-lesson="sql-injection-mass-assignment">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Never let user input become part of your SQL or decide which model columns get filled: use query bindings for the first and <code>$fillable</code> plus <code>validated()</code> for the second.</p>
+    <p class="analogy"><span>📮</span><span>SQL injection is like a form where someone writes “and also give me the keys to the safe” in the name box, and the clerk reads the whole thing out as an order. Mass assignment is like a sign-up form where someone adds an extra line “role: manager” and the clerk copies every line onto the staff card without checking.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Your data is the prize</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🗄️</span>
+        <h3>Whole-database risk</h3>
+        <p>A single injectable query can expose or wipe every table, not just the one you were querying.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">👑</span>
+        <h3>Silent privilege jumps</h3>
+        <p>Mass assignment lets someone set columns like <code>is_admin</code> just by adding a field to the request.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✅</span>
+        <h3>Laravel makes the safe way easy</h3>
+        <p>Eloquent and the query builder bind values automatically. Problems only appear when you go "raw" or skip validation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Attack #1</span>
+      <h2>How SQL injection works</h2>
+    </div>
+    <p><strong>SQL injection</strong> happens when user input is glued directly into a SQL string. The database can't tell where your query ends and the attacker's text begins.</p>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">😈</span><strong>Attacker</strong><small>types <code>' OR '1'='1</code> into the search box</small></div>
+        <div class="flow-node"><span class="flow-icon">🧵</span><strong>Your code</strong><small>pastes it into the SQL string</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Database</strong><small>runs a query whose meaning has changed</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💥</span><strong>Effect</strong><small>every row returned, or data altered</small></div>
+      </div>
+      <figcaption>The attacker's quote mark closes your string early, and the rest of their input becomes SQL code.</figcaption>
+    </figure>
+    <p>The fix is <strong>parameter binding</strong> (also called a <strong>prepared statement</strong>). Your SQL uses a placeholder like <code>?</code>, and the value is sent separately. The database always treats it as data, never as code.</p>
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Interpolated</div>
+        <pre><code class="lang-sql">
+          SELECT * FROM posts
+          WHERE title = '' OR '1'='1'
+          -- the input rewrote the query
+        </code></pre>
+        <p>The condition is now always true.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Bound</div>
+        <pre><code class="lang-sql">
+          SELECT * FROM posts WHERE title = ?
+          -- binding: "' OR '1'='1"
+        </code></pre>
+        <p>The database searches for a post literally titled <code>' OR '1'='1</code> and finds nothing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Attack #2</span>
+      <h2>How mass assignment works</h2>
+    </div>
+    <p><strong>Mass assignment</strong> means filling many model attributes at once from an array, like <code>User::create($request-&gt;all())</code>. If you pass along everything the request contains, the attacker chooses the columns.</p>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">😈</span><strong>Attacker</strong><small>adds <code>is_admin=1</code> to the profile form with dev tools</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>Controller</strong><small><code>$user-&gt;update($request-&gt;all())</code></small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Database</strong><small><code>is_admin</code> column set to 1</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💥</span><strong>Effect</strong><small>a normal user is now an admin</small></div>
+      </div>
+      <figcaption>Hidden or extra fields are trivial to add. Your form's HTML is not a security boundary.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Write queries and saves that can't be hijacked</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Use Eloquent and the query builder normally</h3>
+        <p>Methods like <code>where()</code>, <code>find()</code> and <code>create()</code> bind every value for you. This is safe even with raw user input:</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          $posts = Post::where('title', 'like', '%' . $request-&gt;input('q') . '%')
+              -&gt;where('category_id', $request-&gt;integer('category'))
+              -&gt;get();
+        </code></pre>
+        <p>The string concatenation here only builds the <em>value</em> (<code>%term%</code>). Laravel still sends it as a binding.</p>
+      </li>
+
+      <li class="step">
+        <h3>Going raw? Use <code>?</code> bindings</h3>
+        <p>Sometimes you need a SQL expression Eloquent doesn't offer. Methods like <code>whereRaw()</code>, <code>selectRaw()</code>, <code>orderByRaw()</code> and <code>DB::select()</code> accept a bindings array. Put a <code>?</code> where each value goes.</p>
+        <pre><code class="lang-php" data-hl="2,5">
+          // ✅ value passed as a binding
+          Post::whereRaw('LOWER(title) = ?', [strtolower($title)])-&gt;get();
+
+          // ✅ named bindings work too
+          DB::select('SELECT * FROM posts WHERE user_id = :id', ['id' =&gt; $userId]);
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ <code>DB::raw()</code> is never escaped</div>
+          <p><code>DB::raw()</code> tells Laravel "insert this text into the SQL exactly as-is". Never put a PHP variable inside it with <code>"{$var}"</code> or <code>.</code> concatenation.</p>
+          <pre><code class="lang-php">
+            // ❌ injectable: $sort comes from the URL
+            Post::select(DB::raw("*, {$sort} as rank"))-&gt;get();
+          </code></pre>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Allow-list column names and sort directions</h3>
+        <p>Bindings protect <strong>values</strong>, but you can't bind a column name or <code>asc</code>/<code>desc</code>. When users choose a sort column, check it against a fixed list.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          $sort = in_array($request-&gt;query('sort'), ['title', 'created_at'], true)
+              ? $request-&gt;query('sort')
+              : 'created_at';
+
+          $dir = $request-&gt;query('dir') === 'asc' ? 'asc' : 'desc';
+
+          $posts = Post::orderBy($sort, $dir)-&gt;paginate();
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Declare <code>$fillable</code> (or <code>$guarded</code>) on every model</h3>
+        <p><code>$fillable</code> is an <strong>allow-list</strong> of attributes that <code>create()</code> and <code>update()</code> may set. Anything else in the array is silently ignored.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php" data-hl="7">
+          &lt;?php
+
+          namespace App\Models;
+
+          class Post extends Model
+          {
+              protected $fillable = ['title', 'body', 'category_id'];
+              // user_id, is_featured, published_at are NOT fillable
+          }
+        </code></pre>
+        <p><code>$guarded</code> is the opposite: a <strong>block-list</strong>. <code>protected $guarded = ['is_admin'];</code> allows everything except <code>is_admin</code>. Prefer <code>$fillable</code>: when you add a new sensitive column later, it's protected by default.</p>
+      </li>
+
+      <li class="step">
+        <h3>Save only <code>validated()</code> data</h3>
+        <p>A <a href="../06-crud/forms-validation.html">Form Request</a>'s <code>validated()</code> method returns <em>only</em> the fields that have rules. Extra fields the attacker added never reach the model. This is your second lock, on top of <code>$fillable</code>.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3-4">
+          public function store(StorePostRequest $request)
+          {
+              $post = $request-&gt;user()-&gt;posts()-&gt;create($request-&gt;validated());
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+        <p>Notice that <code>user_id</code> comes from the relationship, not from the form. Set ownership and other sensitive values explicitly on the server.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Post::whereRaw("title = '$title'")-&gt;get();
+        </code></pre>
+        <p>The variable is pasted into the SQL, so a quote in <code>$title</code> rewrites the query.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Post::whereRaw('title = ?', [$title])-&gt;get();
+          // or simply:
+          Post::where('title', $title)-&gt;get();
+        </code></pre>
+        <p>The value travels as a binding and can never become SQL.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          protected $guarded = [];
+
+          $user-&gt;update($request-&gt;all());
+        </code></pre>
+        <p>Every column is writable, and every request field is passed in. Two safety nets removed at once.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          protected $fillable = ['name', 'bio'];
+
+          $user-&gt;update($request-&gt;validated());
+        </code></pre>
+        <p>Only known, validated fields reach the model, and only allowed columns are written.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: make mistakes loud in development</div>
+      <p>By default, non-fillable fields are dropped silently. Turn that into an exception locally so you notice typos and sneaky fields early.</p>
+      <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+        use Illuminate\Database\Eloquent\Model;
+
+        public function boot(): void
+        {
+            Model::preventSilentlyDiscardingAttributes(! app()-&gt;isProduction());
+        }
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build a post search with <code>Post::where('title', 'like', ...)</code>. Search for <code>' OR '1'='1</code> and confirm no extra posts appear.</li>
+        <li>Run <code>Post::whereRaw('LOWER(title) = ?', ['hello'])-&gt;toSql()</code> in <code>php artisan tinker</code> and look at the <code>?</code> placeholder.</li>
+        <li>Add a sortable posts list that only accepts <code>title</code> or <code>created_at</code> as the sort column.</li>
+        <li>Add an <code>is_featured</code> column, leave it out of <code>$fillable</code>, and try to set it via <code>Post::create([...])</code>. Check the database.</li>
+        <li>Enable <code>preventSilentlyDiscardingAttributes</code> and repeat the previous task to see the exception.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Eloquent and the query builder bind values automatically, so normal <code>where()</code> calls are safe.</li>
+      <li>With <code>whereRaw()</code> and friends, always use <code>?</code> placeholders plus a bindings array.</li>
+      <li>Never interpolate variables into <code>DB::raw()</code> or any raw SQL string.</li>
+      <li>Bindings can't protect column names or sort directions: allow-list them.</li>
+      <li>Use <code>$fillable</code> as an allow-list of mass-assignable attributes.</li>
+      <li>Pass <code>$request-&gt;validated()</code>, not <code>$request-&gt;all()</code>, and set ownership on the server.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which query is safe from SQL injection?",
+          "options": ["`Post::whereRaw(\"title = '$title'\")`", "`DB::select(\"SELECT * FROM posts WHERE id = $id\")`", "`Post::whereRaw('title = ?', [$title])`", "`Post::select(DB::raw(\"$col as rank\"))`"],
+          "answer": 2,
+          "explain": "The `?` placeholder sends `$title` separately as a binding, so it's always treated as data."
+        },
+        {
+          "q": "Why can't bindings protect a user-chosen `orderBy` column?",
+          "options": ["Bindings only work for values, not identifiers like column names", "Eloquent ignores `orderBy` bindings", "Column names are encrypted", "They can, so no extra work is needed"],
+          "answer": 0,
+          "explain": "Placeholders stand in for values. Column names and `asc`/`desc` must be checked against an allow-list."
+        },
+        {
+          "q": "What does `protected $fillable = ['title', 'body'];` do?",
+          "options": ["Makes those columns required", "Encrypts those columns", "Hides those columns from JSON", "Lets only `title` and `body` be mass-assigned"],
+          "answer": 3,
+          "explain": "`$fillable` is an allow-list for `create()`, `update()` and `fill()`. Other keys are ignored."
+        },
+        {
+          "q": "Why prefer `$request->validated()` over `$request->all()` when saving?",
+          "options": ["It's faster", "It returns only fields that passed your validation rules", "It automatically hashes passwords", "It adds the CSRF token"],
+          "answer": 1,
+          "explain": "Extra fields an attacker adds have no rules, so they're not in `validated()` and never reach the model."
+        },
+        {
+          "q": "Which is the safer default for a model?",
+          "options": ["`protected $guarded = [];`", "No property at all, and `$request->all()`", "`protected $fillable = [...]` listing only safe columns", "`Model::unguard()` in AppServiceProvider"],
+          "answer": 2,
+          "explain": "An allow-list means new sensitive columns are protected automatically until you choose to make them fillable."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

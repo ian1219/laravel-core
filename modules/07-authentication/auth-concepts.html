@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>How Authentication Works · Laravel Blueprint</title>
+  <meta name="description" content="Understand how login works in Laravel: authentication vs authorization, session cookies, password hashing and a manual Auth::attempt login.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="07" data-lesson="auth-concepts">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Authentication proves who you are once, then a session cookie lets Laravel remember you on every request that follows.</p>
+    <p class="analogy"><span>🎟️</span><span>It's like a music festival. At the gate you show your ID and ticket (email + password). They check it once and put a wristband on you (the session cookie). For the rest of the weekend, staff just glance at the wristband instead of asking for your ID again.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Almost every real app has a “Log in” button</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🪪</span>
+        <h3>Personal data</h3>
+        <p>Dashboards, orders and drafts belong to one person. You need to know <em>who</em> is asking before you show them.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔒</span>
+        <h3>Security basics</h3>
+        <p>Storing passwords safely and handling sessions correctly protects your users even if something leaks.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧠</span>
+        <h3>Demystify the magic</h3>
+        <p>Starter kits write the login code for you. Knowing what happens underneath makes that code easy to read and change.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Two different questions</h2>
+    </div>
+    <p>People mix these two words up all the time, so let's pin them down first.</p>
+    <dl class="terms">
+      <div><dt>Authentication</dt><dd><strong>Who are you?</strong> Checking someone's identity, usually with an email and password. This is Module 07.</dd></div>
+      <div><dt>Authorization</dt><dd><strong>What are you allowed to do?</strong> Checking whether a known user may edit <em>this</em> post. This is <a href="../08-authorization/gates.html">Module 08</a>.</dd></div>
+      <div><dt>Session</dt><dd>A small bundle of data Laravel stores on the server (in a file, the database or Redis) for one visitor.</dd></div>
+      <div><dt>Session cookie</dt><dd>A random ID stored in the browser. It points to that visitor's session, so Laravel can find it again.</dd></div>
+      <div><dt>Hash</dt><dd>A one-way scramble of a password. You can check a guess against it, but you can't turn it back into the password.</dd></div>
+    </dl>
+
+    <figure class="diagram">
+      <div class="flow vertical">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>1. Submit the login form</strong><small>POST /login with email + password</small></div>
+        <div class="flow-node"><span class="flow-icon">🔍</span><strong>2. Find the user and check the hash</strong><small>Hash::check(typed password, stored hash)</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎟️</span><strong>3. Store the user ID in the session</strong><small>browser receives a laravel_session cookie</small></div>
+        <div class="flow-node"><span class="flow-icon">🔁</span><strong>4. Every later request sends the cookie</strong><small>Laravel loads the session → user ID → User model</small></div>
+        <div class="flow-node"><span class="flow-icon">👋</span><strong>5. Log out</strong><small>session is wiped, and the cookie no longer points to a user</small></div>
+      </div>
+      <figcaption>The password is checked exactly once. After that, the session cookie is what identifies you.</figcaption>
+    </figure>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ HTTP forgets everything</div>
+      <p>As you saw in <a href="../03-web-fundamentals/http.html">HTTP Basics</a>, every request is independent. Without the session cookie, the server would have no idea that request #2 came from the same person who logged in on request #1.</p>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a login by hand (once)</h2>
+      <p>In real projects a starter kit writes this for you. Building it once by hand shows you exactly what that generated code does.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Never store plain passwords: hash them</h3>
+        <p><strong>Hashing</strong> turns <code>secret123</code> into a long, random-looking string. Laravel uses <strong>bcrypt</strong> by default, which is deliberately slow so attackers can't guess millions of passwords per second.</p>
+        <pre><code class="lang-php" data-hl="3,6">
+          use Illuminate\Support\Facades\Hash;
+
+          $hash = Hash::make('secret123');
+          // "$2y$12$Qm3k...a long string that changes every time"
+
+          Hash::check('secret123', $hash);   // true
+          Hash::check('wrong-guess', $hash); // false
+        </code></pre>
+        <p>Run <code>Hash::make</code> twice on the same password and you get two different hashes. That's because of a random <strong>salt</strong>, and <code>Hash::check</code> still handles it correctly.</p>
+      </li>
+
+      <li class="step">
+        <h3>Let the model hash for you</h3>
+        <p>The default <code>User</code> model already has a <code>hashed</code> cast. Any plain password you assign is hashed automatically before it's saved.</p>
+        <pre><code class="lang-php" data-file="app/Models/User.php" data-hl="5">
+          protected function casts(): array
+          {
+              return [
+                  'email_verified_at' =&gt; 'datetime',
+                  'password' =&gt; 'hashed',
+              ];
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="php artisan tinker">
+          $user = User::create([
+              'name' =&gt; 'Ada',
+              'email' =&gt; 'ada@example.com',
+              'password' =&gt; 'secret123',   // stored as a bcrypt hash
+          ]);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Log in with <code>Auth::attempt</code></h3>
+        <p><code>Auth::attempt()</code> finds the user by email, runs <code>Hash::check</code> on the password and, if it matches, stores the user's ID in the session. It returns <code>true</code> or <code>false</code>.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/LoginController.php" data-hl="17-20">
+          &lt;?php
+
+          namespace App\Http\Controllers;
+
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\Auth;
+
+          class LoginController extends Controller
+          {
+              public function store(Request $request)
+              {
+                  $credentials = $request-&gt;validate([
+                      'email' =&gt; ['required', 'email'],
+                      'password' =&gt; ['required'],
+                  ]);
+
+                  if (Auth::attempt($credentials, $request-&gt;boolean('remember'))) {
+                      $request-&gt;session()-&gt;regenerate();
+                      return redirect()-&gt;intended('/dashboard');
+                  }
+
+                  return back()-&gt;withErrors([
+                      'email' =&gt; 'These credentials do not match our records.',
+                  ])-&gt;onlyInput('email');
+              }
+          }
+        </code></pre>
+        <p><code>redirect()-&gt;intended()</code> sends the user back to the page they originally tried to visit, or to <code>/dashboard</code> if there wasn't one.</p>
+      </li>
+
+      <li class="step">
+        <h3>Why <code>session()-&gt;regenerate()</code> matters</h3>
+        <p>Regenerating gives the visitor a brand-new session ID the moment they log in. This blocks <strong>session fixation</strong>, an attack where someone plants a known session ID in your browser and waits for you to log in with it.</p>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Always regenerate after login</div>
+          <p>Skipping this line doesn't break anything you can see, which is exactly why it's dangerous. Starter kits include it for you.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Wire up the routes and the form</h3>
+        <p>The form is ordinary HTML with <code>@csrf</code>. The <code>remember</code> checkbox sets a long-lived “remember me” cookie, so the user stays logged in after the browser closes.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          use App\Http\Controllers\LoginController;
+
+          Route::view('/login', 'auth.login')-&gt;name('login')-&gt;middleware('guest');
+          Route::post('/login', [LoginController::class, 'store'])-&gt;middleware('guest');
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/auth/login.blade.php">
+          &lt;form method="POST" action="/login"&gt;
+              @csrf
+              &lt;input type="email" name="email" value="{{ old('email') }}" required&gt;
+              &lt;input type="password" name="password" required&gt;
+              &lt;label&gt;&lt;input type="checkbox" name="remember"&gt; Remember me&lt;/label&gt;
+              @error('email') &lt;p&gt;{{ $message }}&lt;/p&gt; @enderror
+              &lt;button&gt;Log in&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>You'll meet the <code>guest</code> middleware and logging out properly in <a href="sessions-guards.html">Guards &amp; Protecting Routes</a>.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $user = User::where('email', $email)
+              -&gt;where('password', $password)
+              -&gt;first();
+        </code></pre>
+        <p>This only works if passwords are stored in plain text, which is a disaster waiting to happen.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          if (Auth::attempt(['email' =&gt; $email, 'password' =&gt; $password])) {
+              $request-&gt;session()-&gt;regenerate();
+          }
+        </code></pre>
+        <p>Let Laravel look the user up and compare hashes safely.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          'password' =&gt; md5($request-&gt;password),
+        </code></pre>
+        <p>MD5 and SHA1 are fast, so attackers can test billions of guesses. They are not password hashes.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          'password' =&gt; Hash::make($request-&gt;password),
+        </code></pre>
+        <p>Use <code>Hash::make</code> (or the <code>hashed</code> cast), which is slow on purpose and salted automatically.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: friendly but vague errors</div>
+      <p>Say “These credentials do not match our records”, not “No account with that email”. Vague messages stop attackers from discovering which emails are registered. You'll learn more in <a href="../12-security/hashing-encryption.html">Hashing &amp; Encryption</a>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open <code>php artisan tinker</code> and run <code>Hash::make('hello')</code> twice. Compare the two results.</li>
+        <li>Check one of those hashes with <code>Hash::check('hello', $hash)</code> and with a wrong password.</li>
+        <li>Create a user in tinker with a plain password and look at the <code>password</code> column in the database.</li>
+        <li>Build the <code>LoginController</code> above and log in. Then open your browser dev tools and find the <code>laravel_session</code> cookie.</li>
+        <li>Log in again and watch the cookie value change, thanks to <code>regenerate()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Authentication</strong> = who you are; <strong>authorization</strong> = what you may do.</li>
+      <li>The password is checked once; after that, a <strong>session cookie</strong> identifies you.</li>
+      <li>Store passwords with <code>Hash::make</code> (or the <code>hashed</code> cast) and check them with <code>Hash::check</code>.</li>
+      <li><code>Auth::attempt($credentials)</code> looks up the user, checks the hash and logs them in.</li>
+      <li>Always call <code>$request-&gt;session()-&gt;regenerate()</code> right after a successful login.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which question does **authentication** answer?",
+          "options": ["What are you allowed to do?", "Who are you?", "Which page did you come from?", "Is the server online?"],
+          "answer": 1,
+          "explain": "Authentication proves identity. Deciding what a known user may do is authorization."
+        },
+        {
+          "q": "After you log in, how does Laravel recognise you on the next request?",
+          "options": ["You resend your password every time", "It checks your IP address", "Your browser sends a session cookie that points to your session", "It reads your email from the URL"],
+          "answer": 2,
+          "explain": "The session stores your user ID, and the session cookie lets Laravel find that session again."
+        },
+        {
+          "q": "What does `Hash::check('secret', $hash)` do?",
+          "options": ["Decrypts the hash back into the password", "Returns true if `secret` matches the stored hash", "Creates a new hash", "Saves the password to the database"],
+          "answer": 1,
+          "explain": "Hashes are one-way. You can only check whether a guess matches, never reverse them."
+        },
+        {
+          "q": "Why call `$request->session()->regenerate()` after `Auth::attempt` succeeds?",
+          "options": ["To prevent session fixation attacks", "To log the user out", "To clear validation errors", "It's required for the CSRF token to exist"],
+          "answer": 0,
+          "explain": "A fresh session ID at login means an attacker can't reuse an ID they planted before you logged in."
+        },
+        {
+          "q": "Which is the right way to store a new password?",
+          "options": ["`md5($password)`", "Plain text, so you can email it to the user", "`base64_encode($password)`", "`Hash::make($password)` or the `hashed` cast"],
+          "answer": 3,
+          "explain": "Bcrypt (via `Hash::make`) is slow and salted. MD5 is fast, and base64 is just an encoding that anyone can reverse."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

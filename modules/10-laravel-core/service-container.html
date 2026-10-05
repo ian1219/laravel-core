@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Service Container · Laravel Blueprint</title>
+  <meta name="description" content="Understand dependency injection and Laravel's service container: automatic resolution, bind vs singleton vs scoped, interface bindings and contextual binding.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="service-container">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">The service container is Laravel's object factory: you ask for a class, and it builds it, along with everything that class needs, automatically.</p>
+    <p class="analogy"><span>🍔</span><span>Think of a restaurant kitchen. You order a burger; you don't bake the bun, grill the patty or slice the tomato yourself. The kitchen knows the recipe, prepares every ingredient in the right order and hands you the finished plate.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>The engine behind Laravel's "magic"</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🪄</span>
+        <h3>It explains the magic</h3>
+        <p>Ever wondered how a <code>Request $request</code> argument just "appears" in your controller? That's the container at work.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔌</span>
+        <h3>Swap parts easily</h3>
+        <p>Depend on an interface, then tell the container which real class to use. Switch from Mailgun to SES by changing one line.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧪</span>
+        <h3>Testable code</h3>
+        <p>Because classes receive their dependencies instead of creating them, tests can hand in fakes and mocks.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The container builds a whole tree of objects</h2>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 760 380" style="width:100%;max-width:760px" role="img" aria-label="The service container resolving PostController, which needs PostPublisher, which needs SlugGenerator and a Notifier interface bound to MailNotifier" font-size="14" text-anchor="middle" fill="currentColor">
+        <defs>
+          <marker id="sc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L10 5L0 10z" fill="var(--text-muted)"/>
+          </marker>
+        </defs>
+
+        <!-- Container -->
+        <rect x="250" y="10" width="260" height="56" rx="12" fill="var(--mod)"/>
+        <text x="380" y="34" fill="#fff" font-weight="700" font-size="16">🧰 Service container</text>
+        <text x="380" y="54" fill="#fff" font-size="12" font-family="monospace">app(PostController::class)</text>
+
+        <line x1="380" y1="66" x2="380" y2="102" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#sc-arrow)"/>
+
+        <!-- PostController -->
+        <rect x="250" y="106" width="260" height="58" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="380" y="131" font-weight="700">PostController</text>
+        <text x="380" y="151" font-size="12" fill="var(--text-muted)">__construct(PostPublisher $publisher)</text>
+
+        <line x1="380" y1="164" x2="380" y2="198" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#sc-arrow)"/>
+
+        <!-- PostPublisher -->
+        <rect x="250" y="202" width="260" height="58" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="380" y="227" font-weight="700">PostPublisher</text>
+        <text x="380" y="247" font-size="12" fill="var(--text-muted)">needs SlugGenerator + Notifier</text>
+
+        <line x1="320" y1="260" x2="170" y2="298" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#sc-arrow)"/>
+        <line x1="440" y1="260" x2="590" y2="298" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#sc-arrow)"/>
+
+        <!-- SlugGenerator -->
+        <rect x="40" y="302" width="240" height="58" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+        <text x="160" y="327" font-weight="700">SlugGenerator</text>
+        <text x="160" y="347" font-size="12" fill="var(--text-muted)">concrete class, no dependencies</text>
+
+        <!-- Notifier interface -->
+        <rect x="480" y="302" width="240" height="58" rx="10" fill="none" stroke="var(--mod)" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="600" y="327" font-weight="700">Notifier <tspan font-weight="400" font-size="12">(interface)</tspan></text>
+        <text x="600" y="347" font-size="12" fill="var(--text-muted)">bound → MailNotifier</text>
+
+        <!-- Build order badges -->
+        <circle cx="40" cy="302" r="13" fill="var(--mod)"/><text x="40" y="307" fill="#fff" font-size="13" font-weight="700">1</text>
+        <circle cx="480" cy="302" r="13" fill="var(--mod)"/><text x="480" y="307" fill="#fff" font-size="13" font-weight="700">2</text>
+        <circle cx="250" cy="202" r="13" fill="var(--mod)"/><text x="250" y="207" fill="#fff" font-size="13" font-weight="700">3</text>
+        <circle cx="250" cy="106" r="13" fill="var(--mod)"/><text x="250" y="111" fill="#fff" font-size="13" font-weight="700">4</text>
+      </svg>
+      <figcaption>The container reads each constructor, builds the deepest dependencies first (1, 2), then works back up (3, 4) and hands you a ready-to-use <code>PostController</code>.</figcaption>
+    </figure>
+
+    <dl class="terms">
+      <div><dt>Dependency</dt><dd>Another object a class needs to do its job. <code>PostPublisher</code> depends on a <code>SlugGenerator</code>.</dd></div>
+      <div><dt>Dependency injection (DI)</dt><dd>Handing a class its dependencies from the outside (usually through the constructor) instead of letting it create them with <code>new</code>.</dd></div>
+      <div><dt>Resolving</dt><dd>Asking the container to build an object for you: "give me a <code>PostPublisher</code>".</dd></div>
+      <div><dt>Binding</dt><dd>A recipe you register that tells the container how to build something it can't figure out alone, like which class to use for an interface.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>From plain DI to the container</h2>
+      <p>We'll use a blog where publishing a post creates a slug and notifies subscribers.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Dependency injection, without any container</h3>
+        <p>First, the bad version: the class builds its own helpers with <code>new</code>. It's glued to those exact classes, and you can't swap them in a test.</p>
+        <pre><code class="lang-php" data-file="app/Services/PostPublisher.php">
+          class PostPublisher
+          {
+              public function publish(Post $post): void
+              {
+                  $slugs = new SlugGenerator();          // hard-wired
+                  $notifier = new MailNotifier();         // hard-wired
+                  // ...
+              }
+          }
+        </code></pre>
+        <p>Now the DI version. The class simply <strong>asks</strong> for what it needs in its constructor. Whoever creates it must supply them:</p>
+        <pre><code class="lang-php" data-file="app/Services/PostPublisher.php" data-hl="3-6">
+          class PostPublisher
+          {
+              public function __construct(
+                  private SlugGenerator $slugs,
+                  private Notifier $notifier,
+              ) {}
+
+              public function publish(Post $post): void
+              {
+                  $post-&gt;slug = $this-&gt;slugs-&gt;for($post-&gt;title);
+                  $post-&gt;save();
+                  $this-&gt;notifier-&gt;send("New post: {$post-&gt;title}");
+              }
+          }
+
+          // Building it by hand: works, but tedious
+          $publisher = new PostPublisher(new SlugGenerator(), new MailNotifier());
+        </code></pre>
+        <p>That last line is the problem DI creates: somebody has to wire everything together. That somebody is the <strong>service container</strong>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Let the container resolve it automatically</h3>
+        <p>Type-hint a class in a controller, and Laravel builds it for you. This is called <strong>automatic resolution</strong> (or "autowiring"). The container uses PHP's reflection to read the constructor, then resolves each type-hinted parameter, recursively.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3,7">
+          class PostController extends Controller
+          {
+              public function __construct(private PostPublisher $publisher) {}
+
+              // Method injection works too: Laravel fills type-hinted arguments
+              // and route parameters side by side.
+              public function publish(Request $request, Post $post)
+              {
+                  $this-&gt;publisher-&gt;publish($post);
+                  return back()-&gt;with('status', 'Published!');
+              }
+          }
+        </code></pre>
+        <p>Concrete classes with no special setup need <strong>zero configuration</strong>. You don't register <code>SlugGenerator</code> anywhere; the container just does <code>new SlugGenerator()</code>.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Where does injection happen?</div>
+          <p>Anything Laravel builds for you gets autowiring: controllers, middleware, listeners, jobs' <code>handle()</code> methods, form requests, Artisan commands and more.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Bind an interface to an implementation</h3>
+        <p><code>Notifier</code> is an <a href="../02-oop/abstraction.html">interface</a>, so the container can't guess which class to build. You register a <strong>binding</strong> in a <a href="service-providers.html">service provider</a>'s <code>register()</code> method:</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="8">
+          use App\Contracts\Notifier;
+          use App\Services\MailNotifier;
+
+          class AppServiceProvider extends ServiceProvider
+          {
+              public function register(): void
+              {
+                  $this-&gt;app-&gt;bind(Notifier::class, MailNotifier::class);
+              }
+          }
+        </code></pre>
+        <p>Every class that type-hints <code>Notifier</code> now receives a <code>MailNotifier</code>. Tomorrow you switch to <code>SlackNotifier</code> by editing this one line. Nothing else changes. That's <a href="../02-oop/polymorphism.html">polymorphism</a> paying off.</p>
+        <p>Need custom setup? Pass a closure. It receives the container, so you can resolve other things inside it:</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          $this-&gt;app-&gt;bind(Notifier::class, function (Application $app) {
+              return new SlackNotifier(
+                  webhook: config('services.slack.webhook'),
+                  http: $app-&gt;make(HttpClient::class),
+              );
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>bind vs singleton vs scoped</h3>
+        <p>These three methods differ in <strong>how many instances</strong> the container hands out:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What you get</th><th>Good for</th></tr></thead>
+            <tbody>
+              <tr><td><code>bind()</code></td><td>A <strong>new</strong> object every time it's resolved</td><td>Lightweight, stateful helpers</td></tr>
+              <tr><td><code>singleton()</code></td><td>Built <strong>once</strong>, then the same object for the rest of the app's life</td><td>Expensive clients (API SDKs, connections)</td></tr>
+              <tr><td><code>scoped()</code></td><td>Once <strong>per request or queued job</strong>, then flushed</td><td>Per-request state under Octane or queue workers</td></tr>
+              <tr><td><code>instance()</code></td><td>The exact object you already created</td><td>Registering a pre-built object</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          $this-&gt;app-&gt;singleton(StripeClient::class, fn () =&gt;
+              new StripeClient(config('services.stripe.secret'))
+          );
+
+          $this-&gt;app-&gt;scoped(CurrentTeam::class);
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Singletons and long-running workers</div>
+          <p>Under Laravel Octane or a queue worker, the app stays in memory between requests. A singleton holding "the current user" would leak into the next request. Use <code>scoped()</code> for anything request-specific.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Resolve things manually</h3>
+        <p>Sometimes you're not in a place with injection (a plain helper function, a Tinker session). Ask the container directly. All of these do the same thing:</p>
+        <pre><code class="lang-php">
+          $publisher = app(PostPublisher::class);
+          $publisher = app()-&gt;make(PostPublisher::class);
+          $publisher = resolve(PostPublisher::class);
+
+          // Pass extra constructor values the container can't guess:
+          $report = app()-&gt;makeWith(PostReport::class, ['year' =&gt; 2025]);
+        </code></pre>
+        <p>Prefer constructor injection when you can: it shows a class's dependencies right in its signature. Manual resolving hides them.</p>
+      </li>
+
+      <li class="step">
+        <h3>Contextual binding (briefly)</h3>
+        <p>Occasionally two classes need <strong>different</strong> implementations of the same interface. <strong>Contextual binding</strong> says "when building X, give it Y":</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          $this-&gt;app-&gt;when(AdminAlertController::class)
+              -&gt;needs(Notifier::class)
+              -&gt;give(SlackNotifier::class);
+
+          $this-&gt;app-&gt;when(NewsletterController::class)
+              -&gt;needs(Notifier::class)
+              -&gt;give(MailNotifier::class);
+        </code></pre>
+        <p>You won't need this often, but it's good to know it exists before you reach for messy <code>if</code> statements.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function store(Request $request)
+          {
+              $gateway = new StripeGateway('sk_live_...');
+              $gateway-&gt;charge(...);
+          }
+        </code></pre>
+        <p>Creating dependencies with <code>new</code> inside methods hard-wires them and makes the code impossible to test without real charges.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function store(Request $request, PaymentGateway $gateway)
+          {
+              $gateway-&gt;charge(...);
+          }
+        </code></pre>
+        <p>Type-hint an interface and bind it in a provider. Tests can then swap in a fake gateway.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function register(): void
+          {
+              $this-&gt;app-&gt;bind(SlugGenerator::class, SlugGenerator::class);
+          }
+        </code></pre>
+        <p>Binding a concrete class to itself does nothing useful; the container already builds it automatically.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function register(): void
+          {
+              $this-&gt;app-&gt;bind(Notifier::class, MailNotifier::class);
+          }
+        </code></pre>
+        <p>Only bind what needs a decision: interfaces, config values or one-instance rules.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: swap bindings in tests</div>
+      <p>In a test you can replace any binding before the code runs. The rest of the app receives your fake without knowing it:</p>
+      <pre><code class="lang-php">
+        $this-&gt;app-&gt;instance(Notifier::class, new FakeNotifier());
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>app/Services/SlugGenerator.php</code> with a <code>for(string $title): string</code> method that calls <code>Str::slug()</code>.</li>
+        <li>Type-hint it in a controller method and return its output. Notice you registered nothing.</li>
+        <li>Create a <code>Notifier</code> interface and two classes, <code>LogNotifier</code> and <code>MailNotifier</code>. Bind the interface to <code>LogNotifier</code> in <code>AppServiceProvider</code>.</li>
+        <li>In <code>php artisan tinker</code>, compare <code>app(Notifier::class) === app(Notifier::class)</code> with <code>bind()</code>, then with <code>singleton()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>Dependency injection</strong> means a class receives what it needs instead of creating it.</li>
+      <li>The container <strong>autowires</strong> concrete classes by reading type-hints; no setup needed.</li>
+      <li>Bind <strong>interfaces</strong> to implementations in a service provider's <code>register()</code>.</li>
+      <li><code>bind()</code> = new each time, <code>singleton()</code> = one forever, <code>scoped()</code> = one per request/job.</li>
+      <li><code>app()</code>, <code>app()-&gt;make()</code> and <code>resolve()</code> resolve manually; prefer constructor injection.</li>
+      <li>Contextual binding gives different classes different implementations of one interface.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What is dependency injection?",
+          "options": ["Creating dependencies with `new` inside every method", "Passing a class the objects it needs from the outside", "Loading Composer packages", "Injecting SQL into a query"],
+          "answer": 1,
+          "explain": "With DI, a class declares what it needs (usually in its constructor) and someone else, often the container, supplies it."
+        },
+        {
+          "q": "A controller type-hints `SlugGenerator`, a concrete class with no constructor arguments. What must you register?",
+          "options": ["A `bind()` in AppServiceProvider", "A `singleton()` call", "An alias in `config/app.php`", "Nothing, the container resolves it automatically"],
+          "answer": 3,
+          "explain": "Concrete classes are autowired via reflection. You only register bindings for interfaces or special setup."
+        },
+        {
+          "q": "Which binding returns the **same** object every time for the whole life of the app?",
+          "options": ["`singleton()`", "`bind()`", "`scoped()`", "`when()`"],
+          "answer": 0,
+          "explain": "`singleton()` builds once and reuses it. `scoped()` is similar but resets for each request or queued job."
+        },
+        {
+          "q": "Why bind `Notifier::class` to `MailNotifier::class`?",
+          "options": ["To make `MailNotifier` faster", "Because the container can't guess which class should fulfil an interface", "To register a route", "Because interfaces can't have methods"],
+          "answer": 1,
+          "explain": "An interface can't be instantiated. The binding tells the container which implementation to build."
+        },
+        {
+          "q": "Which line gives `AdminAlertController` a `SlackNotifier` while everyone else keeps the default `Notifier`?",
+          "options": ["`app()->make(SlackNotifier::class)`", "`$this->app->singleton(Notifier::class, SlackNotifier::class)`", "`$this->app->when(AdminAlertController::class)->needs(Notifier::class)->give(SlackNotifier::class)`", "`resolve(AdminAlertController::class)`"],
+          "answer": 2,
+          "explain": "Contextual binding with `when()->needs()->give()` targets one consuming class."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

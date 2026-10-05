@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Unit Tests · Laravel Blueprint</title>
+  <meta name="description" content="Write fast Laravel unit tests with Pest: test a plain PHP class in isolation using expect(), datasets and the arrange/act/assert pattern, with the PHPUnit equivalent.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="11" data-lesson="unit-tests">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A unit test checks one small piece of logic, usually a single class or method, on its own, without HTTP, a database or the rest of the app.</p>
+    <p class="analogy"><span>🔩</span><span>A car factory tests each part before assembly: does this spark plug spark? It's quick, cheap, and if it fails you know exactly which part is faulty, long before the whole car refuses to start.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Small, fast, precise</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>Blazing fast</h3>
+        <p>No database or HTTP means thousands of unit tests can run in about a second.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎯</span>
+        <h3>Pinpoints the bug</h3>
+        <p>When a unit test fails, only one small class could be at fault.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧼</span>
+        <h3>Encourages clean code</h3>
+        <p>Code that's easy to unit test is usually small, focused and loosely coupled.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Unit vs feature, side by side</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📥</span><strong>Input</strong><small>a 600-word string</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🔩</span><strong>ReadingTime</strong><small>one plain class</small></div>
+        <div class="flow-node"><span class="flow-icon">📤</span><strong>Output</strong><small>3 (minutes)</small></div>
+      </div>
+      <figcaption>A unit test feeds known input to one class and checks the output. Nothing else is involved.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Unit test</th><th>Feature test</th></tr></thead>
+        <tbody>
+          <tr><td>Scope</td><td>One class or function</td><td>A whole request</td></tr>
+          <tr><td>Boots Laravel?</td><td>No (by default in <code>tests/Unit</code>)</td><td>Yes</td></tr>
+          <tr><td>Database</td><td>None</td><td>Test database</td></tr>
+          <tr><td>Good for</td><td>Calculations, formatting, rules, value objects</td><td>Routes, auth, validation, controllers</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Unit test a reading-time calculator</h2>
+      <p>Our blog wants to show "3 min read" on each post. That logic deserves its own small class.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Write a plain PHP class</h3>
+        <p>Pure logic like this doesn't need Eloquent or facades. It takes input and returns output, which makes it perfect for unit testing.</p>
+        <pre><code class="lang-php" data-file="app/Support/ReadingTime.php">
+          &lt;?php
+
+          namespace App\Support;
+
+          class ReadingTime
+          {
+              public function __construct(private int $wordsPerMinute = 200) {}
+
+              public function minutes(string $text): int
+              {
+                  $words = str_word_count(strip_tags($text));
+
+                  return max(1, (int) ceil($words / $this-&gt;wordsPerMinute));
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Generate a unit test</h3>
+        <p>The <code>--unit</code> flag puts the file in <code>tests/Unit</code>. Unit tests there don't boot the Laravel app, which keeps them very fast.</p>
+        <pre><code class="lang-bash">
+          php artisan make:test ReadingTimeTest --unit
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Arrange, act, assert with <code>expect()</code></h3>
+        <p>Pest's <strong><code>expect()</code></strong> API reads like English: <em>expect this value to be 3</em>.</p>
+        <pre><code class="lang-php" data-file="tests/Unit/ReadingTimeTest.php" data-hl="7-8,11,14">
+          &lt;?php
+
+          use App\Support\ReadingTime;
+
+          it('rounds up to the next whole minute', function () {
+              // Arrange
+              $calculator = new ReadingTime(wordsPerMinute: 200);
+              $text = str_repeat('word ', 450);
+
+              // Act
+              $minutes = $calculator-&gt;minutes($text);
+
+              // Assert
+              expect($minutes)-&gt;toBe(3);
+          });
+
+          it('never returns less than one minute', function () {
+              expect((new ReadingTime)-&gt;minutes(''))-&gt;toBe(1);
+          });
+        </code></pre>
+        <p>Other handy expectations: <code>toBeTrue()</code>, <code>toEqual()</code>, <code>toContain()</code>, <code>toHaveCount()</code>, <code>toBeInstanceOf()</code>, and <code>toThrow()</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Test many inputs at once with datasets</h3>
+        <p>A <strong>dataset</strong> runs the same test with different values. Each row is reported as its own test.</p>
+        <pre><code class="lang-php" data-file="tests/Unit/ReadingTimeTest.php">
+          it('calculates minutes for different lengths', function (int $words, int $expected) {
+              $text = str_repeat('word ', $words);
+
+              expect((new ReadingTime)-&gt;minutes($text))-&gt;toBe($expected);
+          })-&gt;with([
+              'short'   =&gt; [50, 1],
+              'exact'   =&gt; [400, 2],
+              'just over' =&gt; [401, 3],
+          ]);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The PHPUnit equivalent</h3>
+        <p>In PHPUnit, the same test is a class extending <code>PHPUnit\Framework\TestCase</code>, with <code>$this-&gt;assert…</code> methods.</p>
+        <pre><code class="lang-php" data-file="tests/Unit/ReadingTimeTest.php (PHPUnit)">
+          use App\Support\ReadingTime;
+          use PHPUnit\Framework\TestCase;
+
+          class ReadingTimeTest extends TestCase
+          {
+              public function test_it_rounds_up_to_the_next_minute(): void
+              {
+                  $minutes = (new ReadingTime(200))-&gt;minutes(str_repeat('word ', 450));
+
+                  $this-&gt;assertSame(3, $minutes);
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Use it from the app, test it in isolation</h3>
+        <p>The model can use the class, but the <em>logic</em> stays tested on its own. A feature test only needs to check that "3 min read" appears on the page.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          public function readingTime(): int
+          {
+              return (new ReadingTime)-&gt;minutes($this-&gt;body);
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Need Laravel helpers in a unit test?</div>
+          <p>Tests in <code>tests/Unit</code> don't boot the framework, so facades, <code>config()</code> and the database aren't available. If you need them, it's really a feature test, so move it to <code>tests/Feature</code>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function store(Request $request)
+          {
+              $minutes = max(1, ceil(
+                  str_word_count($request-&gt;body) / 200));
+              // ...
+          }
+        </code></pre>
+        <p>Logic buried in a controller can only be tested through a full HTTP request.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $minutes = (new ReadingTime)
+              -&gt;minutes($request-&gt;body);
+        </code></pre>
+        <p>Extract it into a small class, then unit test that class directly.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          expect($minutes)-&gt;toBeGreaterThan(0);
+        </code></pre>
+        <p>A vague assertion passes even when the calculation is wrong.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          expect($minutes)-&gt;toBe(3);
+        </code></pre>
+        <p>Assert the exact expected value for a known input.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: test the edges</div>
+      <p>Bugs hide at the boundaries: empty strings, zero, exactly 200 words, 201 words, negative numbers. Datasets make edge cases cheap to cover.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build <code>ReadingTime</code> and the two tests above; run <code>php artisan test --filter=ReadingTime</code>.</li>
+        <li>Add a dataset row for exactly 200 words, and predict the answer before running it.</li>
+        <li>Create an <code>App\Support\Excerpt</code> class that trims text to N characters and adds "…", then unit test it.</li>
+        <li>Make the constructor throw <code>InvalidArgumentException</code> for 0 words per minute, and test it with <code>toThrow()</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Unit tests check one class or function in isolation, with no HTTP or database.</li>
+      <li>Create them with <code>php artisan make:test Name --unit</code>; they live in <code>tests/Unit</code>.</li>
+      <li>Pest uses <code>expect($value)-&gt;toBe(...)</code>; PHPUnit uses <code>$this-&gt;assertSame(...)</code>.</li>
+      <li>Datasets (<code>-&gt;with([...])</code>) run one test against many inputs.</li>
+      <li>Pull logic out of controllers into small classes so it's easy to unit test.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which of these is the best candidate for a unit test?",
+          "options": ["A reading-time calculator class", "The login page redirect", "Saving a post via a form", "An API returning paginated JSON"],
+          "answer": 0,
+          "explain": "Pure logic with input and output and no HTTP or DB is ideal for unit testing."
+        },
+        {
+          "q": "How do you generate a test in `tests/Unit`?",
+          "options": ["`php artisan make:unit ReadingTimeTest`", "`php artisan make:test ReadingTimeTest`", "`php artisan make:test ReadingTimeTest --unit`", "`php artisan test --unit`"],
+          "answer": 2,
+          "explain": "Without `--unit`, `make:test` creates a feature test."
+        },
+        {
+          "q": "What is the Pest equivalent of PHPUnit's `$this->assertSame(3, $minutes)`?",
+          "options": ["`assert($minutes == 3)`", "`$minutes->should(3)`", "`check($minutes, 3)`", "`expect($minutes)->toBe(3)`"],
+          "answer": 3,
+          "explain": "`toBe()` checks strict equality (`===`), just like `assertSame`."
+        },
+        {
+          "q": "What does a Pest dataset (`->with([...])`) do?",
+          "options": ["Seeds the database", "Runs the same test once per row of inputs", "Loads a factory", "Skips the test"],
+          "answer": 1,
+          "explain": "Each row is passed to the test closure and reported as its own test case."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

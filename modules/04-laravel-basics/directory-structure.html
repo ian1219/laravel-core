@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Directory Structure · Laravel Blueprint</title>
+  <meta name="description" content="A guided tour of the Laravel 11+ project skeleton: what each folder is for and which ones you'll actually edit.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="04" data-lesson="directory-structure">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Every Laravel project has the same folder layout, so once you learn it you can find your way around any Laravel app.</p>
+    <p class="analogy"><span>🏬</span><span>It's like a supermarket chain. Every branch puts bread, dairy and checkouts in the same places, so you can walk into a store you've never visited and still find the milk.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Know where things go</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Navigate any project</h3>
+        <p>Join a team or open a tutorial repo and you'll instantly know where the routes, models and views are.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎯</span>
+        <h3>Focus on what matters</h3>
+        <p>Of the dozen top-level folders, you'll edit about five day to day. The rest you can safely ignore for now.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🪄</span>
+        <h3>Artisan puts files in the right place</h3>
+        <p><code>make:</code> commands generate files in the conventional folders, and Laravel finds them there automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>The Laravel 11+ skeleton</h2>
+      <p>Laravel 11 slimmed the skeleton right down. If an older tutorial mentions <code>app/Http/Kernel.php</code> or <code>app/Console/Kernel.php</code>, those files are gone; their jobs moved into <code>bootstrap/app.php</code>.</p>
+    </div>
+    <figure class="diagram">
+<pre class="tree"><span class="dir">blog/</span>
+├── <span class="dir">app/</span>                       <span class="note">⭐ your PHP code</span>
+│   ├── <span class="dir">Http/</span>
+│   │   └── <span class="dir">Controllers/</span>       <span class="note">⭐ handle requests</span>
+│   │       └── Controller.php
+│   ├── <span class="dir">Models/</span>                <span class="note">⭐ one class per table</span>
+│   │   └── User.php
+│   └── <span class="dir">Providers/</span>
+│       └── AppServiceProvider.php  <span class="note">boot-time setup</span>
+├── <span class="dir">bootstrap/</span>
+│   └── app.php                <span class="note">routing, middleware &amp; exception config</span>
+├── <span class="dir">config/</span>                    <span class="note">settings files (read .env)</span>
+├── <span class="dir">database/</span>
+│   ├── <span class="dir">factories/</span>             <span class="note">fake data for tests</span>
+│   ├── <span class="dir">migrations/</span>            <span class="note">⭐ table blueprints</span>
+│   ├── <span class="dir">seeders/</span>               <span class="note">starter data</span>
+│   └── database.sqlite        <span class="note">the default database</span>
+├── <span class="dir">public/</span>                    <span class="note">web root: index.php, images, built assets</span>
+├── <span class="dir">resources/</span>
+│   ├── <span class="dir">css/</span> &amp; <span class="dir">js/</span>             <span class="note">source assets for Vite</span>
+│   └── <span class="dir">views/</span>                 <span class="note">⭐ Blade templates</span>
+├── <span class="dir">routes/</span>
+│   ├── web.php                <span class="note">⭐ browser routes</span>
+│   └── console.php            <span class="note">Artisan commands &amp; schedule</span>
+├── <span class="dir">storage/</span>                   <span class="note">logs, cache, uploaded files</span>
+├── <span class="dir">tests/</span>                     <span class="note">Feature/ and Unit/ tests</span>
+├── <span class="dir">vendor/</span>                    <span class="note">Composer packages (don't edit)</span>
+├── .env                       <span class="note">your local settings</span>
+├── artisan                    <span class="note">the CLI entry point</span>
+├── composer.json              <span class="note">PHP dependencies</span>
+└── package.json               <span class="note">JS dependencies</span></pre>
+      <figcaption>⭐ marks the folders you'll work in almost every day.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Tour the folders that matter</h2>
+      <p>We'll follow the order a request travels: in through the route, into a controller, to a model, out through a view.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3><code>routes/</code>: the map of URLs</h3>
+        <p><code>routes/web.php</code> lists every page URL. A fresh app has just one route, the welcome page. <code>routes/api.php</code> doesn't exist until you run <code>php artisan install:api</code>.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          &lt;?php
+
+          use Illuminate\Support\Facades\Route;
+
+          Route::get('/', function () {
+              return view('welcome');
+          });
+        </code></pre>
+        <p>Dive deeper in <a href="routing.html">Routing</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3><code>app/</code>: your application code</h3>
+        <p>Everything in <code>app/</code> uses the <code>App\</code> <strong>namespace</strong>, and the folder path matches the namespace. So <code>app/Models/Post.php</code> is the class <code>App\Models\Post</code>. Composer autoloads it; you never <code>require</code> files by hand.</p>
+        <pre><code class="lang-bash">
+          php artisan make:model Post          # → app/Models/Post.php
+          php artisan make:controller PostController   # → app/Http/Controllers/PostController.php
+        </code></pre>
+        <p>As your app grows you'll add more folders here, such as <code>Policies/</code>, <code>Jobs/</code> and <code>Services/</code>. Artisan creates most of them on demand.</p>
+      </li>
+
+      <li class="step">
+        <h3><code>resources/views/</code>: what users see</h3>
+        <p>Blade templates live here. Dots in a view name map to folders: <code>view('posts.index')</code> loads <code>resources/views/posts/index.blade.php</code>.</p>
+        <pre><code class="lang-php">
+          return view('posts.index');   // resources/views/posts/index.blade.php
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>database/</code>: tables and test data</h3>
+        <p><strong>Migrations</strong> are PHP files that describe your tables. They're version control for your database schema. A fresh app already has migrations for users, cache and jobs.</p>
+        <pre><code class="lang-bash">
+          php artisan make:migration create_posts_table
+          php artisan migrate
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>bootstrap/app.php</code>: the app's wiring</h3>
+        <p>This short file configures how the app starts: which route files load, which <strong>middleware</strong> run, and how exceptions are handled. In Laravel 11+ this replaces the old Kernel classes.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php">
+          return Application::configure(basePath: dirname(__DIR__))
+              -&gt;withRouting(
+                  web: __DIR__.'/../routes/web.php',
+                  commands: __DIR__.'/../routes/console.php',
+                  health: '/up',
+              )
+              -&gt;withMiddleware(function (Middleware $middleware) {
+                  //
+              })
+              -&gt;withExceptions(function (Exceptions $exceptions) {
+                  //
+              })-&gt;create();
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3><code>public/</code> and <code>storage/</code>: the edges</h3>
+        <p><code>public/</code> is the only folder the web server exposes. It holds <code>index.php</code> (the front controller), plus images and built CSS/JS. <code>storage/</code> is where Laravel writes things: logs in <code>storage/logs/laravel.log</code>, caches and uploaded files.</p>
+        <div class="callout tip">
+          <div class="callout-title">💡 Something broke?</div>
+          <p>Open <code>storage/logs/laravel.log</code>. The full error and stack trace is almost always there.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          vendor/laravel/framework/src/...  ✏️ edited
+        </code></pre>
+        <p>Files in <code>vendor/</code> are overwritten on every <code>composer install</code> or <code>update</code>. Your changes will vanish.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          app/  config/  bootstrap/app.php  ✏️ edited
+        </code></pre>
+        <p>Customise behaviour from your own code, config files or service providers.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          Web server root → /var/www/blog
+        </code></pre>
+        <p>Pointing the server at the project root would expose <code>.env</code>, your source code and more.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          Web server root → /var/www/blog/public
+        </code></pre>
+        <p>Only <code>public/</code> should be reachable from the internet.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: publish only what you need</div>
+      <p>Some config files and route files are hidden until you need them. Commands like <code>php artisan config:publish</code> and <code>php artisan install:api</code> add them to your project on demand.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open your <code>blog</code> project and find <code>routes/web.php</code>, <code>resources/views/welcome.blade.php</code> and <code>app/Models/User.php</code>.</li>
+        <li>Run <code>php artisan make:model Post</code> and check where the file appeared and what namespace it uses.</li>
+        <li>Visit <code>/up</code> in your browser. Find where that route is defined in <code>bootstrap/app.php</code>.</li>
+        <li>Visit a URL that throws an error (e.g. a route returning <code>view('missing')</code>), then find the error in <code>storage/logs/laravel.log</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Daily folders: <code>routes/</code>, <code>app/Http/Controllers</code>, <code>app/Models</code>, <code>resources/views</code>, <code>database/migrations</code>.</li>
+      <li><code>bootstrap/app.php</code> configures routing, middleware and exceptions; there are no Kernel files in Laravel 11+.</li>
+      <li>Folder paths in <code>app/</code> match namespaces: <code>app/Models/Post.php</code> → <code>App\Models\Post</code>.</li>
+      <li><code>public/</code> is the only web-facing folder; <code>storage/</code> holds logs, cache and uploads.</li>
+      <li>Never edit <code>vendor/</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "In Laravel 11+, where do you configure middleware?",
+          "options": ["`app/Http/Kernel.php`", "`config/middleware.php`", "`routes/middleware.php`", "`bootstrap/app.php`"],
+          "answer": 3,
+          "explain": "The Kernel files were removed. `bootstrap/app.php` uses `->withMiddleware()` instead."
+        },
+        {
+          "q": "Which file does `view('posts.index')` load?",
+          "options": ["`resources/views/posts/index.blade.php`", "`app/Views/posts.index.php`", "`public/posts/index.html`", "`resources/posts.index.blade.php`"],
+          "answer": 0,
+          "explain": "Dots in view names become folder separators inside `resources/views`."
+        },
+        {
+          "q": "Which folder should your web server point at?",
+          "options": ["The project root", "`app/`", "`public/`", "`storage/`"],
+          "answer": 2,
+          "explain": "Only `public/` is web-facing. It contains `index.php`, the front controller."
+        },
+        {
+          "q": "Where would you look for the details of an error?",
+          "options": ["`vendor/errors`", "`storage/logs/laravel.log`", "`public/error.log`", "`config/logging.php`"],
+          "answer": 1,
+          "explain": "Laravel writes logs to `storage/logs/laravel.log` by default."
+        },
+        {
+          "q": "Why shouldn't you edit files inside `vendor/`?",
+          "options": ["They're encrypted", "Composer overwrites them on install or update", "Laravel ignores them", "They're only used in production"],
+          "answer": 1,
+          "explain": "`vendor/` is managed by Composer. Customise through your own code instead."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

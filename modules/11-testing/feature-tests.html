@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Feature Tests · Laravel Blueprint</title>
+  <meta name="description" content="Write Laravel feature tests with Pest: simulate requests with get and post, log in with actingAs, and assert status, redirects, database rows and JSON.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="11" data-lesson="feature-tests">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A feature test pretends to be a browser or API client, sends a request through your whole app, and checks the response and the database afterwards.</p>
+    <p class="analogy"><span>🕵️</span><span>It's a mystery shopper. They walk in the front door, order something, and report back: was the service right, did the receipt match, did the stockroom actually change?</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Test what users actually do</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔗</span>
+        <h3>Covers the whole chain</h3>
+        <p>Routes, middleware, validation, controllers, models and views are all exercised in one test.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔐</span>
+        <h3>Proves your security rules</h3>
+        <p>"Guests are redirected" and "users can't edit others' posts" become checks that run forever.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>No real browser needed</h3>
+        <p>Laravel handles the request in memory, so hundreds of feature tests run in seconds.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>What a feature test touches</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🧪</span><strong>Test</strong><small>$this-&gt;post('/posts')</small></div>
+        <div class="flow-node"><span class="flow-icon">🛡️</span><strong>Middleware</strong><small>auth, CSRF*</small></div>
+        <div class="flow-node"><span class="flow-icon">🎮</span><strong>Controller</strong><small>validates &amp; saves</small></div>
+        <div class="flow-node"><span class="flow-icon">🗄️</span><strong>Test DB</strong><small>reset each test</small></div>
+        <div class="flow-node accent"><span class="flow-icon">✅</span><strong>Assertions</strong><small>status, DB, JSON</small></div>
+      </div>
+      <figcaption>The request runs through the real app. (*CSRF checks are skipped automatically while running tests.)</figcaption>
+    </figure>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">📶</span><h3>Response status</h3><p><code>assertOk()</code>, <code>assertStatus(201)</code>, <code>assertNotFound()</code>, <code>assertForbidden()</code></p></div>
+      <div class="mini-card"><span class="mini-icon">👀</span><h3>Page content</h3><p><code>assertSee('Title')</code>, <code>assertDontSee('Draft')</code>, <code>assertViewIs('posts.index')</code></p></div>
+      <div class="mini-card"><span class="mini-icon">↪️</span><h3>Redirects &amp; errors</h3><p><code>assertRedirect('/login')</code>, <code>assertSessionHasErrors('title')</code></p></div>
+      <div class="mini-card"><span class="mini-icon">🗄️</span><h3>Database</h3><p><code>assertDatabaseHas()</code>, <code>assertDatabaseMissing()</code>, <code>assertDatabaseCount()</code></p></div>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Test the blog's post features</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Create a feature test with a clean database</h3>
+        <p>Generate the file, then turn on <code>RefreshDatabase</code>. The neatest way is once for all feature tests in <code>tests/Pest.php</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan make:test PostTest          # Pest feature test
+          php artisan make:test PostTest --phpunit  # class-based PHPUnit version
+        </code></pre>
+        <pre><code class="lang-php" data-file="tests/Pest.php" data-hl="2">
+          pest()-&gt;extend(Tests\TestCase::class)
+              -&gt;use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+              -&gt;in('Feature');
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>GET a page and check what's on it</h3>
+        <p><code>$this-&gt;get()</code> sends a fake GET request and returns a <strong>test response</strong> you can chain assertions on.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostTest.php">
+          use App\Models\Post;
+
+          test('the blog index lists posts', function () {
+              Post::factory()-&gt;create(['title' =&gt; 'Learning Pest']);
+
+              $this-&gt;get('/posts')
+                  -&gt;assertStatus(200)
+                  -&gt;assertSee('Learning Pest');
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Log in with <code>actingAs</code></h3>
+        <p>Protected pages need a user. <code>actingAs($user)</code> logs that user in for the request, with no login form needed. Test the guest path too.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostTest.php" data-hl="8">
+          use App\Models\User;
+
+          test('guests are redirected to login', function () {
+              $this-&gt;get('/posts/create')-&gt;assertRedirect('/login');
+          });
+
+          test('users can see the create form', function () {
+              $this-&gt;actingAs(User::factory()-&gt;create())
+                  -&gt;get('/posts/create')
+                  -&gt;assertOk();
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>POST a form and check the database</h3>
+        <p>Send data with <code>post()</code>, then use <code>assertDatabaseHas</code> to prove the row was really saved.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostTest.php" data-hl="11-14">
+          test('a user can publish a post', function () {
+              $user = User::factory()-&gt;create();
+
+              $response = $this-&gt;actingAs($user)-&gt;post('/posts', [
+                  'title' =&gt; 'My first post',
+                  'body'  =&gt; 'Written in a test!',
+              ]);
+
+              $response-&gt;assertRedirect('/posts');
+
+              $this-&gt;assertDatabaseHas('posts', [
+                  'title'   =&gt; 'My first post',
+                  'user_id' =&gt; $user-&gt;id,
+              ]);
+          });
+
+          test('a title is required', function () {
+              $this-&gt;actingAs(User::factory()-&gt;create())
+                  -&gt;post('/posts', ['title' =&gt; ''])
+                  -&gt;assertSessionHasErrors('title');
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Test a JSON API</h3>
+        <p>For <a href="../09-api-development/api-routes-resources.html">API endpoints</a>, use <code>getJson()</code> / <code>postJson()</code>. They send <code>Accept: application/json</code> for you. Then assert on the JSON with <code>assertJson</code> (a partial match) or <code>assertJsonPath</code> (one value by dot path).</p>
+        <pre><code class="lang-php" data-file="tests/Feature/Api/PostApiTest.php">
+          use Laravel\Sanctum\Sanctum;
+
+          test('the API creates a post', function () {
+              Sanctum::actingAs(User::factory()-&gt;create());
+
+              $this-&gt;postJson('/api/posts', ['title' =&gt; 'API post', 'body' =&gt; 'Hi'])
+                  -&gt;assertStatus(201)
+                  -&gt;assertJsonPath('data.title', 'API post');
+          });
+
+          test('invalid data returns 422', function () {
+              Sanctum::actingAs(User::factory()-&gt;create());
+
+              $this-&gt;postJson('/api/posts', [])
+                  -&gt;assertStatus(422)
+                  -&gt;assertJsonValidationErrors(['title', 'body']);
+          });
+
+          test('a post can be fetched', function () {
+              $post = Post::factory()-&gt;create(['title' =&gt; 'Hello']);
+
+              $this-&gt;getJson("/api/posts/{$post-&gt;id}")
+                  -&gt;assertOk()
+                  -&gt;assertJson(['data' =&gt; ['id' =&gt; $post-&gt;id, 'title' =&gt; 'Hello']]);
+          });
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>The PHPUnit equivalent</h3>
+        <p>Everything above works in PHPUnit too: same assertions, just wrapped in a class.</p>
+        <pre><code class="lang-php" data-file="tests/Feature/PostTest.php (PHPUnit)">
+          class PostTest extends TestCase
+          {
+              use RefreshDatabase;
+
+              public function test_guests_are_redirected_to_login(): void
+              {
+                  $this-&gt;get('/posts/create')-&gt;assertRedirect('/login');
+              }
+          }
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $this-&gt;post('/posts', $data)
+              -&gt;assertStatus(302);
+        </code></pre>
+        <p>A redirect doesn't prove anything was saved; validation failures redirect too.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $this-&gt;post('/posts', $data)
+              -&gt;assertRedirect('/posts');
+          $this-&gt;assertDatabaseHas('posts', $data);
+        </code></pre>
+        <p>Assert the <em>outcome</em>: where you landed and what changed in the database.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $this-&gt;post('/api/posts', [])
+              -&gt;assertStatus(422);
+        </code></pre>
+        <p>Without the JSON Accept header you may get a <code>302</code> redirect instead of <code>422</code>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $this-&gt;postJson('/api/posts', [])
+              -&gt;assertStatus(422);
+        </code></pre>
+        <p>The <code>*Json</code> helpers behave exactly like a real API client.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: debug a failing response</div>
+      <p>Chain <code>-&gt;dump()</code> or <code>-&gt;dd()</code> onto a test response to print its body, or <code>-&gt;dumpSession()</code> to see validation errors. Remove it once the test passes.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Test that a guest visiting <code>/posts/create</code> is redirected to <code>/login</code>.</li>
+        <li>Test that a logged-in user can create a post, and assert the row with <code>assertDatabaseHas</code>.</li>
+        <li>Test that user A gets <code>403</code> when trying to update user B's post.</li>
+        <li>Test <code>DELETE /api/posts/{id}</code> returns <code>204</code> and use <code>assertDatabaseMissing</code>.</li>
+        <li>Test <code>GET /api/posts</code> with <code>assertJsonPath('meta.total', 3)</code> after creating three posts.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Feature tests send fake requests through the full app: routes, middleware, controllers and DB.</li>
+      <li>Use <code>RefreshDatabase</code> so every test starts with an empty database.</li>
+      <li><code>actingAs($user)</code> logs in; <code>Sanctum::actingAs()</code> does the same for API routes.</li>
+      <li>Assert outcomes: <code>assertStatus</code>, <code>assertSee</code>, <code>assertRedirect</code>, <code>assertDatabaseHas</code>.</li>
+      <li>For APIs, use <code>getJson</code>/<code>postJson</code> plus <code>assertJson</code> and <code>assertJsonPath</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "How do you make a request as a logged-in user in a feature test?",
+          "options": ["Post to `/login` first in every test", "`$this->actingAs($user)->get(...)`", "Set `$_SESSION['user']`", "Add `auth()->login()` to the route"],
+          "answer": 1,
+          "explain": "`actingAs()` authenticates the user for the following requests, with no login form needed."
+        },
+        {
+          "q": "Which assertion proves a post was actually saved?",
+          "options": ["`assertStatus(302)`", "`assertSee('Saved')`", "`assertOk()`", "`assertDatabaseHas('posts', [...])`"],
+          "answer": 3,
+          "explain": "`assertDatabaseHas` checks for a matching row in the table."
+        },
+        {
+          "q": "Why use `postJson()` instead of `post()` for API tests?",
+          "options": ["It sends JSON headers, so errors come back as JSON (e.g. 422)", "It's faster", "It skips validation", "It logs the user in"],
+          "answer": 0,
+          "explain": "The `*Json` helpers send `Accept: application/json`, just like a real API client."
+        },
+        {
+          "q": "What does `assertJsonPath('data.title', 'API post')` check?",
+          "options": ["That the response has any `title`", "That the URL is `/data/title`", "That the value at `data.title` equals `API post`", "That the JSON is valid"],
+          "answer": 2,
+          "explain": "It reads one value using dot notation and compares it."
+        },
+        {
+          "q": "A guest visits a page protected by `auth` middleware. Which assertion fits?",
+          "options": ["`assertOk()`", "`assertRedirect('/login')`", "`assertJsonPath('user', null)`", "`assertDatabaseHas('users', [])`"],
+          "answer": 1,
+          "explain": "Web routes behind `auth` redirect guests to the login page."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Blade Templates · Laravel Blueprint</title>
+  <meta name="description" content="Learn Blade, Laravel's templating engine: safe output, conditionals and loops, layouts, components, includes, @csrf and the $loop variable.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="04" data-lesson="blade">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Blade lets you write ordinary HTML with a few smart placeholders and shortcuts, then turns it into a finished page full of your data.</p>
+    <p class="analogy"><span>📮</span><span>Think of a mail-merge letter. You write the letter once with blanks like “Dear ___”, and Blade fills in the blanks for each reader, repeating sections (loops) and skipping paragraphs (conditions) as needed.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>HTML without the mess</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Safe by default</h3>
+        <p><code>{{ }}</code> escapes output automatically, which blocks most cross-site scripting (XSS) attacks for free.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧱</span>
+        <h3>Write the layout once</h3>
+        <p>Header, navigation and footer live in one layout. Every page just fills in its own content.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">✨</span>
+        <h3>Readable templates</h3>
+        <p><code>@foreach</code> and <code>@if</code> read like plain English, with no <code>&lt;?php ?&gt;</code> tags scattered through your HTML.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>How a page is assembled</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>🖼️</span><strong>Layout</strong><small><code>components/layout.blade.php</code>: &lt;html&gt;, &lt;head&gt;, nav, footer</small></div>
+        <div class="layer"><span>📄</span><strong>Page view</strong><small><code>posts/index.blade.php</code>: the content for this one URL</small></div>
+        <div class="layer"><span>🧩</span><strong>Partials &amp; components</strong><small><code>@include('partials.alert')</code>, <code>&lt;x-post-card /&gt;</code></small></div>
+        <div class="layer"><span>📊</span><strong>Data</strong><small><code>$posts</code> passed in from the controller</small></div>
+      </div>
+      <figcaption>The controller passes data to a page view. The page slots into a layout and pulls in small reusable pieces.</figcaption>
+    </figure>
+    <p>Blade files end in <strong><code>.blade.php</code></strong> and live in <code>resources/views</code>. Laravel compiles them to plain PHP once and caches the result, so they're fast.</p>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build the blog's templates</h2>
+      <p>Assume the controller returns <code>view('posts.index', ['posts' =&gt; $posts])</code>, where each post has a <code>title</code>, <code>excerpt</code> and <code>author</code>.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Echo data: <code>{{ }}</code> vs <code>{!! !!}</code></h3>
+        <p>Double curly braces print a value and <strong>escape</strong> it, turning <code>&lt;</code> into <code>&amp;lt;</code> so any HTML or scripts inside show up as plain text. That's what you want 99% of the time.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          &lt;h1&gt;{{ $post-&gt;title }}&lt;/h1&gt;
+          &lt;p&gt;By {{ $post-&gt;author ?? 'Anonymous' }}&lt;/p&gt;
+          &lt;p&gt;Posted {{ $post-&gt;created_at-&gt;diffForHumans() }}&lt;/p&gt;
+
+          {{-- Blade comments never reach the browser --}}
+
+          {!! $post-&gt;body_html !!}   {{-- raw, NOT escaped --}}
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ <code>{!! !!}</code> is dangerous</div>
+          <p>It prints raw HTML. If a user typed <code>&lt;script&gt;</code> into that field, it would run in every visitor's browser. Only use it for HTML <em>you</em> generated and trust. More in <a href="../12-security/csrf-xss.html">CSRF &amp; XSS</a>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Conditions and loops</h3>
+        <p>Blade <strong>directives</strong> start with <code>@</code>. <code>@if</code> shows or hides markup; <code>@foreach</code> repeats it. <code>@forelse</code> is a <code>foreach</code> with a built-in “nothing here” branch.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php" data-hl="7,12,14">
+          @if (count($posts) &gt; 10)
+              &lt;p&gt;Wow, a busy blog!&lt;/p&gt;
+          @elseif (count($posts) === 0)
+              &lt;p&gt;Quiet in here...&lt;/p&gt;
+          @endif
+
+          @forelse ($posts as $post)
+              &lt;article&gt;
+                  &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+                  &lt;p&gt;{{ $post-&gt;excerpt }}&lt;/p&gt;
+              &lt;/article&gt;
+          @empty
+              &lt;p&gt;No posts yet. Write the first one!&lt;/p&gt;
+          @endforelse
+        </code></pre>
+        <p>Other handy ones: <code>@unless</code> (if not), <code>@isset</code>, <code>@auth</code> / <code>@guest</code> (logged in or not).</p>
+      </li>
+
+      <li class="step">
+        <h3>The <code>$loop</code> variable</h3>
+        <p>Inside any <code>@foreach</code> or <code>@forelse</code>, Blade gives you a free <code>$loop</code> object with information about where you are in the loop.</p>
+        <pre><code class="lang-blade">
+          @foreach ($posts as $post)
+              &lt;article class="{{ $loop-&gt;first ? 'featured' : '' }}"&gt;
+                  &lt;span&gt;{{ $loop-&gt;iteration }} of {{ $loop-&gt;count }}&lt;/span&gt;
+                  &lt;h2&gt;{{ $post-&gt;title }}&lt;/h2&gt;
+              &lt;/article&gt;
+
+              @unless ($loop-&gt;last)
+                  &lt;hr&gt;
+              @endunless
+          @endforeach
+        </code></pre>
+        <dl class="terms">
+          <div><dt><code>$loop-&gt;iteration</code></dt><dd>Current item number, starting at 1.</dd></div>
+          <div><dt><code>$loop-&gt;index</code></dt><dd>Current index, starting at 0.</dd></div>
+          <div><dt><code>$loop-&gt;first</code> / <code>last</code></dt><dd><code>true</code> on the first or last item.</dd></div>
+          <div><dt><code>$loop-&gt;count</code></dt><dd>Total number of items.</dd></div>
+          <div><dt><code>$loop-&gt;even</code> / <code>odd</code></dt><dd>Handy for striped rows.</dd></div>
+        </dl>
+      </li>
+
+      <li class="step">
+        <h3>Layouts, the classic way: <code>@extends</code>, <code>@section</code>, <code>@yield</code></h3>
+        <p>A <strong>layout</strong> is the shared page frame. It marks holes with <code>@yield</code>; each page says which layout it <code>@extends</code> and fills the holes with <code>@section</code>.</p>
+        <pre><code class="lang-blade" data-file="resources/views/layouts/app.blade.php" data-hl="4,9">
+          &lt;!doctype html&gt;
+          &lt;html lang="en"&gt;
+          &lt;head&gt;
+              &lt;title&gt;@yield('title', 'My Blog')&lt;/title&gt;
+          &lt;/head&gt;
+          &lt;body&gt;
+              &lt;nav&gt;&lt;a href="{{ route('posts.index') }}"&gt;Blog&lt;/a&gt;&lt;/nav&gt;
+              &lt;main&gt;
+                  @yield('content')
+              &lt;/main&gt;
+          &lt;/body&gt;
+          &lt;/html&gt;
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          @extends('layouts.app')
+
+          @section('title', 'All posts')
+
+          @section('content')
+              &lt;h1&gt;All posts&lt;/h1&gt;
+              {{-- the @forelse loop from step 2 --}}
+          @endsection
+        </code></pre>
+        <p>Pull small shared snippets into any view with <code>@include</code>. You can pass extra data as a second argument:</p>
+        <pre><code class="lang-blade">
+          @include('partials.alert', ['type' =&gt; 'success'])
+          {{-- loads resources/views/partials/alert.blade.php --}}
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Layouts, the modern way: components and <code>{{ $slot }}</code></h3>
+        <p>Newer Laravel apps and starter kits use <strong>components</strong>. Any file in <code>resources/views/components</code> becomes an HTML-like tag with an <code>x-</code> prefix. Whatever you put between the tags lands in <code>{{ $slot }}</code>.</p>
+        <pre><code class="lang-blade" data-file="resources/views/components/layout.blade.php" data-hl="1,9">
+          @props(['title' =&gt; 'My Blog'])
+
+          &lt;!doctype html&gt;
+          &lt;html lang="en"&gt;
+          &lt;head&gt;&lt;title&gt;{{ $title }}&lt;/title&gt;&lt;/head&gt;
+          &lt;body&gt;
+              &lt;nav&gt;&lt;a href="{{ route('posts.index') }}"&gt;Blog&lt;/a&gt;&lt;/nav&gt;
+              &lt;main&gt;
+                  {{ $slot }}
+              &lt;/main&gt;
+          &lt;/body&gt;
+          &lt;/html&gt;
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          &lt;x-layout title="All posts"&gt;
+              &lt;h1&gt;All posts&lt;/h1&gt;
+
+              @foreach ($posts as $post)
+                  &lt;x-post-card :post="$post" /&gt;
+              @endforeach
+          &lt;/x-layout&gt;
+        </code></pre>
+        <p><code>@props</code> declares the attributes a component accepts. A colon (<code>:post</code>) passes a PHP value instead of a plain string. Which style should you use? Both work; components are the modern default, but you'll see <code>@extends</code> in plenty of existing projects.</p>
+      </li>
+
+      <li class="step">
+        <h3>Forms need <code>@csrf</code></h3>
+        <p>Every <code>POST</code>, <code>PUT</code>, <code>PATCH</code> or <code>DELETE</code> form in <code>web.php</code> routes must include a <strong>CSRF token</strong>, a hidden secret proving the form came from your site. Forget it and you'll get a <strong>419 Page Expired</strong> error.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/create.blade.php" data-hl="2,8-9">
+          &lt;form method="POST" action="{{ route('posts.store') }}"&gt;
+              @csrf
+              &lt;input name="title" value="{{ old('title') }}"&gt;
+              &lt;button&gt;Publish&lt;/button&gt;
+          &lt;/form&gt;
+
+          &lt;form method="POST" action="{{ route('posts.destroy', $post) }}"&gt;
+              @csrf
+              @method('DELETE')
+              &lt;button&gt;Delete&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>HTML forms can only send <code>GET</code> and <code>POST</code>, so <code>@method('DELETE')</code> adds a hidden field telling Laravel which verb you really meant.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;p&gt;{!! $comment-&gt;body !!}&lt;/p&gt;
+        </code></pre>
+        <p>User-written content printed raw is an open door for XSS attacks.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;p&gt;{{ $comment-&gt;body }}&lt;/p&gt;
+        </code></pre>
+        <p>Escape by default. Reach for <code>{!! !!}</code> only for trusted, already-sanitised HTML.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          @if (count($posts))
+              @foreach ($posts as $post) ... @endforeach
+          @else
+              &lt;p&gt;No posts.&lt;/p&gt;
+          @endif
+        </code></pre>
+        <p>An <code>@if</code> wrapped around a <code>@foreach</code> is more nesting than you need.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          @forelse ($posts as $post)
+              ...
+          @empty
+              &lt;p&gt;No posts.&lt;/p&gt;
+          @endforelse
+        </code></pre>
+        <p><code>@forelse</code> handles the empty case in one tidy block.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: generate components</div>
+      <p><code>php artisan make:component PostCard --view</code> creates an anonymous component at <code>resources/views/components/post-card.blade.php</code>, ready to use as <code>&lt;x-post-card /&gt;</code>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>components/layout.blade.php</code> with a nav bar and <code>{{ $slot }}</code>, and use it from <code>posts/index.blade.php</code>.</li>
+        <li>Render your fake posts with <code>@forelse</code>, showing “No posts yet” when the array is empty.</li>
+        <li>Number each post with <code>$loop-&gt;iteration</code> and add a “featured” class to the first one.</li>
+        <li>Pass a title containing <code>&lt;b&gt;bold&lt;/b&gt;</code> and compare how <code>{{ }}</code> and <code>{!! !!}</code> display it.</li>
+        <li>Build a small form with <code>@csrf</code>, then remove it and submit to see the 419 error.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>{{ $value }}</code> prints escaped output; <code>{!! $value !!}</code> prints raw HTML, so use it with care.</li>
+      <li><code>@if</code>, <code>@foreach</code> and <code>@forelse</code>/<code>@empty</code> control what's shown.</li>
+      <li><code>$loop</code> gives you <code>iteration</code>, <code>first</code>, <code>last</code>, <code>count</code> and more inside loops.</li>
+      <li>Layouts: <code>@extends</code> + <code>@section</code> + <code>@yield</code>, or components with <code>&lt;x-layout&gt;</code> + <code>{{ $slot }}</code>.</li>
+      <li><code>@include</code> pulls in partials; every non-GET form needs <code>@csrf</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What's the difference between `{{ $x }}` and `{!! $x !!}`?",
+          "options": ["None, they're aliases", "`{{ }}` escapes HTML; `{!! !!}` prints it raw", "`{!! !!}` is faster and always preferred", "`{{ }}` only works with strings"],
+          "answer": 1,
+          "explain": "`{{ }}` runs the value through `htmlspecialchars`, protecting against XSS. Raw output is only for trusted HTML."
+        },
+        {
+          "q": "Which directive loops over items and has a built-in branch for an empty list?",
+          "options": ["`@foreach`", "`@while`", "`@each`", "`@forelse`"],
+          "answer": 3,
+          "explain": "`@forelse ... @empty ... @endforelse` handles the empty case without an extra `@if`."
+        },
+        {
+          "q": "Inside a component like `components/layout.blade.php`, where does the content between `<x-layout>` tags appear?",
+          "options": ["`{{ $slot }}`", "`@yield('content')`", "`{{ $content }}`", "`@section('slot')`"],
+          "answer": 0,
+          "explain": "Everything between a component's opening and closing tags is available as `$slot`."
+        },
+        {
+          "q": "You submit a POST form and get a **419 Page Expired** error. What's most likely missing?",
+          "options": ["`@method('POST')`", "`@auth`", "`@csrf`", "A route name"],
+          "answer": 2,
+          "explain": "Forms to `web.php` routes need the CSRF token that `@csrf` adds as a hidden field."
+        },
+        {
+          "q": "Inside `@foreach`, which expression is `true` only on the final item?",
+          "options": ["`$loop->end`", "`$loop->last`", "`$loop->count`", "`$loop->index == 0`"],
+          "answer": 1,
+          "explain": "`$loop->last` is `true` on the last iteration; `$loop->first` on the first."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

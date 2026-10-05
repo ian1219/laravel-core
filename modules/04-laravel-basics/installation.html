@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Installation &amp; Setup · Laravel Blueprint</title>
+  <meta name="description" content="Install PHP, Composer and Node, create a new Laravel app with the Laravel installer or Herd, and run it locally.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="04" data-lesson="installation">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">With PHP, Composer and Node installed, one <code>laravel new</code> command gives you a complete, working app you can open in your browser.</p>
+    <p class="analogy"><span>🏠</span><span>It's like moving into a furnished flat instead of an empty plot. The walls, plumbing and wiring (routing, database, security) are already in; you just bring your own furniture (your features).</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>A good setup saves hours later</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>Running in minutes</h3>
+        <p>Laravel ships with sensible defaults, including a ready-to-use SQLite database. There's no server to configure before you see a page.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧰</span>
+        <h3>Tools you'll use daily</h3>
+        <p>Composer, Artisan and npm are the commands you'll type every day. Getting them working now pays off in every later lesson.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔐</span>
+        <h3>Settings kept safe</h3>
+        <p>The <code>.env</code> file keeps passwords and keys out of your code, and out of Git.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>From nothing to “it works!”</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🧱</span><strong>Prerequisites</strong><small>PHP 8.2+, Composer, Node</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>Installer</strong><small>laravel/installer</small></div>
+        <div class="flow-node accent"><span class="flow-icon">✨</span><strong>laravel new blog</strong><small>creates the project</small></div>
+        <div class="flow-node"><span class="flow-icon">▶️</span><strong>composer run dev</strong><small>starts everything</small></div>
+        <div class="flow-node"><span class="flow-icon">🌐</span><strong>Browser</strong><small>http://127.0.0.1:8000</small></div>
+      </div>
+      <figcaption>Five stops, most of them one-time. After the first project, a new app is just <code>laravel new</code>.</figcaption>
+    </figure>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">🐘</span><h3>PHP 8.2+</h3><p>The language Laravel is written in. Check with <code>php -v</code>.</p></div>
+      <div class="mini-card"><span class="mini-icon">🎼</span><h3>Composer</h3><p>PHP's package manager. It downloads Laravel and its libraries. Check with <code>composer -V</code>.</p></div>
+      <div class="mini-card"><span class="mini-icon">🟢</span><h3>Node.js &amp; npm</h3><p>Builds your CSS and JavaScript with Vite. Check with <code>node -v</code>.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Create your first Laravel app</h2>
+      <p>We'll build a project called <code>blog</code>, which you'll keep growing throughout the course.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Install the tools (the easy way: Herd)</h3>
+        <p><strong>Laravel Herd</strong> is a free desktop app for Windows and macOS. One installer gives you PHP, Composer, the Laravel installer and a local web server. It's the fastest way to start.</p>
+        <p>Download it from <a href="https://herd.laravel.com">herd.laravel.com</a>, run it, and open a new terminal. Then check everything is there:</p>
+        <pre><code class="lang-bash">
+          php -v
+          composer -V
+          laravel --version
+        </code></pre>
+        <p>Install <strong>Node.js</strong> (the LTS version) separately from <a href="https://nodejs.org">nodejs.org</a> if you don't already have it.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Prefer to install by hand?</div>
+          <p>That's fine too. Install PHP 8.2+ (with common extensions), then Composer from <a href="https://getcomposer.org">getcomposer.org</a>, then add the Laravel installer globally:</p>
+          <pre><code class="lang-bash">
+            composer global require laravel/installer
+          </code></pre>
+          <p>Make sure Composer's global <code>vendor/bin</code> folder is on your PATH so the <code>laravel</code> command is found.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Create the project</h3>
+        <p>Move to the folder where you keep your code and run <code>laravel new</code>. The installer asks a few questions.</p>
+        <pre><code class="lang-bash">
+          laravel new blog
+        </code></pre>
+        <ul>
+          <li><strong>Starter kit</strong>: choose <em>None</em> for now. Starter kits (React, Vue, Livewire, or the classic <strong>Breeze</strong>) add login pages; you'll meet them in <a href="../07-authentication/starter-kits.html">Starter Kits</a>.</li>
+          <li><strong>Testing framework</strong>: Pest or PHPUnit. Either is fine.</li>
+          <li><strong>Database</strong>: keep the default, <strong>SQLite</strong>.</li>
+          <li><strong>Run npm install?</strong> Yes.</li>
+        </ul>
+        <p>No installer? <code>composer create-project laravel/laravel blog</code> does the same job with no questions asked.</p>
+      </li>
+
+      <li class="step">
+        <h3>Run the app</h3>
+        <p>Step into the folder and start the development server. <code>php artisan serve</code> starts PHP's built-in web server on port 8000.</p>
+        <pre><code class="lang-bash">
+          cd blog
+          php artisan serve
+        </code></pre>
+        <pre><code class="lang-text">
+          INFO  Server running on [http://127.0.0.1:8000].
+          Press Ctrl+C to stop the server
+        </code></pre>
+        <p>Even better, run <code>composer run dev</code>. It starts the web server, the Vite asset builder, the queue worker and a live log viewer, all in one terminal.</p>
+        <pre><code class="lang-bash">
+          composer run dev
+        </code></pre>
+        <div class="callout tip">
+          <div class="callout-title">💡 Using Herd?</div>
+          <p>Herd automatically serves any project in its “parked” folder at <code>http://blog.test</code>. You only need <code>npm run dev</code> for your CSS/JS.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Meet the <code>.env</code> file</h3>
+        <p>The <strong><code>.env</code></strong> file holds settings that change between computers, such as your local machine vs. the live server. Laravel reads it on every request.</p>
+        <pre><code class="lang-env" data-file=".env">
+          APP_NAME=Blog
+          APP_ENV=local
+          APP_KEY=base64:Xv3...generated...
+          APP_DEBUG=true
+          APP_URL=http://localhost
+
+          DB_CONNECTION=sqlite
+        </code></pre>
+        <ul>
+          <li><code>APP_KEY</code> encrypts cookies and sessions. It's generated for you; never share it.</li>
+          <li><code>APP_DEBUG=true</code> shows detailed error pages. It must be <code>false</code> in production.</li>
+          <li>In your code, read settings with <code>config('app.name')</code>, which pulls from the files in <code>config/</code>, which in turn read <code>.env</code>.</li>
+        </ul>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Never commit <code>.env</code></div>
+          <p>It's already in <code>.gitignore</code>. Commit <code>.env.example</code> instead, a template without real secrets. A teammate copies it to <code>.env</code> and runs <code>php artisan key:generate</code>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Check the database (SQLite by default)</h3>
+        <p><strong>SQLite</strong> stores the whole database in one file, <code>database/database.sqlite</code>. There's no server to install. The installer has already created it and run the first <strong>migrations</strong> (the scripts that build tables).</p>
+        <pre><code class="lang-bash">
+          php artisan migrate:status
+        </code></pre>
+        <p>Want MySQL or PostgreSQL later? Change the <code>DB_*</code> lines in <code>.env</code> and run <code>php artisan migrate</code>. You'll learn more in <a href="../05-database/migrations.html">Migrations</a>.</p>
+        <pre><code class="lang-env" data-file=".env">
+          DB_CONNECTION=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=blog
+          DB_USERNAME=root
+          DB_PASSWORD=
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          $key = 'sk_live_123abc';   // in a controller
+        </code></pre>
+        <p>Secrets hard-coded in PHP files end up in Git history forever.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // .env:  STRIPE_SECRET=sk_live_123abc
+          // config/services.php:  'secret' =&gt; env('STRIPE_SECRET'),
+          $key = config('services.stripe.secret');
+        </code></pre>
+        <p>Put secrets in <code>.env</code>, read them with <code>env()</code> in config files only, and use <code>config()</code> everywhere else.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          Edited .env... page still shows old value 🤔
+        </code></pre>
+        <p>If you ran <code>php artisan config:cache</code>, Laravel stops reading <code>.env</code> until the cache is cleared.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-bash">
+          php artisan config:clear
+        </code></pre>
+        <p>Locally, don't cache config at all. Clear it whenever <code>.env</code> changes seem to be ignored.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: meet Artisan</div>
+      <p><strong>Artisan</strong> is Laravel's command-line helper. List every command it knows, or get help on one:</p>
+      <pre><code class="lang-bash">
+        php artisan list
+        php artisan help make:controller
+        php artisan about
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a new project called <code>blog</code> and open it at <code>http://127.0.0.1:8000</code> (or <code>http://blog.test</code> with Herd).</li>
+        <li>Change <code>APP_NAME</code> in <code>.env</code> to “My Blog” and print it with <code>{{ config('app.name') }}</code> in <code>resources/views/welcome.blade.php</code>.</li>
+        <li>Run <code>php artisan about</code> and find your PHP version, Laravel version and database driver.</li>
+        <li>Stop the server, then start it again with <code>composer run dev</code> and see the extra processes it runs.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>You need PHP 8.2+, Composer and Node.js. <strong>Laravel Herd</strong> bundles most of it.</li>
+      <li><code>composer global require laravel/installer</code>, then <code>laravel new blog</code>, creates a project.</li>
+      <li><code>php artisan serve</code> runs the app; <code>composer run dev</code> runs the server, Vite, queue and logs together.</li>
+      <li><code>.env</code> holds per-machine settings and secrets. Never commit it.</li>
+      <li>New apps use <strong>SQLite</strong> by default, so you have a working database with zero setup.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which tool downloads Laravel and its PHP libraries?",
+          "options": ["npm", "Composer", "Artisan", "Vite"],
+          "answer": 1,
+          "explain": "Composer is PHP's package manager. npm handles JavaScript packages."
+        },
+        {
+          "q": "Which command starts the server, Vite, the queue worker and logs together?",
+          "options": ["`php artisan serve`", "`npm run build`", "`composer run dev`", "`laravel start`"],
+          "answer": 2,
+          "explain": "`composer run dev` runs a script defined in `composer.json` that starts all four processes at once."
+        },
+        {
+          "q": "What database does a new Laravel app use by default?",
+          "options": ["SQLite", "MySQL", "PostgreSQL", "None"],
+          "answer": 0,
+          "explain": "New apps use SQLite, stored in `database/database.sqlite`, so there's no database server to install."
+        },
+        {
+          "q": "Why should `.env` never be committed to Git?",
+          "options": ["It's too large", "Git can't read it", "It breaks Composer", "It contains secrets like `APP_KEY` and passwords"],
+          "answer": 3,
+          "explain": "Commit `.env.example` as a template instead, and keep the real values out of version control."
+        },
+        {
+          "q": "In application code, how should you read a setting such as the app name?",
+          "options": ["`env('APP_NAME')` everywhere", "`config('app.name')`", "`$_ENV['APP_NAME']`", "Read the `.env` file with `file_get_contents()`"],
+          "answer": 1,
+          "explain": "Use `env()` only inside config files. Everywhere else use `config()`, which still works when config is cached."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

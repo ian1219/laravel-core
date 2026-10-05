@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Actions &amp; DTOs · Laravel Blueprint</title>
+  <meta name="description" content="Use single-purpose action classes and readonly data transfer objects (DTOs) in Laravel to keep business logic focused, typed and reusable.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="14" data-lesson="actions-dtos">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">An action is a class that does exactly one business task (like “publish a post”), and a DTO is a small typed object that carries the data that task needs.</p>
+    <p class="analogy"><span>📦</span><span>A DTO is a labelled shipping box: everything inside has a name and a type, so nothing gets lost. The action is the one worker whose only job is to open that kind of box and do one thing with it.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Small, named, typed pieces</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔎</span>
+        <h3>Find logic by name</h3>
+        <p>A folder of <code>PublishPost</code>, <code>RefundOrder</code>, <code>InviteTeamMember</code> reads like a list of everything your app can do.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>No more mystery arrays</h3>
+        <p>A DTO replaces <code>array $data</code> (“which keys does it have?”) with typed properties your editor can autocomplete and check.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Compose and reuse</h3>
+        <p>Controllers, jobs, commands and other actions can all call the same action with the same DTO.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Data flows in a typed box</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Form Request</strong><small>validated input</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>DTO</strong><small>PostData (readonly)</small></div>
+        <div class="flow-node accent"><span class="flow-icon">⚡</span><strong>Action</strong><small>PublishPost::handle()</small></div>
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>Result</strong><small>a Post model</small></div>
+      </div>
+      <figcaption>The request is turned into a DTO once. From there on, every layer works with typed properties, not loose arrays.</figcaption>
+    </figure>
+    <dl class="terms">
+      <div><dt>Action</dt><dd>A class with one public method (by convention <code>handle()</code> or <code>execute()</code>) that performs one use case.</dd></div>
+      <div><dt>DTO</dt><dd><strong>Data Transfer Object</strong>: a class with only typed properties and no behaviour, used to move data between layers.</dd></div>
+      <div><dt><code>readonly</code></dt><dd>A PHP 8.2 class modifier: every property can be set once (in the constructor) and never changed after.</dd></div>
+      <div><dt>Constructor promotion</dt><dd>Declaring properties directly in the constructor's parameters, so you don't write them twice.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>From array soup to action + DTO</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>The “before”: a fat controller with an untyped array</h3>
+        <p>Every line below depends on array keys that nothing checks. A typo like <code>$data['tittle']</code> fails only at runtime.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function store(StorePostRequest $request)
+          {
+              $data = $request-&gt;validated();
+
+              $post = $request-&gt;user()-&gt;posts()-&gt;create([
+                  'title' =&gt; $data['title'],
+                  'slug' =&gt; Str::slug($data['title']),
+                  'body' =&gt; $data['body'],
+                  'category_id' =&gt; $data['category_id'],
+                  'published_at' =&gt; ($data['publish_now'] ?? false) ? now() : null,
+              ]);
+              $post-&gt;tags()-&gt;sync($data['tags'] ?? []);
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Create a readonly DTO with constructor promotion</h3>
+        <p>The whole class is <code>readonly</code>, and each property is declared once, in the constructor. A small <strong>named constructor</strong> builds it from a Form Request.</p>
+        <pre><code class="lang-php" data-file="app/Data/PostData.php" data-hl="7-15">
+          &lt;?php
+
+          namespace App\Data;
+
+          use App\Http\Requests\StorePostRequest;
+
+          final readonly class PostData
+          {
+              public function __construct(
+                  public string $title,
+                  public string $body,
+                  public int $categoryId,
+                  public bool $publishNow = false,
+                  public array $tagIds = [],
+              ) {}
+
+              public static function fromRequest(StorePostRequest $request): self
+              {
+                  return new self(
+                      title: $request-&gt;validated('title'),
+                      body: $request-&gt;validated('body'),
+                      categoryId: (int) $request-&gt;validated('category_id'),
+                      publishNow: $request-&gt;boolean('publish_now'),
+                      tagIds: $request-&gt;validated('tags', []),
+                  );
+              }
+          }
+        </code></pre>
+        <p>Try <code>$data-&gt;title = 'x'</code> and PHP throws an <code>Error</code>: readonly properties can't change once set. That makes DTOs safe to pass around.</p>
+      </li>
+
+      <li class="step">
+        <h3>Create a single-action class</h3>
+        <p>One class, one public method. Its name is a verb phrase describing the use case.</p>
+        <pre><code class="lang-php" data-file="app/Actions/PublishPost.php">
+          &lt;?php
+
+          namespace App\Actions;
+
+          use App\Data\PostData;
+          use App\Models\Post;
+          use App\Models\User;
+          use Illuminate\Support\Facades\DB;
+          use Illuminate\Support\Str;
+
+          class PublishPost
+          {
+              public function handle(User $author, PostData $data): Post
+              {
+                  return DB::transaction(function () use ($author, $data) {
+                      $post = $author-&gt;posts()-&gt;create([
+                          'title' =&gt; $data-&gt;title,
+                          'slug' =&gt; Str::slug($data-&gt;title),
+                          'body' =&gt; $data-&gt;body,
+                          'category_id' =&gt; $data-&gt;categoryId,
+                          'published_at' =&gt; $data-&gt;publishNow ? now() : null,
+                      ]);
+                      $post-&gt;tags()-&gt;sync($data-&gt;tagIds);
+
+                      return $post;
+                  });
+              }
+          }
+        </code></pre>
+        <p>Some teams call the method <code>execute()</code>, others use <code>__invoke()</code>. The name matters less than <strong>using one convention everywhere</strong>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Wire it into a thin controller</h3>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3">
+          public function store(StorePostRequest $request, PublishPost $publish)
+          {
+              $post = $publish-&gt;handle($request-&gt;user(), PostData::fromRequest($request));
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+        <p>The container injects <code>PublishPost</code> (and anything <em>it</em> needs in its own constructor). The controller is back to “validate, delegate, respond”.</p>
+      </li>
+
+      <li class="step">
+        <h3>Reuse it from a job or another action</h3>
+        <p>Because the action only needs a <code>User</code> and a <code>PostData</code>, anything can call it: an import job, a seeder, or a bigger action.</p>
+        <pre><code class="lang-php" data-file="app/Jobs/ImportPostsFromCsv.php">
+          public function handle(PublishPost $publish): void
+          {
+              foreach ($this-&gt;rows as $row) {
+                  $publish-&gt;handle($this-&gt;author, new PostData(
+                      title: $row['title'],
+                      body: $row['body'],
+                      categoryId: (int) $row['category_id'],
+                  ));
+              }
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Packages exist, but you don't need them</div>
+          <p>Packages like <code>spatie/laravel-data</code> and <code>lorisleiva/laravel-actions</code> add extras (auto-validation, running actions as jobs). Plain PHP classes, as shown here, are enough to get all the core benefits.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          class PostActions
+          {
+              public function create() { /* ... */ }
+              public function update() { /* ... */ }
+              public function delete() { /* ... */ }
+          }
+        </code></pre>
+        <p>An “action” with many methods is just a service with a different name, and it loses the one-class-one-job clarity.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          app/Actions/Posts/CreatePost.php
+          app/Actions/Posts/UpdatePost.php
+          app/Actions/Posts/DeletePost.php
+        </code></pre>
+        <p>One file per use case, each with a single <code>handle()</code>.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          class PostData
+          {
+              public $title;
+              public $body;
+
+              public function save() { /* ... */ }
+          }
+        </code></pre>
+        <p>Untyped, mutable properties plus behaviour: this isn't a DTO anymore, it's a half-model.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          final readonly class PostData
+          {
+              public function __construct(
+                  public string $title,
+                  public string $body,
+              ) {}
+          }
+        </code></pre>
+        <p>Typed, immutable, no behaviour. Logic belongs in the action.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: don't wrap everything</div>
+      <p>A DTO for a single <code>string $email</code> is overkill. Use DTOs when data has several fields or passes through several layers. Likewise, a trivial <code>$post-&gt;delete()</code> doesn't need a <code>DeletePost</code> action unless it also has side effects.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create <code>final readonly class CommentData</code> with promoted <code>string $body</code> and <code>int $postId</code>, plus a <code>fromRequest()</code> method.</li>
+        <li>Create <code>app/Actions/AddComment.php</code> with <code>handle(User $user, CommentData $data): Comment</code>.</li>
+        <li>Refactor <code>CommentController@store</code> to a 3-line method that uses both.</li>
+        <li>In <code>php artisan tinker</code>, create a <code>CommentData</code> and try to change <code>$data-&gt;body</code>. Read the error message.</li>
+        <li>Write a test that calls <code>app(AddComment::class)-&gt;handle(...)</code> and asserts the comment exists in the database.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>An action is one class for one use case, with a single <code>handle()</code> or <code>execute()</code> method.</li>
+      <li>A DTO is a typed, behaviour-free data carrier. Make it <code>final readonly</code> and use constructor promotion.</li>
+      <li>Build DTOs once at the edge (for example <code>PostData::fromRequest()</code>), then pass them inward.</li>
+      <li>Actions are container-resolved, so they can inject their own dependencies.</li>
+      <li>Controllers, jobs, commands and other actions can all reuse the same action.</li>
+      <li>Pick one naming convention and don't wrap trivial one-liners just for the sake of it.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does `final readonly class PostData` guarantee about its properties?",
+          "options": ["They can be changed at any time", "They can be set once, in the constructor, and never changed", "They're stored in the database", "They're always strings"],
+          "answer": 1,
+          "explain": "A `readonly` class makes every property write-once. Changing one later throws an `Error`."
+        },
+        {
+          "q": "What is constructor promotion?",
+          "options": ["Declaring properties directly in the constructor's parameter list", "Calling the parent constructor", "A Laravel service provider feature", "Making the constructor static"],
+          "answer": 0,
+          "explain": "`public function __construct(public string $title) {}` declares and assigns `$title` in one place."
+        },
+        {
+          "q": "Which class best fits the action pattern?",
+          "options": ["`PostActions` with create, update and delete", "`PostHelper` with 20 static methods", "`PublishPost` with one `handle()` method", "`PostData` with a `save()` method"],
+          "answer": 2,
+          "explain": "An action does one job and exposes one public entry point."
+        },
+        {
+          "q": "Why replace `array $data` with a DTO?",
+          "options": ["Arrays are slower in PHP 8", "Typed properties catch typos and wrong types, and editors can autocomplete them", "Laravel can't validate arrays", "DTOs are saved automatically"],
+          "answer": 1,
+          "explain": "With a DTO, `$data->tittle` is an obvious error instead of a silent `null` from a missing array key."
+        },
+        {
+          "q": "When is creating a DTO probably overkill?",
+          "options": ["For a single value like one email string", "For data with six fields", "For data passed from a controller through a job to an action", "For API input"],
+          "answer": 0,
+          "explain": "DTOs shine with several fields or several layers. A single scalar argument is clear enough on its own."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

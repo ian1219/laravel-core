@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Queues &amp; Jobs · Laravel Blueprint</title>
+  <meta name="description" content="Move slow work into the background with Laravel jobs: make:job, ShouldQueue, dispatch, the database queue driver, queue:work, retries and failed jobs.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="13" data-lesson="queues-jobs">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A queue lets your app say “I'll do this later” by saving a <strong>job</strong> to a list, while a separate <strong>worker</strong> process picks jobs off that list and runs them in the background.</p>
+    <p class="analogy"><span>🍔</span><span>At a burger counter, the cashier takes your order, gives you a ticket and moves on to the next customer. The kitchen (the worker) cooks the orders in turn. Customers aren't kept standing at the till while each burger is made.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Users shouldn't wait for slow work</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">⏱️</span>
+        <h3>Snappy responses</h3>
+        <p>Sending an email can take 1–3 seconds. Queue it, and the page responds in milliseconds.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔁</span>
+        <h3>Automatic retries</h3>
+        <p>If the mail server hiccups, the job is retried later instead of showing the user an error.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏗️</span>
+        <h3>Heavy lifting, safely</h3>
+        <p>Resizing images, generating PDFs and importing CSVs can run for minutes without hitting web request timeouts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>From request to background job</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🙂</span><strong>Request</strong><small>user publishes a post</small></div>
+        <div class="flow-node"><span class="flow-icon">📤</span><strong>dispatch()</strong><small>job saved to the queue</small></div>
+        <div class="flow-node"><span class="flow-icon">⚡</span><strong>Response</strong><small>“Published!” sent right away</small></div>
+        <div class="flow-node accent"><span class="flow-icon">👷</span><strong>Worker</strong><small><code>queue:work</code> runs the job</small></div>
+        <div class="flow-node"><span class="flow-icon">📧</span><strong>Done</strong><small>followers notified</small></div>
+      </div>
+      <figcaption>The web request and the worker are separate processes. The queue (a database table or Redis list) sits between them.</figcaption>
+    </figure>
+    <dl class="terms">
+      <div><dt>Job</dt><dd>A small class describing one piece of work, with a <code>handle()</code> method.</dd></div>
+      <div><dt>Queue</dt><dd>The waiting list of jobs, stored by a <strong>driver</strong> (database, Redis, SQS…).</dd></div>
+      <div><dt>Worker</dt><dd>A long-running command (<code>php artisan queue:work</code>) that takes jobs from the queue and runs them.</dd></div>
+      <div><dt>Dispatch</dt><dd>Putting a job onto the queue.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Your first queued job</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Configure the database queue driver</h3>
+        <p>New Laravel apps already use the <code>database</code> driver, and the <code>jobs</code> and <code>failed_jobs</code> tables are created by the default migrations. Check your <code>.env</code>:</p>
+        <pre><code class="lang-env" data-file=".env">
+          QUEUE_CONNECTION=database
+        </code></pre>
+        <p>If the tables are missing in an older app, run <code>php artisan make:queue-table</code> then <code>php artisan migrate</code>. The <code>sync</code> driver runs jobs immediately (no queue), which is handy in tests. In production at scale, <code>redis</code> is the usual choice.</p>
+      </li>
+
+      <li class="step">
+        <h3>Create a job with <code>make:job</code></h3>
+        <pre><code class="lang-bash">
+          php artisan make:job NotifyFollowers
+        </code></pre>
+        <p>This creates <code>app/Jobs/NotifyFollowers.php</code>. The <code>ShouldQueue</code> interface is what tells Laravel to queue it rather than run it immediately.</p>
+        <pre><code class="lang-php" data-file="app/Jobs/NotifyFollowers.php" data-hl="10,14,16-21">
+          &lt;?php
+
+          namespace App\Jobs;
+
+          use App\Models\Post;
+          use App\Notifications\NewPostPublished;
+          use Illuminate\Contracts\Queue\ShouldQueue;
+          use Illuminate\Foundation\Queue\Queueable;
+
+          class NotifyFollowers implements ShouldQueue
+          {
+              use Queueable;
+
+              public function __construct(public Post $post) {}
+
+              public function handle(): void
+              {
+                  foreach ($this-&gt;post-&gt;author-&gt;followers as $follower) {
+                      $follower-&gt;notify(new NewPostPublished($this-&gt;post));
+                  }
+              }
+          }
+        </code></pre>
+        <p>Passing a model is safe: Laravel stores only its ID in the queue and re-fetches the fresh model when the job runs.</p>
+      </li>
+
+      <li class="step">
+        <h3>Dispatch it</h3>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="5">
+          public function publish(Post $post)
+          {
+              $post-&gt;update(['published_at' =&gt; now()]);
+
+              NotifyFollowers::dispatch($post);
+
+              return back()-&gt;with('status', 'Published!');
+          }
+        </code></pre>
+        <p>A few useful variations:</p>
+        <pre><code class="lang-php">
+          NotifyFollowers::dispatch($post)-&gt;delay(now()-&gt;addMinutes(5));
+          NotifyFollowers::dispatch($post)-&gt;onQueue('emails');
+          NotifyFollowers::dispatchAfterResponse($post);   // tiny tasks, no worker needed
+        </code></pre>
+        <p>Mailables and notifications can be queued too: add <code>implements ShouldQueue</code> to the class, or use <code>Mail::to($user)-&gt;queue(...)</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Run a worker with <code>queue:work</code></h3>
+        <p>Nothing happens to queued jobs until a worker is running. In development, open a second terminal:</p>
+        <pre><code class="lang-bash">
+          php artisan queue:work
+          php artisan queue:work --queue=emails,default   # priority order
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Workers keep old code in memory</div>
+          <p><code>queue:work</code> boots your app once and keeps running, so code changes aren't picked up. Restart it after edits (or use <code>queue:listen</code> locally). On deploy, run <code>php artisan queue:restart</code>, and keep workers alive with a process manager like <strong>Supervisor</strong>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Handle retries and failed jobs</h3>
+        <p>If <code>handle()</code> throws an exception, the job goes back on the queue and is tried again. Control how many times and how long to wait between attempts:</p>
+        <pre><code class="lang-php" data-file="app/Jobs/NotifyFollowers.php">
+          public int $tries = 3;
+
+          public function backoff(): array
+          {
+              return [10, 60, 300];   // wait 10s, then 60s, then 5 min
+          }
+
+          public function failed(?Throwable $e): void
+          {
+              // runs after the final attempt fails: alert someone, log it
+          }
+        </code></pre>
+        <p>After the last attempt, the job is stored in the <code>failed_jobs</code> table. Inspect and retry from the command line:</p>
+        <pre><code class="lang-bash">
+          php artisan queue:failed           # list failed jobs
+          php artisan queue:retry all        # push them back onto the queue
+          php artisan queue:retry 5          # retry one by ID
+          php artisan queue:flush            # delete all failed jobs
+        </code></pre>
+      </li>
+    </ol>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Growing up: Laravel Horizon</div>
+      <p>When you move to Redis, <strong>Laravel Horizon</strong> (<code>composer require laravel/horizon</code>) gives you a dashboard of throughput, runtimes and failures, plus code-based worker configuration. It replaces running <code>queue:work</code> by hand.</p>
+    </div>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          foreach ($followers as $f) {
+              Mail::to($f)-&gt;send(new NewPost($post));
+          }
+          return back();
+        </code></pre>
+        <p>200 followers × 1 second each: the user stares at a spinner for minutes, or the request times out.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          NotifyFollowers::dispatch($post);
+          return back();
+        </code></pre>
+        <p>The response is instant, and the worker sends emails in the background with retries.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function __construct(
+              public UploadedFile $file
+          ) {}
+        </code></pre>
+        <p>Jobs are serialised into storage. Uploaded files, closures and open connections don't survive the trip.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $path = $request-&gt;file('csv')-&gt;store('imports');
+          ImportPosts::dispatch($path);
+        </code></pre>
+        <p>Store the file first and pass simple data (a path, an ID, a model).</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: make jobs safe to run twice</div>
+      <p>Retries mean a job might run more than once. Design <code>handle()</code> so a second run doesn't double-charge or double-send, for example by checking “already notified?” before acting.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Create a <code>LogPostPublished</code> job that writes to the log with <code>Log::info()</code>, then dispatch it from a route.</li>
+        <li>Visit the route <em>without</em> a worker running and look at the <code>jobs</code> table.</li>
+        <li>Start <code>php artisan queue:work</code> and watch the job get processed.</li>
+        <li>Make <code>handle()</code> throw an exception, set <code>$tries = 2</code>, and find it with <code>php artisan queue:failed</code>.</li>
+        <li>Fix the bug and run <code>php artisan queue:retry all</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Create jobs with <code>php artisan make:job</code>; <code>implements ShouldQueue</code> makes them run in the background.</li>
+      <li>Send them with <code>MyJob::dispatch(...)</code>, optionally with <code>delay()</code> or <code>onQueue()</code>.</li>
+      <li><code>QUEUE_CONNECTION=database</code> works out of the box; Redis (with Horizon) is the production upgrade.</li>
+      <li>Nothing runs without <code>php artisan queue:work</code>; restart workers after deploying.</li>
+      <li>Use <code>$tries</code>, <code>backoff()</code> and <code>failed()</code>; manage failures with <code>queue:failed</code> and <code>queue:retry</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What makes a job class run on the queue instead of immediately?",
+          "options": ["Naming it `...Job`", "Implementing `ShouldQueue`", "Putting it in `routes/console.php`", "Calling it from a controller"],
+          "answer": 1,
+          "explain": "The `ShouldQueue` interface tells Laravel to push the job onto the queue when dispatched."
+        },
+        {
+          "q": "You dispatched jobs but nothing happens. What's the most likely cause?",
+          "options": ["The job has no constructor", "The cache is full", "No worker is running `php artisan queue:work`", "APP_DEBUG is false"],
+          "answer": 2,
+          "explain": "Jobs wait in the queue until a worker process picks them up."
+        },
+        {
+          "q": "Where do jobs end up after their last retry fails?",
+          "options": ["The `failed_jobs` table", "They're deleted silently", "`storage/logs/laravel.log` only", "The `jobs` table, forever"],
+          "answer": 0,
+          "explain": "Failed jobs are stored in `failed_jobs`. List them with `queue:failed` and retry with `queue:retry`."
+        },
+        {
+          "q": "You deployed new job code, but workers still run the old version. What should you run?",
+          "options": ["`php artisan cache:clear`", "`php artisan migrate`", "`composer dump-autoload`", "`php artisan queue:restart`"],
+          "answer": 3,
+          "explain": "Workers keep the app in memory. `queue:restart` tells them to exit gracefully so your process manager starts fresh ones."
+        },
+        {
+          "q": "What is Laravel Horizon?",
+          "options": ["A cache driver", "A dashboard and configuration layer for Redis queues", "A replacement for Eloquent", "A deployment server"],
+          "answer": 1,
+          "explain": "Horizon monitors and manages Redis-powered queue workers with a web dashboard."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

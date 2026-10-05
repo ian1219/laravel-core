@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Project 1 · Todo App · Laravel Blueprint</title>
+  <meta name="description" content="Build your first full Laravel CRUD app: a todo list with migrations, Eloquent, resource controllers, validation and Blade.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="P" data-lesson="todo-app">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- What you'll build -->
+  <div class="one-liner">
+    <span class="one-liner-label">What you'll build</span>
+    <p class="big">A todo app where you can add, list, edit, complete and delete tasks: your first complete CRUD, built from an empty folder.</p>
+    <p class="analogy"><span>✅</span><span>Every big app is lots of small CRUDs stitched together. Build this one end to end and you'll have practised the whole Laravel loop: route → controller → model → database → view.</span></p>
+  </div>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>What the finished app does</h2>
+      <p>Uses skills from Modules 01–06. No login yet; that comes in Project 2.</p>
+    </div>
+    <div class="card-grid">
+      <div class="mini-card"><span class="mini-icon">📝</span><h3>Add tasks</h3><p>A form with a title, optional notes and an optional due date.</p></div>
+      <div class="mini-card"><span class="mini-icon">📋</span><h3>List tasks</h3><p>Open tasks first, newest at the top, paginated 10 per page.</p></div>
+      <div class="mini-card"><span class="mini-icon">✔️</span><h3>Mark as done</h3><p>One click toggles a task between open and completed.</p></div>
+      <div class="mini-card"><span class="mini-icon">✏️</span><h3>Edit &amp; delete</h3><p>Change a task or remove it, with a confirmation step.</p></div>
+      <div class="mini-card"><span class="mini-icon">🚦</span><h3>Validation</h3><p>Friendly error messages and old input kept when a form fails.</p></div>
+      <div class="mini-card"><span class="mini-icon">🔍</span><h3>Filter</h3><p>Show all, open or done tasks with a <code>?status=</code> query string.</p></div>
+    </div>
+  </section>
+
+  <!-- Data model -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Data model</span>
+      <h2>One table, kept simple</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>bigint</td><td>Primary key</td></tr>
+          <tr><td><code>title</code></td><td>string(255)</td><td>Required</td></tr>
+          <tr><td><code>notes</code></td><td>text, nullable</td><td>Optional details</td></tr>
+          <tr><td><code>due_on</code></td><td>date, nullable</td><td>Cast to a Carbon date</td></tr>
+          <tr><td><code>completed_at</code></td><td>timestamp, nullable</td><td><code>null</code> means still open</td></tr>
+          <tr><td><code>created_at</code> / <code>updated_at</code></td><td>timestamps</td><td>Managed by Eloquent</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Here's where your files will end up:</p>
+    <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Http/Controllers/</span>TaskController.php
+├── <span class="dir">Http/Requests/</span>TaskRequest.php
+└── <span class="dir">Models/</span>Task.php
+<span class="dir">database/migrations/</span>xxxx_create_tasks_table.php
+<span class="dir">resources/views/</span>
+├── <span class="dir">layouts/</span>app.blade.php
+└── <span class="dir">tasks/</span>index · create · edit .blade.php
+<span class="dir">routes/</span>web.php</pre>
+  </section>
+
+  <!-- Milestones -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Build it</span>
+      <h2>Build it milestone by milestone</h2>
+      <p>Finish and test each milestone in the browser before moving on. Stuck? The chips link to the lesson that teaches that skill.</p>
+    </div>
+
+    <ol class="milestones">
+      <li>
+        <h3>Create the project</h3>
+        <p>Create a fresh app, choose no starter kit and SQLite as the database, then run it.</p>
+        <pre><code class="lang-bash">
+          laravel new todo-app
+          cd todo-app
+          composer run dev
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../04-laravel-basics/installation.html">🚀 Installation &amp; Setup</a>
+          <a class="chip-link" href="../04-laravel-basics/directory-structure.html">📁 Directory Structure</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Design the tasks table</h3>
+        <p>Generate a model with a migration, add the columns from the data model above, then run <code>php artisan migrate</code>.</p>
+        <pre><code class="lang-php" data-file="database/migrations/xxxx_create_tasks_table.php">
+          Schema::create('tasks', function (Blueprint $table) {
+              $table-&gt;id();
+              $table-&gt;string('title');
+              $table-&gt;text('notes')-&gt;nullable();
+              $table-&gt;date('due_on')-&gt;nullable();
+              $table-&gt;timestamp('completed_at')-&gt;nullable();
+              $table-&gt;timestamps();
+          });
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/migrations.html">🗄️ Migrations</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Build the Task model</h3>
+        <p>Set <code>$fillable</code>, add a <code>casts()</code> method for the dates, and an <code>isDone()</code> helper. Try it out in <code>php artisan tinker</code>.</p>
+        <pre><code class="lang-php" data-file="app/Models/Task.php">
+          protected $fillable = ['title', 'notes', 'due_on', 'completed_at'];
+
+          protected function casts(): array
+          {
+              return ['due_on' =&gt; 'date', 'completed_at' =&gt; 'datetime'];
+          }
+
+          public function isDone(): bool
+          {
+              return $this-&gt;completed_at !== null;
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/models.html">🧱 Models</a>
+          <a class="chip-link" href="../01-php-foundations/classes-objects.html">🐘 Classes &amp; Objects</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Wire up routes and a resource controller</h3>
+        <p>Generate <code>TaskController</code> with <code>--resource</code>, register it, and redirect <code>/</code> to the task list.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          Route::redirect('/', '/tasks');
+          Route::resource('tasks', TaskController::class)-&gt;except('show');
+          Route::patch('tasks/{task}/toggle', [TaskController::class, 'toggle'])
+              -&gt;name('tasks.toggle');
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../04-laravel-basics/routing.html">🧭 Routing</a>
+          <a class="chip-link" href="../04-laravel-basics/controllers.html">🎛️ Controllers</a>
+          <a class="chip-link" href="../06-crud/resource-controllers.html">🛠️ Resource Controllers</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Create a Blade layout</h3>
+        <p>Build <code>layouts/app.blade.php</code> with a header, a flash-message area and a <code>{{ $slot }}</code> or <code>@yield('content')</code>. Add Tailwind via the default Vite setup.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../04-laravel-basics/blade.html">🖌️ Blade Templates</a>
+          <a class="chip-link" href="../03-web-fundamentals/mvc.html">🧩 The MVC Pattern</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>List tasks and add new ones</h3>
+        <p>In <code>index()</code>, show open tasks first with pagination. Build the create form with <code>@csrf</code> and save in <code>store()</code>.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/TaskController.php">
+          $tasks = Task::query()
+              -&gt;orderByRaw('completed_at is not null')
+              -&gt;latest()
+              -&gt;paginate(10);
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/create-read.html">📋 Create &amp; Read</a>
+          <a class="chip-link" href="../05-database/eloquent.html">🔎 Eloquent Queries</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Validate input properly</h3>
+        <p>Move rules into a <code>TaskRequest</code> Form Request: title required and max 255, due date a valid date not in the past. Show errors with <code>@error</code> and keep <code>old()</code> values.</p>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/forms-validation.html">🚦 Forms &amp; Validation</a>
+          <a class="chip-link" href="../03-web-fundamentals/http.html">🌐 How HTTP Works</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Edit, toggle and delete</h3>
+        <p>Add the edit form with <code>@method('PUT')</code>, a delete button with <code>@method('DELETE')</code>, and a <code>toggle()</code> action that flips <code>completed_at</code>. Redirect back with a flash message each time.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/TaskController.php">
+          public function toggle(Task $task)
+          {
+              $task-&gt;update(['completed_at' =&gt; $task-&gt;isDone() ? null : now()]);
+
+              return back()-&gt;with('status', 'Task updated.');
+          }
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../06-crud/update-delete.html">✏️ Update &amp; Delete</a>
+          <a class="chip-link" href="../03-web-fundamentals/request-response.html">🔁 Request &amp; Response</a>
+        </div>
+      </li>
+
+      <li>
+        <h3>Add a status filter</h3>
+        <p>Read <code>?status=open|done</code> from the request and apply it with <code>when()</code>. Keep the filter in pagination links with <code>withQueryString()</code>.</p>
+        <pre><code class="lang-php">
+          $tasks = Task::query()
+              -&gt;when($request-&gt;status === 'open', fn ($q) =&gt; $q-&gt;whereNull('completed_at'))
+              -&gt;when($request-&gt;status === 'done', fn ($q) =&gt; $q-&gt;whereNotNull('completed_at'))
+              -&gt;latest()-&gt;paginate(10)-&gt;withQueryString();
+        </code></pre>
+        <div class="link-chips">
+          <a class="chip-link" href="../05-database/eloquent.html">🔎 Eloquent Queries</a>
+          <a class="chip-link" href="../01-php-foundations/functions.html">🐘 Functions (arrow functions)</a>
+          <a class="chip-link" href="../01-php-foundations/arrays.html">🐘 Arrays</a>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Stretch goals -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Stretch goals</div>
+      <ol>
+        <li>Highlight overdue tasks in red using a <code>isOverdue()</code> model method.</li>
+        <li>Add a <code>priority</code> column (low/normal/high) with a new migration, and sort by it.</li>
+        <li>Add a “Clear completed” button that deletes all done tasks in one query.</li>
+        <li>Extract the task row into a Blade component: <code>&lt;x-task-row :task="$task" /&gt;</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Definition of done -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Definition of done</span>
+      <h2>You're finished when…</h2>
+    </div>
+    <ul class="takeaways">
+      <li>You can create, list, edit, toggle and delete tasks entirely in the browser.</li>
+      <li>Invalid forms show clear error messages and keep what the user typed.</li>
+      <li>All links use named routes, and <code>php artisan route:list</code> shows every route you expect.</li>
+      <li>Every form has <code>@csrf</code>, and updates/deletes use the right HTTP method.</li>
+      <li>Running <code>php artisan migrate:fresh</code> rebuilds the database from your migrations alone.</li>
+      <li>The project is committed to Git with a short README explaining how to run it.</li>
+    </ul>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

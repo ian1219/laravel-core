@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Encapsulation · Laravel Blueprint</title>
+  <meta name="description" content="Learn encapsulation in PHP: public, protected and private visibility, guarded methods, readonly properties and readonly classes.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="02" data-lesson="encapsulation">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Encapsulation means an object keeps its data private and only lets the outside world change it through methods it controls.</p>
+    <p class="analogy"><span>🏧</span><span>A cash machine doesn't let you reach in and grab notes. You use its buttons (public methods), and it checks your PIN and balance first. The cash drawer (private data) stays locked inside.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Objects that can't be broken from outside</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Valid data, always</h3>
+        <p>If every change goes through a method, that method can refuse bad values like a negative price or an empty title.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔧</span>
+        <h3>Change the inside freely</h3>
+        <p>Callers only know the public methods. You can rename or restructure private details without breaking anyone.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📖</span>
+        <h3>A clear, small surface</h3>
+        <p>A class with three public methods is easy to learn. One with twenty public properties is a guessing game.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Three levels of visibility</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>🌍</span><strong>public</strong><small>Anyone can use it: other classes, your routes, your views.</small></div>
+        <div class="layer"><span>👨‍👧</span><strong>protected</strong><small>This class and its child classes (see <a href="inheritance.html">Inheritance</a>).</small></div>
+        <div class="layer"><span>🔒</span><strong>private</strong><small>Only code inside this exact class.</small></div>
+      </div>
+      <figcaption>Every property, method and constant gets one of these keywords. Start with <code>private</code> and open up only when you need to.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Keyword</th><th>Same class</th><th>Child class</th><th>Outside code</th></tr></thead>
+        <tbody>
+          <tr><td><code>public</code></td><td>✅</td><td>✅</td><td>✅</td></tr>
+          <tr><td><code>protected</code></td><td>✅</td><td>✅</td><td>❌</td></tr>
+          <tr><td><code>private</code></td><td>✅</td><td>❌</td><td>❌</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Lock down a class, one step at a time</h2>
+      <p>We'll protect a <code>Post</code> so it can never end up with a bad title or a negative view count.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>See the problem with all-public data</h3>
+        <p>When properties are <code>public</code>, any code anywhere can put nonsense in them, and the class can't stop it.</p>
+        <pre><code class="lang-php" data-file="Post.php">
+          class Post
+          {
+              public function __construct(
+                  public string $title,
+                  public int $views = 0,
+              ) {}
+          }
+
+          $post = new Post('Hello');
+          $post-&gt;title = '';        // empty title: allowed 😬
+          $post-&gt;views = -500;      // negative views: allowed 😬
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Make data private and expose methods</h3>
+        <p>Mark properties <code>private</code>. Then add public methods that describe <strong>what</strong> callers can do (<code>addView()</code>) rather than handing out raw access.</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="4-5,8,13">
+          class Post
+          {
+              public function __construct(
+                  private string $title,
+                  private int $views = 0,
+              ) {}
+
+              public function title(): string
+              {
+                  return $this-&gt;title;
+              }
+
+              public function addView(): void
+              {
+                  $this-&gt;views++;
+              }
+
+              public function views(): int
+              {
+                  return $this-&gt;views;
+              }
+          }
+
+          $post = new Post('Hello');
+          $post-&gt;addView();
+          echo $post-&gt;views();      // 1
+          $post-&gt;views = 99;        // Error: Cannot modify private property
+        </code></pre>
+        <p>There's no way to set <code>views</code> to an arbitrary number any more. It can only go up by one.</p>
+      </li>
+
+      <li class="step">
+        <h3>Guard the rules inside the class</h3>
+        <p>An <strong>invariant</strong> is a rule that must always be true for an object, like "a title is never empty". Check it in the constructor and in every method that changes the data. Throw an <strong>exception</strong> when the rule is broken.</p>
+        <pre><code class="lang-php" data-file="Post.php" data-hl="10-11">
+          class Post
+          {
+              public function __construct(private string $title)
+              {
+                  $this-&gt;rename($title);
+              }
+
+              public function rename(string $title): void
+              {
+                  if (trim($title) === '') {
+                      throw new InvalidArgumentException('A post needs a title.');
+                  }
+
+                  $this-&gt;title = trim($title);
+              }
+          }
+
+          new Post('   ');   // InvalidArgumentException: A post needs a title.
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Hide helper methods with <code>private</code></h3>
+        <p>Methods can be private too. Use them for internal steps that callers shouldn't call directly. The public method stays short and readable.</p>
+        <pre><code class="lang-php" data-file="Post.php">
+          public function slug(): string
+          {
+              return $this-&gt;slugify($this-&gt;title);
+          }
+
+          private function slugify(string $text): string
+          {
+              return strtolower(preg_replace('/[^a-z0-9]+/i', '-', trim($text)));
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Make data unchangeable with <code>readonly</code></h3>
+        <p>Sometimes data should be set once and never change, like an ID or an email in a message. A <strong>readonly property</strong> (PHP 8.1+) can be read publicly but written only once, from inside the class. PHP 8.2 adds the <strong>readonly class</strong>, which makes every property readonly.</p>
+        <pre><code class="lang-php" data-file="Money.php" data-hl="1">
+          final readonly class Money
+          {
+              public function __construct(
+                  public int $amount,       // in cents
+                  public string $currency,
+              ) {}
+
+              public function add(Money $other): static
+              {
+                  return new static($this-&gt;amount + $other-&gt;amount, $this-&gt;currency);
+              }
+          }
+
+          $price = new Money(1999, 'USD');
+          echo $price-&gt;amount;          // 1999, reading is fine
+          $price-&gt;amount = 0;           // Error: Cannot modify readonly property
+          $total = $price-&gt;add(new Money(500, 'USD'));   // a NEW object
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Immutable objects</div>
+          <p>An object that never changes after creation is called <strong>immutable</strong>. Instead of editing it, you create a new one, as <code>add()</code> does. Laravel's <code>Carbon</code> dates have an immutable version for the same reason. <code>final</code> stops other classes from extending it (more on that in <a href="inheritance.html">Inheritance</a>).</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function setStatus(string $s): void { $this-&gt;status = $s; }
+          public function setPublishedAt($d): void { $this-&gt;publishedAt = $d; }
+
+          $post-&gt;setStatus('published');
+          $post-&gt;setPublishedAt(new DateTime());
+        </code></pre>
+        <p>A setter for every property is public data in disguise, and callers must remember to do both steps.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function publish(): void
+          {
+              $this-&gt;status = PostStatus::Published;
+              $this-&gt;publishedAt = new DateTimeImmutable();
+          }
+
+          $post-&gt;publish();
+        </code></pre>
+        <p>Name methods after real actions. The class keeps related data in sync by itself.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: start private</div>
+      <p>Default to <code>private</code>. It's easy to make something public later, but once outside code depends on a public property, taking it away breaks things.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Build a <code>BankAccount</code> class with a private <code>int $balance</code> (in cents) starting at 0.</li>
+        <li>Add <code>deposit(int $amount)</code> and <code>withdraw(int $amount)</code>. Throw <code>InvalidArgumentException</code> for amounts of zero or less.</li>
+        <li>Make <code>withdraw</code> throw if the balance would go negative.</li>
+        <li>Add a public <code>balance(): int</code> getter, and confirm that <code>$account-&gt;balance = 1000;</code> fails.</li>
+        <li>Bonus: create a <code>readonly class Transaction</code> holding the amount and type, and keep a private list of them.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Where you'll see this in Laravel -->
+  <section class="section">
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where you'll see this in Laravel</div>
+      <ul>
+        <li><strong>Mass assignment protection</strong>: a model's <code>$fillable</code> list (a <code>protected</code> property) decides which attributes can be set from user input (see <a href="../12-security/sql-injection-mass-assignment.html">SQL Injection &amp; Mass Assignment</a>).</li>
+        <li><strong>Hidden attributes</strong>: <code>protected $hidden = ['password'];</code> keeps secrets out of JSON.</li>
+        <li><strong>Injected dependencies</strong> are usually <code>private readonly</code>: <code>public function __construct(private readonly PostService $posts) {}</code>.</li>
+        <li><strong>DTOs</strong> (data transfer objects) are often <code>readonly</code> classes (see <a href="../14-architecture/actions-dtos.html">Actions &amp; DTOs</a>).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Encapsulation = private data + public methods that control access.</li>
+      <li><code>public</code> is open to all, <code>protected</code> to the class and its children, <code>private</code> to the class only.</li>
+      <li>Enforce invariants in the constructor and in every method that changes data.</li>
+      <li>Prefer action methods (<code>publish()</code>) over blind setters.</li>
+      <li><code>readonly</code> properties and classes give you immutable objects.</li>
+    </ul>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Who can access a `protected` method?",
+          "options": ["Anyone", "Only the class itself", "The class and its child classes", "Only static methods"],
+          "answer": 2,
+          "explain": "`protected` opens access to subclasses but still hides it from outside code."
+        },
+        {
+          "q": "What happens when outside code runs `$post->views = 99;` and `views` is `private`?",
+          "options": ["It throws an Error", "It silently works", "It creates a new public property", "It sets it to null"],
+          "answer": 0,
+          "explain": "PHP throws `Error: Cannot modify private property`. That's encapsulation doing its job."
+        },
+        {
+          "q": "Where should you check a rule like \"a title is never empty\"?",
+          "options": ["In every controller that uses the post", "Inside the class: in the constructor and methods that change the title", "In the database only", "Nowhere; trust the input"],
+          "answer": 1,
+          "explain": "The class owns its invariants, so it checks them once, in one place."
+        },
+        {
+          "q": "What does `readonly` on a property mean?",
+          "options": ["It can only be read from inside the class", "It is private", "It must be a string", "It can be assigned once, then never changed"],
+          "answer": 3,
+          "explain": "Readonly properties are write-once. Reading is fine, but a second assignment throws an Error."
+        },
+        {
+          "q": "Which method name best follows encapsulation?",
+          "options": ["`setStatus()`", "`publish()`", "`getAllData()`", "`setEverything()`"],
+          "answer": 1,
+          "explain": "Action methods express intent and keep related data (status and publish date) in sync inside the class."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

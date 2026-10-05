@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Dependency Injection · Laravel Blueprint</title>
+  <meta name="description" content="Dependency Injection in plain English: phone charging ports, coffee pods, constructor injection and how Laravel's service container hands your classes what they need.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="dependency-injection">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- Opening chat -->
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">“Dependency Injection” sounds like something a doctor does. Should I be scared?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Not at all. It's a fancy name for a simple idea: <b>don't build your own tools, ask for them</b>.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">What's a “dependency” then?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Anything a class needs to do its job. A class that sends order emails <b>depends on</b> a mailer. The mailer is its dependency.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">And “injection”?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Handing that dependency in from the outside, instead of the class making it itself. Think <b>charging port</b>, not <b>glued-in battery</b>. Let me show you.</div></div>
+    </div>
+  </section>
+
+  <!-- Topic 1: the problem -->
+  <section class="section" id="glued-in">
+    <div class="topic-banner" style="--tc1:#fb7185;--tc2:#f59e0b">
+      <span class="tb-icon">🧱</span>
+      <div><h2>The problem: a battery glued inside</h2><p>When a class builds its own tools, you're stuck with them forever.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">📱🔋</div><p>Imagine a phone with the battery <strong>glued in</strong>. When the battery dies, or you want a bigger one, you can't swap it. You have to open the whole phone.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php" data-file="app/Services/OrderService.php" data-hl="7">
+class OrderService
+{
+    private EmailNotifier $notifier;
+
+    public function __construct()
+    {
+        $this-&gt;notifier = new EmailNotifier(); // glued in!
+    }
+}
+</code></pre></div>
+    </div>
+
+    <p>The word <code>new</code> means “build one right here”. Writing <code>new EmailNotifier()</code> <strong>inside</strong> the class welds the two together. <code>OrderService</code> can only ever send emails.</p>
+    <p>Want SMS next month? You edit <code>OrderService</code>. Want to run a test without sending real emails? Tough luck: every test fires a real email at a real customer. 😬</p>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>Seeing <code>new Something()</code> inside a class's constructor is a little alarm bell: “this battery is glued in.”</p></div>
+  </section>
+
+  <!-- Topic 2: constructor injection -->
+  <section class="section" id="constructor-injection">
+    <div class="topic-banner" style="--tc1:#a855f7;--tc2:#22d3ee">
+      <span class="tb-icon">🔌</span>
+      <div><h2>The fix: give it a charging port</h2><p>Ask for the tool in the constructor. Someone else plugs it in.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">☕</div><p>A pod coffee machine doesn't grow its own coffee. It has a <strong>slot</strong> that accepts <em>any</em> pod of the right shape: espresso, decaf, hot chocolate. Same machine, different drink.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php" data-file="app/Services/OrderService.php" data-hl="3-5">
+class OrderService
+{
+    public function __construct(
+        private Notifier $notifier, // the slot
+    ) {}
+
+    public function placeOrder(Order $order): void
+    {
+        $this-&gt;notifier-&gt;send("Order #{$order-&gt;id} confirmed!");
+    }
+}
+</code></pre></div>
+    </div>
+
+    <p>This is <strong>constructor injection</strong> (passing the tool in through the constructor, the method that runs when an object is created). <code>OrderService</code> no longer cares <em>which</em> notifier it gets. It only says: “give me something that can <code>send()</code>.”</p>
+    <p>That “shape of the pod” is an <strong>interface</strong> (a contract that lists which methods a class promises to have). Any class that signs the contract fits the slot:</p>
+
+    <pre><code class="lang-php" data-file="app/Contracts/Notifier.php">
+interface Notifier
+{
+    public function send(string $message): void;
+}
+
+class EmailNotifier implements Notifier { /* sends an email */ }
+class SmsNotifier implements Notifier { /* sends a text */ }
+</code></pre>
+
+    <p>Now plugging in is your choice, made from the <em>outside</em>:</p>
+    <pre><code class="lang-php">
+$service = new OrderService(new SmsNotifier());   // texts today
+$service = new OrderService(new EmailNotifier()); // emails tomorrow
+</code></pre>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><strong>Ask, don't make.</strong> A class lists what it needs in its constructor, like a coffee machine with a pod slot. Whoever creates it chooses the pod.</p></div>
+
+    <div class="demo" data-demo="di"></div>
+    <p>Play with it: with DI on, every notifier plugs straight in. Switch to “Without DI” and try to pick SMS. The class refuses, because the email battery is glued in.</p>
+  </section>
+
+  <!-- Topic 3: Laravel does it for you -->
+  <section class="section" id="laravel-auto">
+    <div class="topic-banner" style="--tc1:#f472b6;--tc2:#a855f7">
+      <span class="tb-icon">🥤</span>
+      <div><h2>Laravel plugs things in for you</h2><p>Meet the service container: a vending machine for objects.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🏪</div><p>A <strong>vending machine</strong>: you press “B4” and a drink drops out. You don't care how it was stocked. You just name what you want.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php" data-file="app/Http/Controllers/OrderController.php" data-hl="3">
+class OrderController extends Controller
+{
+    public function store(StoreOrderRequest $request, OrderService $orders)
+    {
+        $order = Order::create($request-&gt;validated());
+        $orders-&gt;placeOrder($order);
+
+        return redirect()-&gt;route('orders.show', $order);
+    }
+}
+</code></pre></div>
+    </div>
+
+    <p>See <code>OrderService $orders</code> in the method's brackets? That's a <strong>type-hint</strong> (writing the class name before a variable to say “I want one of these”). You never wrote <code>new OrderService(...)</code>. Laravel read the type-hint, built an <code>OrderService</code>, noticed <em>it</em> needs a <code>Notifier</code>, built that too, and handed you the finished object.</p>
+    <p>The thing doing all this is the <strong>service container</strong> (Laravel's central object factory). It works in controller methods, controller constructors, jobs, listeners, commands and more:</p>
+
+    <pre><code class="lang-php" data-file="app/Http/Controllers/ReportController.php">
+class ReportController extends Controller
+{
+    public function __construct(
+        private ReportBuilder $reports, // Laravel builds and plugs this in
+    ) {}
+}
+</code></pre>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Why “automatically” works</div>
+      <p>For a normal class, the container simply reads the constructor and builds whatever it finds. This is called <strong>auto-wiring</strong>. You only need to give it instructions when it can't guess, which is our next topic.</p>
+    </div>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><strong>Type-hint it, get it.</strong> Write the class name in the brackets, and the vending machine drops the object into your hands.</p></div>
+  </section>
+
+  <!-- Topic 4: binding an interface -->
+  <section class="section" id="binding">
+    <div class="topic-banner" style="--tc1:#22d3ee;--tc2:#a3e635">
+      <span class="tb-icon">🏷️</span>
+      <div><h2>Telling the machine which pod to use</h2><p>Bind an interface to a real class, once, in one place.</p></div>
+    </div>
+
+    <p>Here's the catch: <code>Notifier</code> is an interface, just a shape. The vending machine can't build a “shape”. You have to tell it: “when someone asks for a <code>Notifier</code>, give them an <code>SmsNotifier</code>.” That's called a <strong>binding</strong>.</p>
+
+    <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="8">
+use App\Contracts\Notifier;
+use App\Services\SmsNotifier;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this-&gt;app-&gt;bind(Notifier::class, SmsNotifier::class);
+    }
+}
+</code></pre>
+
+    <p>That one line rewires your whole app. Every class that asks for a <code>Notifier</code> now gets SMS. Switching back to email? Change one word in one file. Nothing else moves.</p>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: bind vs singleton</div>
+      <p><code>bind()</code> builds a fresh object every time someone asks. <code>singleton()</code> builds it once and hands out the same one after that, handy for things like an API client you want to set up only once.</p>
+    </div>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>The <strong>service provider</strong> is the label on the vending machine button: “Notifier → SmsNotifier”. Change the label, change the drink.</p></div>
+  </section>
+
+  <!-- Topic 5: testing -->
+  <section class="section" id="testing">
+    <div class="topic-banner" style="--tc1:#a3e635;--tc2:#22d3ee">
+      <span class="tb-icon">🧪</span>
+      <div><h2>The superpower: easy testing</h2><p>Swap the real battery for a pretend one.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🎭</div><p>Film crews use a <strong>stunt double</strong> for the dangerous scenes. Same costume, no real risk. The movie doesn't know the difference.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php" data-file="app/Services/FakeNotifier.php">
+class FakeNotifier implements Notifier
+{
+    public array $sent = [];
+
+    public function send(string $message): void
+    {
+        $this-&gt;sent[] = $message; // just remember it
+    }
+}
+</code></pre></div>
+    </div>
+
+    <p>In a test you don't want real texts going to real phones. Because <code>OrderService</code> has a slot, you plug in the fake and then check what it “sent”:</p>
+
+    <pre><code class="lang-php" data-file="tests/Feature/OrderServiceTest.php">
+public function test_customer_is_notified(): void
+{
+    $fake = new FakeNotifier();
+    $this-&gt;app-&gt;instance(Notifier::class, $fake); // swap it in
+
+    app(OrderService::class)-&gt;placeOrder(Order::factory()-&gt;create());
+
+    $this-&gt;assertCount(1, $fake-&gt;sent);
+}
+</code></pre>
+
+    <p>This is a PHPUnit-style test. The same idea works in Pest. And with the glued-in version? This test is impossible without editing the class itself.</p>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>If a class has a slot, a test can plug in a <strong>stunt double</strong>. No slot, no stunt double, and the real explosions happen every time.</p></div>
+  </section>
+
+  <!-- Compare -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Spot the difference</span>
+      <h2>Glued in vs plugged in</h2>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <span class="compare-label">❌ Avoid</span>
+        <pre><code class="lang-php">
+public function __construct()
+{
+    $this-&gt;notifier = new SmsNotifier();
+}
+</code></pre>
+        <p>The class picks its own tool, so you can't swap it or fake it.</p>
+      </div>
+      <div class="compare-card good">
+        <span class="compare-label">✅ Do</span>
+        <pre><code class="lang-php">
+public function __construct(
+    private Notifier $notifier,
+) {}
+</code></pre>
+        <p>The class asks for any <code>Notifier</code>, and Laravel or your test decides which one.</p>
+      </div>
+    </div>
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: not everything needs injecting</div>
+      <p>Simple value objects like <code>new DateTime()</code> or a small data object are fine to create with <code>new</code>. Inject the things that talk to the outside world: mail, SMS, payments, APIs and storage.</p>
+    </div>
+  </section>
+
+  <!-- Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>In the live demo above, place an order with each notifier, then switch DI off and try to change it. Notice the error message.</li>
+        <li>Write a <code>Notifier</code> interface and a <code>LogNotifier</code> that calls <code>Log::info($message)</code>.</li>
+        <li>Bind <code>Notifier::class</code> to <code>LogNotifier::class</code> in <code>AppServiceProvider</code>, type-hint <code>OrderService</code> in a controller and check <code>storage/logs/laravel.log</code>.</li>
+        <li>Change the binding to a different class and confirm you didn't touch <code>OrderService</code> at all.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Key takeaways</span>
+      <h2>What to remember</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A <strong>dependency</strong> is a tool a class needs. <strong>Injection</strong> means handing it in from outside.</li>
+      <li><code>new</code> inside a class glues the battery in. A constructor parameter gives it a charging port.</li>
+      <li>Type-hint an interface (the pod shape) so any matching class fits the slot.</li>
+      <li>Laravel's <strong>service container</strong> reads your type-hints and builds everything for you automatically.</li>
+      <li>Use <code>$this-&gt;app-&gt;bind(Interface::class, Concrete::class)</code> in <code>AppServiceProvider</code> to choose which class fills an interface.</li>
+      <li>DI makes testing easy: swap in a fake and check what it recorded. Ready for more? Read the deep dive on the <a href="../10-laravel-core/service-container.html">Service Container</a>.</li>
+    </ul>
+  </section>
+
+  <!-- Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Mini quiz</span>
+      <h2>Check your understanding</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "In the phone analogy, what does writing `new EmailNotifier()` inside a class's constructor feel like?",
+          "options": ["A charging port", "A battery glued inside", "A spare battery in your pocket", "A wireless charger"],
+          "answer": 1,
+          "explain": "Creating the tool inside the class welds it in place. You can't swap it without opening up (editing) the class."
+        },
+        {
+          "q": "What is a dependency?",
+          "options": ["A bug that depends on another bug", "A Composer package only", "Something a class needs to do its job", "A database table"],
+          "answer": 2,
+          "explain": "A dependency is any tool a class relies on, such as a mailer, a notifier or a payment gateway."
+        },
+        {
+          "q": "You type-hint `OrderService $orders` in a controller method. What happens?",
+          "options": ["Laravel's service container builds the OrderService (and its dependencies) and passes it in", "You get null until you call `new OrderService()`", "Laravel throws an error because you didn't create it", "PHP creates an empty object with no dependencies"],
+          "answer": 0,
+          "explain": "The service container reads the type-hint, auto-wires the constructor and hands you a ready-made object."
+        },
+        {
+          "q": "Where would you write `$this->app->bind(Notifier::class, SmsNotifier::class)`?",
+          "options": ["In routes/web.php", "In the `register()` method of AppServiceProvider", "Inside OrderService's constructor", "In the .env file"],
+          "answer": 1,
+          "explain": "Bindings belong in a service provider's `register()` method. `AppServiceProvider` is the usual home for them."
+        },
+        {
+          "q": "Why does DI make testing easier?",
+          "options": ["Tests run faster on any code", "It removes the need for tests", "It turns off the database", "You can plug in a fake (like FakeNotifier) instead of the real thing"],
+          "answer": 3,
+          "explain": "Because the class has a slot, a test can swap in a stunt double that records calls instead of sending real messages."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

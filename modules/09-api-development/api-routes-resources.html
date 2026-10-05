@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>API Routes &amp; Resources · Laravel Blueprint</title>
+  <meta name="description" content="Set up routes/api.php with php artisan install:api, register Route::apiResource, and shape JSON output with API Resources, collections and pagination.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="09" data-lesson="api-routes-resources">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">API routes give your JSON endpoints a home, and API Resources decide exactly which fields each model sends to the outside world.</p>
+    <p class="analogy"><span>🪟</span><span>An API Resource is like a shop window. The storeroom (your database row) holds everything, including things customers must never see, but the window shows only what you carefully arrange.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Your JSON is a contract</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔒</span>
+        <h3>Don't leak secrets</h3>
+        <p>Returning a raw model can expose columns you forgot about. A Resource lists fields explicitly.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧱</span>
+        <h3>Stable shape</h3>
+        <p>Rename a database column and the JSON can stay the same, so mobile apps don't break.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚡</span>
+        <h3>Five routes in one line</h3>
+        <p><code>Route::apiResource</code> registers the full set of CRUD endpoints for a controller.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>From model to JSON</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🧭</span><strong>api.php</strong><small>/api/posts</small></div>
+        <div class="flow-node"><span class="flow-icon">🎮</span><strong>PostController</strong><small>loads models</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🪟</span><strong>PostResource</strong><small>picks fields</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>JSON</strong><small>{"data": ...}</small></div>
+      </div>
+      <figcaption>The controller fetches data; the Resource is the final filter before anything leaves your app.</figcaption>
+    </figure>
+    <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Http/</span>
+│   ├── <span class="dir">Controllers/Api/</span>
+│   │   └── PostController.php   <span class="note">← --api controller</span>
+│   └── <span class="dir">Resources/</span>
+│       ├── PostResource.php     <span class="note">← one post</span>
+│       └── PostCollection.php   <span class="note">← optional custom list</span>
+<span class="dir">routes/</span>
+└── api.php                      <span class="note">← created by install:api</span></pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a posts API</h2>
+      <p>We'll expose the blog's <code>Post</code> model as a clean JSON API.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Install the API scaffolding</h3>
+        <p>New Laravel 11/12 apps don't include <code>routes/api.php</code> by default. One command creates it, installs <strong>Sanctum</strong> (for tokens, next lesson) and registers the file in <code>bootstrap/app.php</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan install:api
+        </code></pre>
+        <pre><code class="lang-php" data-file="bootstrap/app.php" data-hl="3">
+          -&gt;withRouting(
+              web: __DIR__.'/../routes/web.php',
+              api: __DIR__.'/../routes/api.php',   // added for you
+              commands: __DIR__.'/../routes/console.php',
+              health: '/up',
+          )
+        </code></pre>
+        <p>Every route in <code>api.php</code> automatically starts with <strong><code>/api</code></strong> and is <strong>stateless</strong> (no sessions or CSRF).</p>
+      </li>
+
+      <li class="step">
+        <h3>Register all CRUD routes at once</h3>
+        <p>Create a controller with the <code>--api</code> flag. It skips <code>create</code> and <code>edit</code>, because APIs don't serve HTML forms. Then wire it up with <code>Route::apiResource</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller Api/PostController --api --model=Post
+        </code></pre>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          use App\Http\Controllers\Api\PostController;
+
+          Route::apiResource('posts', PostController::class);
+        </code></pre>
+        <pre><code class="lang-text" data-file="php artisan route:list --path=api">
+          GET|HEAD   api/posts ........... posts.index
+          POST       api/posts ........... posts.store
+          GET|HEAD   api/posts/{post} .... posts.show
+          PUT|PATCH  api/posts/{post} .... posts.update
+          DELETE     api/posts/{post} .... posts.destroy
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Shape the output with an API Resource</h3>
+        <p>An <strong>API Resource</strong> is a class that converts one model into an array. Only the keys you return end up in the JSON.</p>
+        <pre><code class="lang-bash">
+          php artisan make:resource PostResource
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Resources/PostResource.php" data-hl="12-19">
+          &lt;?php
+
+          namespace App\Http\Resources;
+
+          use Illuminate\Http\Request;
+          use Illuminate\Http\Resources\Json\JsonResource;
+
+          class PostResource extends JsonResource
+          {
+              public function toArray(Request $request): array
+              {
+                  return [
+                      'id'         =&gt; $this-&gt;id,
+                      'title'      =&gt; $this-&gt;title,
+                      'excerpt'    =&gt; str($this-&gt;body)-&gt;limit(80),
+                      'author'     =&gt; $this-&gt;whenLoaded('user', fn () =&gt; $this-&gt;user-&gt;name),
+                      'comments'   =&gt; $this-&gt;whenCounted('comments'),
+                      'created_at' =&gt; $this-&gt;created_at-&gt;toIso8601String(),
+                  ];
+              }
+          }
+        </code></pre>
+        <p><code>whenLoaded</code> only includes the relation if you eager-loaded it, which helps avoid the <a href="../13-performance/eager-loading.html">N+1 problem</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Return resources with the right status codes</h3>
+        <p>Use <code>PostResource::collection()</code> for lists and <code>new PostResource()</code> for one item. Set <code>201</code> on create and <code>204</code> on delete.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/Api/PostController.php" data-hl="5,17,28">
+          public function index()
+          {
+              $posts = Post::with('user')-&gt;withCount('comments')-&gt;latest()-&gt;paginate(10);
+
+              return PostResource::collection($posts);
+          }
+
+          public function store(Request $request)
+          {
+              $data = $request-&gt;validate([
+                  'title' =&gt; ['required', 'string', 'max:255'],
+                  'body'  =&gt; ['required', 'string'],
+              ]);
+
+              $post = $request-&gt;user()-&gt;posts()-&gt;create($data);
+
+              return (new PostResource($post))-&gt;response()-&gt;setStatusCode(201);
+          }
+
+          public function show(Post $post)
+          {
+              return new PostResource($post-&gt;load('user'));   // 404 if not found
+          }
+
+          public function destroy(Post $post)
+          {
+              $post-&gt;delete();
+              return response()-&gt;noContent();                  // 204
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Validation is automatic</div>
+          <p>If <code>validate()</code> fails on a JSON request, Laravel returns <code>422</code> with the errors. You'll see the exact shape in <a href="versioning-errors.html">Versioning &amp; Error Handling</a>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Read the JSON, including pagination meta</h3>
+        <p>Every resource response wraps data in a <code>data</code> key. When you pass a paginator, Laravel adds <code>links</code> and <code>meta</code> so clients can page through results.</p>
+        <pre><code class="lang-bash">
+          curl "http://127.0.0.1:8000/api/posts?page=2" -H "Accept: application/json"
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response · 200 OK">
+          {
+              "data": [
+                  { "id": 11, "title": "Queues 101", "excerpt": "Send emails later...",
+                    "author": "Ada", "comments": 4, "created_at": "2026-10-01T08:00:00+00:00" }
+              ],
+              "links": {
+                  "first": "http://127.0.0.1:8000/api/posts?page=1",
+                  "last": "http://127.0.0.1:8000/api/posts?page=3",
+                  "prev": "http://127.0.0.1:8000/api/posts?page=1",
+                  "next": "http://127.0.0.1:8000/api/posts?page=3"
+              },
+              "meta": { "current_page": 2, "last_page": 3, "per_page": 10, "total": 27 }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Customise the list with a ResourceCollection</h3>
+        <p>Need extra top-level data on a list? Create a <strong>ResourceCollection</strong>. It wraps many <code>PostResource</code> items and lets you add your own keys.</p>
+        <pre><code class="lang-bash">
+          php artisan make:resource PostCollection
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Resources/PostCollection.php">
+          class PostCollection extends ResourceCollection
+          {
+              public function toArray(Request $request): array
+              {
+                  return [
+                      'data'    =&gt; $this-&gt;collection,          // each item uses PostResource
+                      'summary' =&gt; ['count_on_page' =&gt; $this-&gt;collection-&gt;count()],
+                  ];
+              }
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="PostController@index">
+          return new PostCollection(Post::latest()-&gt;paginate(10));
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function show(User $user)
+          {
+              return $user;   // every column!
+          }
+        </code></pre>
+        <p>Raw models expose whatever is in the table today, and anything you add tomorrow.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function show(User $user)
+          {
+              return new UserResource($user);
+          }
+        </code></pre>
+        <p>The Resource is an allow-list: new columns stay private until you add them on purpose.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          return PostResource::collection(Post::all());
+        </code></pre>
+        <p>Loading every row will get slower and heavier as the blog grows.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          return PostResource::collection(Post::paginate(10));
+        </code></pre>
+        <p>Paginate lists. You get <code>links</code> and <code>meta</code> for free.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: try requests without curl</div>
+      <p>Tools like Postman, Insomnia, or the HTTP client built into many editors let you save and replay API requests. Remember to set the <code>Accept: application/json</code> header there too.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Run <code>php artisan install:api</code> in your blog project and confirm <code>routes/api.php</code> exists.</li>
+        <li>Create <code>Api/CategoryController</code> with <code>--api</code> and register it with <code>Route::apiResource</code>.</li>
+        <li>Make a <code>CategoryResource</code> that returns only <code>id</code>, <code>name</code> and <code>slug</code>.</li>
+        <li>Paginate the index at 5 per page and check the <code>meta.total</code> value with curl.</li>
+        <li>Make <code>store</code> return <code>201</code> and <code>destroy</code> return <code>204</code>. Verify with <code>curl -i</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><code>php artisan install:api</code> creates <code>routes/api.php</code> (auto <code>/api</code> prefix) and installs Sanctum.</li>
+      <li><code>Route::apiResource</code> registers index, store, show, update and destroy in one line.</li>
+      <li>API Resources are an allow-list that turns a model into exactly the JSON you intend.</li>
+      <li>Use <code>::collection()</code> for lists; pass a paginator to get <code>links</code> and <code>meta</code>.</li>
+      <li>Return <code>201</code> after creating and <code>204</code> (<code>response()-&gt;noContent()</code>) after deleting.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "In a new Laravel 11/12 app, how do you get a `routes/api.php` file?",
+          "options": ["It's always there", "`php artisan install:api`", "`php artisan make:api`", "`composer require laravel/api`"],
+          "answer": 1,
+          "explain": "`install:api` creates the file, registers it in `bootstrap/app.php` and installs Sanctum."
+        },
+        {
+          "q": "Which routes does `Route::apiResource('posts', ...)` NOT create?",
+          "options": ["`index` and `show`", "`store` and `destroy`", "`create` and `edit`", "`update`"],
+          "answer": 2,
+          "explain": "`create` and `edit` show HTML forms, which an API doesn't need."
+        },
+        {
+          "q": "What is the main job of an API Resource class?",
+          "options": ["Choosing exactly which fields go into the JSON", "Validating incoming data", "Defining database columns", "Registering routes"],
+          "answer": 0,
+          "explain": "`toArray()` returns the keys the client will see. Everything else stays private."
+        },
+        {
+          "q": "You pass a paginator to `PostResource::collection()`. What extra keys appear in the JSON?",
+          "options": ["`errors` and `status`", "`page` and `size`", "Nothing extra", "`links` and `meta`"],
+          "answer": 3,
+          "explain": "Laravel adds `links` (first/last/prev/next) and `meta` (current_page, total, and more)."
+        },
+        {
+          "q": "Which helper returns an empty `204` response after deleting?",
+          "options": ["`response()->json(null)`", "`response()->noContent()`", "`abort(204)`", "`return true;`"],
+          "answer": 1,
+          "explain": "`response()->noContent()` sends a `204 No Content` with an empty body."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

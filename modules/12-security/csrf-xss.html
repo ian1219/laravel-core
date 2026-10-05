@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CSRF &amp; XSS · Laravel Blueprint</title>
+  <meta name="description" content="Understand CSRF and XSS attacks and how Laravel stops them with @csrf tokens and Blade's {{ }} escaping.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="12" data-lesson="csrf-xss">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">CSRF tricks a logged-in user's browser into sending a request they never meant to send, and XSS sneaks attacker JavaScript into your pages. Laravel blocks the first with <code>@csrf</code> tokens and the second with <code>{{ }}</code> escaping.</p>
+    <p class="analogy"><span>🏦</span><span>CSRF is like someone slipping a pre-filled cheque into your pile of papers for you to sign without reading. XSS is like someone writing graffiti on your shop window that then talks to every customer who walks by. A secret stamp on every real cheque stops the first; washing every message before you hang it in the window stops the second.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Two attacks that target your users, not your server</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🎭</span>
+        <h3>They act as your users</h3>
+        <p>Both attacks borrow a real user's logged-in session. The damage happens in their name: changed emails, deleted posts, stolen data.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🛡️</span>
+        <h3>Laravel defends by default</h3>
+        <p>CSRF checks run on every web form, and Blade escapes output automatically. You stay safe as long as you don't switch the defences off.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔍</span>
+        <h3>Easy to undo by accident</h3>
+        <p>One stray <code>{!! !!}</code> or one route excluded from CSRF is all it takes. Knowing <em>why</em> the defaults exist keeps you from breaking them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer: CSRF -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Attack #1</span>
+      <h2>How a CSRF attack works</h2>
+    </div>
+    <p><strong>CSRF</strong> stands for <strong>Cross-Site Request Forgery</strong>. A "forged" request comes from another website, but your browser attaches your login cookie to it automatically, so your app thinks you sent it.</p>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">😈</span><strong>Attacker</strong><small>builds evil-site.com with a hidden form</small></div>
+        <div class="flow-node"><span class="flow-icon">🙂</span><strong>Victim</strong><small>logged in to your blog, visits evil-site.com</small></div>
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Forged POST</strong><small>form auto-submits to /account/email with the victim's cookie</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💥</span><strong>Effect</strong><small>email changed to the attacker's, account taken over</small></div>
+      </div>
+      <figcaption>The victim never clicks anything on your site. Their browser does the work because cookies travel with every request to your domain.</figcaption>
+    </figure>
+    <p>Laravel's defence is a <strong>CSRF token</strong>: a random secret stored in the user's session. Every form on your site must send it back. The attacker's site can't read your pages, so it can't know the token, and its forged request is rejected.</p>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📝</span><strong>Your form</strong><small><code>@csrf</code> adds a hidden <code>_token</code></small></div>
+        <div class="flow-node accent"><span class="flow-icon">🧪</span><strong>CSRF middleware</strong><small>compares <code>_token</code> to the session</small></div>
+        <div class="flow-node"><span class="flow-icon">✅</span><strong>Match</strong><small>request continues to your controller</small></div>
+        <div class="flow-node"><span class="flow-icon">⛔</span><strong>No match</strong><small>419 Page Expired</small></div>
+      </div>
+      <figcaption>Only pages served by your own app contain the right token, so only they can submit successfully.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Visual explainer: XSS -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Attack #2</span>
+      <h2>How an XSS attack works</h2>
+    </div>
+    <p><strong>XSS</strong> stands for <strong>Cross-Site Scripting</strong>. The attacker saves some JavaScript as ordinary-looking data (a comment, a username). If your page prints that data as raw HTML, the browser runs the script for every visitor.</p>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">😈</span><strong>Attacker</strong><small>posts a comment containing a &lt;script&gt; tag</small></div>
+        <div class="flow-node"><span class="flow-icon">💾</span><strong>Your database</strong><small>stores the comment as text</small></div>
+        <div class="flow-node"><span class="flow-icon">🙂</span><strong>Victim</strong><small>opens the post; page prints the comment raw</small></div>
+        <div class="flow-node accent"><span class="flow-icon">💥</span><strong>Effect</strong><small>script runs as the victim: reads the page, sends requests, fakes a login box</small></div>
+      </div>
+      <figcaption>Stored XSS: the script lives in your data and attacks everyone who views it.</figcaption>
+    </figure>
+    <p>Blade's defence is <strong>escaping</strong>: turning special characters like <code>&lt;</code> and <code>&gt;</code> into harmless text codes (<code>&amp;lt;</code>, <code>&amp;gt;</code>). The browser then <em>shows</em> the script as text instead of running it.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Blade syntax</th><th>What it does</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr><td><code>{{ $value }}</code></td><td>Escapes with <code>htmlspecialchars()</code>, then prints</td><td>Almost everything: names, titles, comments, any user input</td></tr>
+          <tr><td><code>{!! $value !!}</code></td><td>Prints raw HTML, no escaping</td><td>Only HTML <em>you</em> generated or have sanitised</td></tr>
+          <tr><td><code>@json($value)</code></td><td>Safely encodes data for JavaScript</td><td>Passing PHP data into a <code>&lt;script&gt;</code> block</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Use Laravel's defences correctly</h2>
+      <p>Each step shows one habit. Together they cover the vast majority of CSRF and XSS risks.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Add <code>@csrf</code> to every form</h3>
+        <p>Any form that uses <code>POST</code>, <code>PUT</code>, <code>PATCH</code> or <code>DELETE</code> needs the token. The <code>@csrf</code> directive renders a hidden input for you.</p>
+        <pre><code class="lang-blade" data-file="resources/views/account/email.blade.php" data-hl="2">
+          &lt;form method="POST" action="{{ route('account.email.update') }}"&gt;
+              @csrf
+              @method('PATCH')
+
+              &lt;input type="email" name="email" value="{{ old('email', $user-&gt;email) }}"&gt;
+              &lt;button&gt;Save&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>In the browser's page source you'll see something like this:</p>
+        <pre><code class="lang-html">
+          &lt;input type="hidden" name="_token" value="kX3v9Qe...random40chars"&gt;
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Know what the CSRF middleware checks</h3>
+        <p>Every route in <code>routes/web.php</code> runs through the <code>web</code> middleware group, which includes the CSRF middleware (historically called <strong><code>VerifyCsrfToken</code></strong>; in Laravel 11+ it's <code>ValidateCsrfToken</code>). For any request that changes data, it looks for the token in:</p>
+        <ul>
+          <li>the <code>_token</code> form field, or</li>
+          <li>the <code>X-CSRF-TOKEN</code> header, or</li>
+          <li>the <code>X-XSRF-TOKEN</code> header (set automatically by Axios from the <code>XSRF-TOKEN</code> cookie).</li>
+        </ul>
+        <p><code>GET</code>, <code>HEAD</code> and <code>OPTIONS</code> requests are not checked. That's why you should <strong>never change data in a GET route</strong>.</p>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ What's a 419?</div>
+          <p>If the token is missing or wrong, Laravel responds with <strong>419 Page Expired</strong>. During development this usually means you forgot <code>@csrf</code>, or your session expired while the form was open.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Send the token from JavaScript</h3>
+        <p>For <code>fetch()</code> calls, put the token in a meta tag in your layout and send it as a header.</p>
+        <pre><code class="lang-blade" data-file="resources/views/layouts/app.blade.php">
+          &lt;meta name="csrf-token" content="{{ csrf_token() }}"&gt;
+        </code></pre>
+        <pre><code class="lang-js" data-file="resources/js/like.js">
+          const token = document.querySelector('meta[name="csrf-token"]').content;
+
+          fetch('/posts/42/like', {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+          });
+        </code></pre>
+        <p>If you use Axios (included in new Laravel apps), it reads the <code>XSRF-TOKEN</code> cookie and sends it for you.</p>
+      </li>
+
+      <li class="step">
+        <h3>Exclude routes only when an outside service calls them</h3>
+        <p>Webhooks (for example, from a payment provider) can't know your token. Exclude <em>only</em> those exact paths in <code>bootstrap/app.php</code>, and verify the webhook's own signature instead.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php" data-hl="3-5">
+          -&gt;withMiddleware(function (Middleware $middleware) {
+              $middleware-&gt;validateCsrfTokens(except: [
+                  'webhooks/stripe',
+              ]);
+          })
+        </code></pre>
+        <p>Routes in <code>routes/api.php</code> are stateless and token-authenticated (see <a href="../09-api-development/sanctum.html">Sanctum</a>), so they don't use CSRF tokens at all.</p>
+      </li>
+
+      <li class="step">
+        <h3>Print user data with <code>{{ }}</code></h3>
+        <p>Double curly braces escape the output. Here's what happens to a malicious comment:</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          @foreach ($post-&gt;comments as $comment)
+              &lt;p&gt;{{ $comment-&gt;body }}&lt;/p&gt;
+          @endforeach
+        </code></pre>
+        <pre><code class="lang-html" data-file="Rendered HTML">
+          &lt;p&gt;&amp;lt;script&amp;gt;steal()&amp;lt;/script&amp;gt;&lt;/p&gt;
+        </code></pre>
+        <p>The visitor sees the text <code>&lt;script&gt;steal()&lt;/script&gt;</code> on screen, and nothing runs.</p>
+      </li>
+
+      <li class="step">
+        <h3>Treat <code>{!! !!}</code> as a red flag</h3>
+        <p>Sometimes you really need raw HTML, for example a post body written in Markdown. Convert and sanitise it first, then print it raw.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use Illuminate\Support\Str;
+
+          public function bodyHtml(): string
+          {
+              // Markdown → HTML, with raw HTML in the input stripped out
+              return Str::markdown($this-&gt;body, [
+                  'html_input' =&gt; 'strip',
+                  'allow_unsafe_links' =&gt; false,
+              ]);
+          }
+        </code></pre>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          &lt;article&gt;{!! $post-&gt;bodyHtml() !!}&lt;/article&gt;
+        </code></pre>
+        <p>For rich-text editors that produce HTML, use a dedicated sanitiser package (such as HTML Purifier) before saving or displaying.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-blade">
+          &lt;h1&gt;Welcome, {!! $user-&gt;name !!}&lt;/h1&gt;
+        </code></pre>
+        <p>A user who sets their name to a <code>&lt;script&gt;</code> tag now runs code for everyone who sees that greeting.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;h1&gt;Welcome, {{ $user-&gt;name }}&lt;/h1&gt;
+        </code></pre>
+        <p>Escaped output displays exactly what they typed, safely, as text.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Route::get('/posts/{post}/delete', [PostController::class, 'destroy']);
+        </code></pre>
+        <p>GET requests skip the CSRF check, so a simple image tag on another site could delete posts.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+        </code></pre>
+        <p>Use <code>DELETE</code> with a <code>@csrf</code> + <code>@method('DELETE')</code> form, so the token is required.</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠️ Escaping doesn't cover every context</div>
+      <p><code>{{ }}</code> is safe for HTML text and quoted attributes. It does <strong>not</strong> make a user-supplied URL safe inside <code>href</code> (a <code>javascript:</code> link still runs). Validate URLs with the <code>url</code> or <code>active_url</code> rules, and use <code>@json</code> when passing data into JavaScript.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: search before you ship</div>
+      <p>Before a release, search your views for raw output. Every match should have a clear reason to exist.</p>
+      <pre><code class="lang-bash">
+        grep -rn "{!!" resources/views
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Remove <code>@csrf</code> from one of your forms, submit it and confirm you get a <strong>419</strong>. Put it back.</li>
+        <li>Open the page source and find the hidden <code>_token</code> input. Refresh: is the value the same within one session?</li>
+        <li>Save a comment with the body <code>&lt;b&gt;bold?&lt;/b&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code>. Display it with <code>{{ }}</code> and check that it shows as plain text.</li>
+        <li>Temporarily switch to <code>{!! !!}</code> in a local-only branch to see the alert fire, then switch back and delete the test comment.</li>
+        <li>Add a <code>fetch()</code> POST that sends the <code>X-CSRF-TOKEN</code> header from a meta tag.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li><strong>CSRF</strong> forges requests using a victim's cookies; <strong>XSS</strong> injects scripts into your pages.</li>
+      <li>Put <code>@csrf</code> in every non-GET form; a missing or wrong token gives a <strong>419</strong>.</li>
+      <li>The CSRF middleware checks <code>_token</code>, <code>X-CSRF-TOKEN</code> or <code>X-XSRF-TOKEN</code> on POST/PUT/PATCH/DELETE.</li>
+      <li>Never change data in a GET route.</li>
+      <li><code>{{ }}</code> escapes output; <code>{!! !!}</code> prints raw HTML and needs trusted or sanitised input.</li>
+      <li>Exclude CSRF only for third-party webhooks, and verify their signatures instead.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Why does a CSRF attack work at all?",
+          "options": ["The attacker steals the database password", "The browser automatically sends the victim's cookies with the forged request", "Laravel trusts every POST request", "The victim types their password on the attacker's site"],
+          "answer": 1,
+          "explain": "Cookies travel with every request to your domain, even ones triggered by another site. The CSRF token is something the other site can't know."
+        },
+        {
+          "q": "You submit a form and get **419 Page Expired**. What's the most likely cause?",
+          "options": ["The route doesn't exist", "The database is down", "The user isn't authorised", "The form is missing `@csrf` (or the session expired)"],
+          "answer": 3,
+          "explain": "419 is Laravel's response when the CSRF token is missing or doesn't match the session."
+        },
+        {
+          "q": "A comment body contains `<script>alert(1)<\/script>`. What does `{{ $comment->body }}` show?",
+          "options": ["The script text, safely escaped", "An alert box", "Nothing at all", "A Blade syntax error"],
+          "answer": 0,
+          "explain": "`{{ }}` runs `htmlspecialchars()`, so `<` becomes `&lt;` and the browser shows the text instead of executing it."
+        },
+        {
+          "q": "When is `{!! $html !!}` acceptable?",
+          "options": ["For any user's display name", "Whenever the page looks wrong with `{{ }}`", "Only for HTML you generated or have sanitised", "Never, it's been removed from Blade"],
+          "answer": 2,
+          "explain": "Raw output is fine for trusted HTML, like Markdown converted with `html_input` set to `strip`. Never for raw user input."
+        },
+        {
+          "q": "Which requests does the CSRF middleware skip?",
+          "options": ["POST and PUT", "GET, HEAD and OPTIONS", "DELETE only", "None, it checks every request"],
+          "answer": 1,
+          "explain": "Read-only methods aren't checked. That's why routes that change data must never use GET."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

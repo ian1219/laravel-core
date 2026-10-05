@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>APIs &amp; REST APIs · Laravel Blueprint</title>
+  <meta name="description" content="APIs and REST in plain English: waiters, power sockets, JSON lunchboxes, HTTP verbs, status-code traffic lights and a REST cheat sheet for Laravel.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="rest-api">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- Opening chat -->
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Everyone keeps saying “just call the API”. What even <i>is</i> an API?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">It's how one program asks another program for something. Picture a <b>waiter</b> in a restaurant.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Okay… and REST? Is that when the API takes a nap?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Ha! No. <b>REST</b> is a set of house rules, so every waiter in every restaurant takes orders the same way.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">And JSON? I've seen that word next to APIs everywhere.</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">That's the <b>lunchbox</b> the food arrives in. Let's take them one at a time.</div></div>
+    </div>
+  </section>
+
+  <!-- Topic 1: what an API is -->
+  <section class="section" id="api">
+    <div class="topic-banner" style="--tc1:#a855f7;--tc2:#22d3ee">
+      <span class="tb-icon">🤵</span>
+      <div><h2>What is an API?</h2><p>A waiter between your app and someone else's kitchen.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🍽️</div><p>You don't walk into the restaurant kitchen. You tell the <strong>waiter</strong> “one pizza, please”, and the waiter brings it back. You never see how it's cooked.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-text">
+Your app  →  GET https://api.blog.test/api/posts/1
+             (the order, sent to the waiter)
+
+Server    →  200 OK + the post as JSON
+             (the pizza, brought back)
+</code></pre></div>
+    </div>
+
+    <p><strong>API</strong> stands for Application Programming Interface (a fixed set of requests one program can make to another). Your weather app doesn't own satellites. It asks a weather API, and gets the forecast back.</p>
+    <p>Another way to see it: a <strong>power socket</strong> 🔌. Your toaster doesn't need to know about power stations. It just needs a plug that fits the socket. An API is the socket: a standard shape that hides everything behind the wall.</p>
+
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📱</span><strong>Client</strong><small>phone app, website, another server</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🤵</span><strong>API</strong><small>takes the order, returns the result</small></div>
+        <div class="flow-node"><span class="flow-icon">🍳</span><strong>Server</strong><small>Laravel + database do the cooking</small></div>
+      </div>
+      <figcaption>The client never talks to the database directly. The API sits in the middle.</figcaption>
+    </figure>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>An API is a <strong>waiter</strong>: you never go into the kitchen, you just place an order and get a plate back.</p></div>
+  </section>
+
+  <!-- Topic 2: JSON -->
+  <section class="section" id="json">
+    <div class="topic-banner" style="--tc1:#fbbf24;--tc2:#f472b6">
+      <span class="tb-icon">🍱</span>
+      <div><h2>What is JSON?</h2><p>A lunchbox where every compartment has a label.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🍱</div><p>A <strong>bento box</strong> with sticky labels: “rice”, “salad”, “dessert”. Anyone opening it knows exactly what's where, even a stranger.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-json">
+{
+  "id": 1,
+  "title": "Hello REST",
+  "published": true,
+  "tags": ["laravel", "api"],
+  "author": { "name": "Ana" }
+}
+</code></pre></div>
+    </div>
+
+    <p><strong>JSON</strong> (JavaScript Object Notation) is plain text that stores data as <code>"label": value</code> pairs. Text goes in quotes, numbers and <code>true</code>/<code>false</code> don't, square brackets <code>[ ]</code> hold a list, and curly braces <code>{ }</code> hold a smaller labelled box inside the big one.</p>
+    <p>Why do APIs love it? Every language can read it: PHP, JavaScript, Swift, Python. It's the universal lunchbox.</p>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p>JSON = <strong>labels + values</strong>. Curly braces are boxes, square brackets are lists.</p></div>
+  </section>
+
+  <!-- Topic 3: REST — nouns and verbs -->
+  <section class="section" id="rest">
+    <div class="topic-banner" style="--tc1:#22d3ee;--tc2:#a3e635">
+      <span class="tb-icon">📏</span>
+      <div><h2>What REST adds: nouns and verbs</h2><p>House rules so every API speaks the same language.</p></div>
+    </div>
+
+    <p>Without rules, one API might use <code>/getAllPosts</code>, another <code>/fetch_post?id=1</code>, another <code>/deletePostNow</code>. Chaos. <strong>REST</strong> (Representational State Transfer, a style for designing APIs) fixes this with one simple grammar:</p>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🗣️</div><p>A sentence has a <strong>noun</strong> (the thing) and a <strong>verb</strong> (the action): “<em>read</em> the <em>post</em>”, “<em>delete</em> the <em>post</em>”.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-text">
+GET     /posts/1   →  read post 1
+DELETE  /posts/1   →  delete post 1
+
+verb ↑   ↑ noun (the resource)
+</code></pre></div>
+    </div>
+
+    <ul>
+      <li><strong>Resources are nouns in the URL.</strong> A resource is a “thing” your app manages: <code>/posts</code>, <code>/users</code>, <code>/comments</code>. Plural, no verbs.</li>
+      <li><strong>HTTP methods are the verbs.</strong> The method (the type of request) says what to do: <span class="m get">GET</span> read, <span class="m post">POST</span> create, <span class="m put">PUT</span> replace, <span class="m patch">PATCH</span> tweak, <span class="m delete">DELETE</span> remove.</li>
+    </ul>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><strong>The URL says <em>what</em>, the method says <em>do what</em>.</strong> If you see a verb like “get” or “delete” in a URL, something's off.</p></div>
+  </section>
+
+  <!-- Cheat sheet -->
+  <section class="section" id="cheat-sheet">
+    <div class="section-head">
+      <span class="eyebrow">Pin this to your wall</span>
+      <h2>The REST cheat sheet</h2>
+    </div>
+    <p>Six requests cover nearly everything you'll ever do with one resource. Learn this table once and you can read most APIs in the world.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Request</th><th>What it does</th><th>Laravel controller method</th><th>Success status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="m get">GET</span> <code>/posts</code></td><td>Get the list of all posts</td><td><code>index()</code></td><td>🟢 200 OK</td></tr>
+          <tr><td><span class="m get">GET</span> <code>/posts/{id}</code></td><td>Get one post</td><td><code>show()</code></td><td>🟢 200 OK</td></tr>
+          <tr><td><span class="m post">POST</span> <code>/posts</code></td><td>Create a new post</td><td><code>store()</code></td><td>🟢 201 Created</td></tr>
+          <tr><td><span class="m put">PUT</span> <code>/posts/{id}</code></td><td>Replace the whole post</td><td><code>update()</code></td><td>🟢 200 OK</td></tr>
+          <tr><td><span class="m patch">PATCH</span> <code>/posts/{id}</code></td><td>Change just some fields</td><td><code>update()</code></td><td>🟢 200 OK</td></tr>
+          <tr><td><span class="m delete">DELETE</span> <code>/posts/{id}</code></td><td>Delete the post</td><td><code>destroy()</code></td><td>🟢 204 No Content</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <div class="callout-title">ℹ️ PUT vs PATCH in one line</div>
+      <p><span class="m put">PUT</span> sends the <em>whole</em> post (like repainting the entire wall). <span class="m patch">PATCH</span> sends only what changed (like touching up one spot). Laravel routes both to <code>update()</code>. The next page shows the difference live.</p>
+    </div>
+  </section>
+
+  <!-- Topic 4: status codes -->
+  <section class="section" id="status-codes">
+    <div class="topic-banner" style="--tc1:#a3e635;--tc2:#fb7185">
+      <span class="tb-icon">🚦</span>
+      <div><h2>Status codes: traffic lights for answers</h2><p>A three-digit number that tells you how it went, before you even read the body.</p></div>
+    </div>
+
+    <p>Every response comes with a <strong>status code</strong>. The first digit is all you need to start: 2 is good news, 4 is <em>your</em> mistake, 5 is <em>the server's</em> mistake.</p>
+
+    <div class="card-grid">
+      <div class="mini-card">
+        <span class="mini-icon">🟢</span>
+        <h3>2xx · Green: it worked</h3>
+        <p><code>200</code> OK, <code>201</code> Created, <code>204</code> No Content (done, nothing to send back).</p>
+      </div>
+      <div class="mini-card">
+        <span class="mini-icon">🟡</span>
+        <h3>4xx · Amber: check your order</h3>
+        <p><code>401</code> who are you?, <code>403</code> not allowed, <code>404</code> not found, <code>422</code> invalid data.</p>
+      </div>
+      <div class="mini-card">
+        <span class="mini-icon">🔴</span>
+        <h3>5xx · Red: kitchen on fire</h3>
+        <p><code>500</code> Server Error. Something broke on the server, not in your request.</p>
+      </div>
+    </div>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><strong>2 = 🙂, 4 = “you messed up”, 5 = “we messed up”.</strong></p></div>
+  </section>
+
+  <!-- Topic 5: stateless -->
+  <section class="section" id="stateless">
+    <div class="topic-banner" style="--tc1:#f472b6;--tc2:#a855f7">
+      <span class="tb-icon">🎟️</span>
+      <div><h2>Stateless: the waiter has no memory</h2><p>Every request must carry everything the server needs.</p></div>
+    </div>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🐠</div><p>Imagine a waiter with a goldfish memory. Each time you order, you show your <strong>VIP wristband</strong> again, because they've already forgotten you.</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-text" data-hl="2">
+GET /api/posts
+Authorization: Bearer 1|aBcD3fGh...
+Accept: application/json
+</code></pre></div>
+    </div>
+
+    <p><strong>Stateless</strong> means the server doesn't remember earlier requests. So instead of a login session, API clients send a <strong>token</strong> (a long secret string that proves who you are) in the <code>Authorization</code> header on <em>every</em> request. In Laravel, <strong>Sanctum</strong> hands out and checks these tokens.</p>
+    <p>Why bother? A forgetful waiter is easy to replace. You can run ten servers side by side, and any of them can serve any request.</p>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><strong>No token, no service.</strong> Show your wristband with every single order.</p></div>
+  </section>
+
+  <!-- Topic 6: how Laravel builds it -->
+  <section class="section" id="laravel">
+    <div class="topic-banner" style="--tc1:#fb7185;--tc2:#fbbf24">
+      <span class="tb-icon">🛠️</span>
+      <div><h2>How Laravel builds a REST API</h2><p>Three moves, and the whole cheat sheet is live.</p></div>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Switch on API mode</h3>
+        <p>New Laravel apps don't include API routes by default. One command adds <code>routes/api.php</code> and installs Sanctum for tokens:</p>
+        <pre><code class="lang-bash">
+php artisan install:api
+</code></pre>
+      </li>
+      <li class="step">
+        <h3>One line, the whole cheat sheet</h3>
+        <p><code>apiResource</code> registers the whole cheat sheet above, pointing each one at the matching controller method. Everything in <code>routes/api.php</code> automatically starts with <code>/api</code>.</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+use App\Http\Controllers\PostController;
+
+Route::apiResource('posts', PostController::class);
+</code></pre>
+        <p>Run <code>php artisan route:list</code> to see them all. PUT and PATCH share one line, because both go to <code>update()</code>.</p>
+      </li>
+      <li class="step">
+        <h3>Return a model, get JSON for free</h3>
+        <p>No JSON-writing needed. Return an Eloquent model (or a list of them) and Laravel packs the lunchbox for you:</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+public function index()
+{
+    return Post::latest()-&gt;get();   // 200 + JSON list
+}
+
+public function show(Post $post)
+{
+    return $post;                     // 200 + JSON object
+}
+</code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Compare -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Spot the difference</span>
+      <h2>Verbs belong in the method, not the URL</h2>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <span class="compare-label">❌ Avoid</span>
+        <pre><code class="lang-text">
+GET  /getPosts
+POST /deletePost?id=7
+</code></pre>
+        <p>Made-up verbs in URLs mean every API needs its own manual.</p>
+      </div>
+      <div class="compare-card good">
+        <span class="compare-label">✅ Do</span>
+        <pre><code class="lang-text">
+GET    /posts
+DELETE /posts/7
+</code></pre>
+        <p>Plural nouns plus the right HTTP method: anyone can guess what it does.</p>
+      </div>
+    </div>
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: always ask for JSON</div>
+      <p>Send the header <code>Accept: application/json</code> when testing. Then errors like validation failures come back as tidy JSON with a <code>422</code>, instead of a redirect meant for browsers.</p>
+    </div>
+  </section>
+
+  <!-- Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open <code>https://jsonplaceholder.typicode.com/posts/1</code> in your browser. Name the labels in that JSON lunchbox.</li>
+        <li>Write the method and URL for: “list all comments”, “delete user 5” and “fix the title of post 3”.</li>
+        <li>In a fresh Laravel app, run <code>php artisan install:api</code>, add <code>Route::apiResource('posts', PostController::class)</code> and check <code>php artisan route:list</code>.</li>
+        <li>Guess the status code: a missing post, a post created, a form with an empty title, and a successful delete.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Key takeaways</span>
+      <h2>What to remember</h2>
+    </div>
+    <ul class="takeaways">
+      <li>An <strong>API</strong> is a waiter (or a power socket): a standard way for one program to ask another for something.</li>
+      <li><strong>JSON</strong> is the labelled lunchbox data travels in: <code>"label": value</code> pairs, <code>{ }</code> boxes and <code>[ ]</code> lists.</li>
+      <li><strong>REST</strong> = nouns in URLs (<code>/posts</code>) + HTTP methods as verbs (GET, POST, PUT, PATCH, DELETE).</li>
+      <li>Status codes are traffic lights: 2xx 🟢 worked, 4xx 🟡 your mistake, 5xx 🔴 server's mistake.</li>
+      <li>REST is <strong>stateless</strong>: send your token with every request.</li>
+      <li>In Laravel: <code>php artisan install:api</code>, then <code>Route::apiResource()</code>, then return models. Want more depth? See <a href="../09-api-development/rest-basics.html">REST Basics</a>.</li>
+    </ul>
+  </section>
+
+  <!-- Next page pointer -->
+  <section class="section">
+    <div class="topic-banner" style="--tc1:#a855f7;--tc2:#22d3ee">
+      <span class="tb-icon">🚀</span>
+      <div><h2>Next up: build it and play with it live</h2><p>You know the rules. Now build a real CRUD API and fire requests at a live playground.</p></div>
+    </div>
+    <div class="pillars">
+      <a class="pillar" href="crud-api.html" style="--pc:#a855f7"><span class="p-num">→</span><span class="p-icon">🧪</span><strong>Build a Simple CRUD API</strong><small>Create, read, PUT vs PATCH, delete and soft delete, all clickable</small></a>
+    </div>
+  </section>
+
+  <!-- Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Mini quiz</span>
+      <h2>Check your understanding</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "In the restaurant analogy, what is the API?",
+          "options": ["The kitchen", "The waiter", "The customer", "The menu prices"],
+          "answer": 1,
+          "explain": "The API is the waiter: it takes your request to the server (the kitchen) and brings the result back."
+        },
+        {
+          "q": "Which URL follows REST rules for deleting post 7?",
+          "options": ["`POST /deletePost?id=7`", "`GET /posts/7/delete`", "`DELETE /posts/7`", "`DELETE /deletePosts`"],
+          "answer": 2,
+          "explain": "REST puts the noun in the URL (`/posts/7`) and the verb in the HTTP method (`DELETE`)."
+        },
+        {
+          "q": "A client sends a new post with an empty title and validation fails. Which status code fits?",
+          "options": ["422 Unprocessable", "201 Created", "500 Server Error", "204 No Content"],
+          "answer": 0,
+          "explain": "4xx means the client's request was the problem. `422` specifically means the data didn't pass validation."
+        },
+        {
+          "q": "What does `Route::apiResource('posts', PostController::class)` give you?",
+          "options": ["Only a GET route", "A JSON file called posts.json", "A new database table", "Every cheat-sheet route: index, show, store, update (PUT and PATCH) and destroy"],
+          "answer": 3,
+          "explain": "`apiResource` registers the whole REST cheat sheet for `posts`, without the HTML-only `create` and `edit` routes."
+        },
+        {
+          "q": "What does **stateless** mean for an API?",
+          "options": ["The server never stores any data", "The server doesn't remember you between requests, so you send your token every time", "The API only works in one country", "Responses never include a status code"],
+          "answer": 1,
+          "explain": "Like a waiter with no memory, the server treats every request fresh, so each one carries its own token in the `Authorization` header."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

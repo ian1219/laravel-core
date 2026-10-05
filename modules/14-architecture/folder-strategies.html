@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Structuring Large Apps · Laravel Blueprint</title>
+  <meta name="description" content="Compare Laravel's default folder structure with domain-based and modular structures, and choose the one that fits your app's size and team.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="14" data-lesson="folder-strategies">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">As an app grows, you can keep Laravel's default “group by type” folders, or switch to grouping code by business area (domains) or by self-contained modules.</p>
+    <p class="analogy"><span>🏬</span><span>A small shop can sort stock by type: all boxes on one shelf, all bottles on another. A department store sorts by department instead (kitchen, garden, toys), each with its own boxes and bottles. Neither is “right”; it depends on how big the store is.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Structure decides how fast you find things</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧭</span>
+        <h3>Navigation</h3>
+        <p>With 200 models in one <code>app/Models</code> folder, finding everything about “billing” means searching five folders.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">👥</span>
+        <h3>Team ownership</h3>
+        <p>Grouping by business area lets one team own <code>Billing</code> while another owns <code>Catalog</code>, with fewer merge conflicts.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">💸</span>
+        <h3>Restructuring costs</h3>
+        <p>Moving hundreds of files later is painful. Choosing sensibly early (and <em>not</em> over-engineering) saves real time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Three ways to slice the same app</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📁</span><strong>Default</strong><small>group by type</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🏷️</span><strong>Domain-based</strong><small>group logic by business area</small></div>
+        <div class="flow-node"><span class="flow-icon">📦</span><strong>Modular</strong><small>mini-apps with routes &amp; views</small></div>
+      </div>
+      <figcaption>From left to right: more separation between areas, but also more setup and more conventions to agree on.</figcaption>
+    </figure>
+    <p>We'll use one running example: a blog with <strong>posts</strong>, <strong>comments</strong> and a paid <strong>billing</strong> area for premium subscriptions.</p>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Tour each structure</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>The default structure: group by type</h3>
+        <p>This is what <code>laravel new</code> gives you (see <a href="../04-laravel-basics/directory-structure.html">Directory Structure</a>). Every controller is in one folder, every model in another. Add <code>Services</code>, <code>Actions</code> and <code>Data</code> folders as you learned earlier in this module.</p>
+        <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Actions/</span>
+│   ├── PublishPost.php
+│   └── StartSubscription.php
+├── <span class="dir">Http/</span>
+│   ├── <span class="dir">Controllers/</span>
+│   │   ├── PostController.php
+│   │   ├── CommentController.php
+│   │   └── SubscriptionController.php
+│   └── <span class="dir">Requests/</span>
+├── <span class="dir">Models/</span>
+│   ├── Post.php
+│   ├── Comment.php
+│   ├── Subscription.php
+│   └── Invoice.php
+├── <span class="dir">Policies/</span>
+└── <span class="dir">Services/</span>
+    └── InvoiceService.php   <span class="note">← billing logic lives far from billing models</span></pre>
+        <p><strong>Great for:</strong> small and medium apps, solo developers, and anyone still learning. Every Laravel tutorial and package assumes it, and the <code>make:*</code> commands put files here automatically.</p>
+      </li>
+
+      <li class="step">
+        <h3>Domain-based structure: group logic by business area</h3>
+        <p>A <strong>domain</strong> is one area of the business (Billing, Blog, Users). Business code (models, actions, DTOs, events) moves into <code>app/Domain/&lt;Area&gt;</code>, while HTTP code often stays in <code>app/Http</code>.</p>
+        <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Domain/</span>
+│   ├── <span class="dir">Billing/</span>
+│   │   ├── <span class="dir">Actions/</span>
+│   │   │   ├── StartSubscription.php
+│   │   │   └── IssueInvoice.php
+│   │   ├── <span class="dir">Data/</span>
+│   │   │   └── SubscriptionData.php
+│   │   ├── <span class="dir">Events/</span>
+│   │   │   └── SubscriptionStarted.php
+│   │   └── <span class="dir">Models/</span>
+│   │       ├── Subscription.php
+│   │       └── Invoice.php
+│   └── <span class="dir">Blog/</span>
+│       ├── <span class="dir">Actions/</span>
+│       │   └── PublishPost.php
+│       └── <span class="dir">Models/</span>
+│           ├── Post.php
+│           └── Comment.php
+├── <span class="dir">Http/</span>               <span class="note">← controllers &amp; requests stay here</span>
+│   └── <span class="dir">Controllers/</span>
+│       ├── <span class="dir">Billing/</span>SubscriptionController.php
+│       └── <span class="dir">Blog/</span>PostController.php
+└── <span class="dir">Models/</span>
+    └── User.php             <span class="note">← shared by every domain</span></pre>
+        <p>Namespaces follow folders, so a model becomes <code>App\Domain\Billing\Models\Invoice</code>. No extra Composer setup is needed, because everything is still under <code>App\</code>.</p>
+        <pre><code class="lang-php" data-file="app/Domain/Billing/Actions/StartSubscription.php">
+          &lt;?php
+
+          namespace App\Domain\Billing\Actions;
+
+          use App\Domain\Billing\Data\SubscriptionData;
+          use App\Domain\Billing\Models\Subscription;
+          use App\Models\User;
+
+          class StartSubscription
+          {
+              public function handle(User $user, SubscriptionData $data): Subscription
+              {
+                  // ...
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Teach Laravel where moved files live</h3>
+        <p>Some conventions are based on folder names. When models leave <code>app/Models</code>, check these spots:</p>
+        <ul>
+          <li><strong>Factories:</strong> add a <code>newFactory()</code> method to the model, or customise <code>Factory::guessFactoryNamesUsing()</code>.</li>
+          <li><strong>Policies:</strong> auto-discovery looks for <code>Policies</code> next to <code>Models</code>. Register others with <code>Gate::policy()</code> in a service provider.</li>
+          <li><strong>Generators:</strong> pass a full path, such as <code>php artisan make:model Domain/Billing/Models/Invoice</code>.</li>
+        </ul>
+        <pre><code class="lang-php" data-file="app/Domain/Billing/Models/Invoice.php">
+          use Database\Factories\InvoiceFactory;
+
+          protected static function newFactory(): InvoiceFactory
+          {
+              return InvoiceFactory::new();
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Modular structure: mini-apps inside your app</h3>
+        <p>A <strong>module</strong> goes further: it bundles <em>everything</em> for one area, including routes, views, migrations and tests, plus its own service provider. Modules usually live outside <code>app/</code>, with their own namespace.</p>
+        <pre class="tree"><span class="dir">modules/</span>
+├── <span class="dir">Billing/</span>
+│   ├── <span class="dir">database/</span>
+│   │   └── <span class="dir">migrations/</span>
+│   ├── <span class="dir">resources/</span>
+│   │   └── <span class="dir">views/</span>
+│   ├── <span class="dir">routes/</span>
+│   │   └── web.php
+│   ├── <span class="dir">src/</span>
+│   │   ├── <span class="dir">Actions/</span>
+│   │   ├── <span class="dir">Http/Controllers/</span>
+│   │   ├── <span class="dir">Models/</span>
+│   │   └── BillingServiceProvider.php  <span class="note">← loads routes, views, migrations</span>
+│   └── <span class="dir">tests/</span>
+└── <span class="dir">Blog/</span>
+    └── <span class="note">… same shape …</span></pre>
+        <p>Composer needs to know the new namespace, and the module's provider must be registered:</p>
+        <pre><code class="lang-json" data-file="composer.json">
+          "autoload": {
+              "psr-4": {
+                  "App\\": "app/",
+                  "Modules\\Billing\\": "modules/Billing/src/"
+              }
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="modules/Billing/src/BillingServiceProvider.php">
+          public function boot(): void
+          {
+              $this-&gt;loadRoutesFrom(__DIR__.'/../routes/web.php');
+              $this-&gt;loadViewsFrom(__DIR__.'/../resources/views', 'billing');
+              $this-&gt;loadMigrationsFrom(__DIR__.'/../database/migrations');
+          }
+        </code></pre>
+        <p>Run <code>composer dump-autoload</code> and add the provider to <code>bootstrap/providers.php</code>. Views are then referenced as <code>view('billing::invoices.index')</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Choose with a decision table</h3>
+        <p>Be honest about your app's size and team. Most apps should start with the default and evolve only when the pain is real.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Question</th><th>Default</th><th>Domain-based</th><th>Modular</th></tr></thead>
+            <tbody>
+              <tr><td>Team size</td><td>1–3 devs</td><td>3–10 devs</td><td>Several teams</td></tr>
+              <tr><td>App size</td><td>Up to ~30 models</td><td>Many models in clear areas</td><td>Large, with near-independent areas</td></tr>
+              <tr><td>Setup effort</td><td>None</td><td>Low (namespaces, factories)</td><td>Higher (Composer, providers, conventions)</td></tr>
+              <tr><td>Fits tutorials &amp; generators</td><td>✅ Perfectly</td><td>🟡 Mostly</td><td>🟠 Needs extra work</td></tr>
+              <tr><td>Clear ownership of areas</td><td>🟠 Weak</td><td>✅ Good</td><td>✅ Strongest</td></tr>
+              <tr><td>Could split into a separate service later</td><td>🟠 Hard</td><td>🟡 Possible</td><td>✅ Easiest</td></tr>
+              <tr><td>Best for</td><td>Learning, MVPs, most apps</td><td>Growing products</td><td>Big platforms, many teams</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ You can mix approaches</div>
+          <p>A common, practical path: start with the default, add <code>app/Actions</code> and <code>app/Data</code>, then group those by area (<code>app/Actions/Billing</code>) as the app grows. Move to full domains only when an area clearly stands on its own.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre class="tree"><span class="dir">modules/</span>
+└── <span class="dir">Todo/</span>   <span class="note">← 1 model, 4 routes</span>
+    ├── <span class="dir">src/</span>
+    ├── <span class="dir">routes/</span>
+    └── <span class="dir">database/</span></pre>
+        <p>A full modular setup for a weekend project adds files and conventions you'll fight on every feature.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre class="tree"><span class="dir">app/</span>
+├── <span class="dir">Http/Controllers/</span>TodoController.php
+└── <span class="dir">Models/</span>Todo.php</pre>
+        <p>Start with Laravel's defaults. Restructure when navigation actually hurts.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // Inside the Blog domain
+          use App\Domain\Billing\Models\Invoice;
+
+          $post-&gt;author-&gt;invoices()-&gt;latest()-&gt;first()-&gt;markPaid();
+        </code></pre>
+        <p>Reaching deep into another domain's models recreates the tangle you were trying to avoid.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // Blog talks to Billing through an action or event
+          app(MarkLatestInvoicePaid::class)-&gt;handle($user);
+          // or: event(new PostSponsored($post));
+        </code></pre>
+        <p>Cross area boundaries through a small public surface (actions, <a href="../10-laravel-core/events.html">events</a>), not raw internals.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: consistency beats cleverness</div>
+      <p>Whatever structure you choose, write it down in the README (“actions live in <code>app/Domain/&lt;Area&gt;/Actions</code>”). A slightly imperfect structure everyone follows beats a perfect one nobody understands.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Draw your current project's <code>app/</code> folder as a tree and circle the files that belong to one business area.</li>
+        <li>In a test project, move <code>Invoice</code> to <code>app/Domain/Billing/Models</code>, fix the namespace and add <code>newFactory()</code>. Run your tests.</li>
+        <li>Create <code>modules/Billing</code> with a service provider that loads one route returning “Billing works”. Register it and visit the URL.</li>
+        <li>Fill in the decision table for your own project and decide which structure you'd pick, in one sentence.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Laravel's default structure groups by type and is the right choice for most apps.</li>
+      <li>Domain-based structure groups business code by area under <code>app/Domain/&lt;Area&gt;</code>.</li>
+      <li>Modular structure bundles routes, views, migrations and code per area, with its own provider and namespace.</li>
+      <li>Moving models means fixing namespaces, factories and policy registration.</li>
+      <li>Areas should talk through actions and events, not each other's internals.</li>
+      <li>Choose by team and app size, document the choice, and evolve gradually.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "How does Laravel's default structure organise code?",
+          "options": ["By business area", "By type: all controllers together, all models together", "By developer", "By date created"],
+          "answer": 1,
+          "explain": "`app/Http/Controllers`, `app/Models` and so on group files by what kind of class they are."
+        },
+        {
+          "q": "In a domain-based structure, where would the `Invoice` model typically live?",
+          "options": ["`app/Domain/Billing/Models/Invoice.php`", "`app/Http/Invoice.php`", "`resources/Billing/Invoice.php`", "`routes/billing.php`"],
+          "answer": 0,
+          "explain": "Business code for the Billing area is grouped under `app/Domain/Billing`."
+        },
+        {
+          "q": "What extra setup does a module in `modules/Billing/src` usually need?",
+          "options": ["Nothing at all", "A new database", "A PSR-4 entry in `composer.json` and a registered service provider", "A separate `.env` file"],
+          "answer": 2,
+          "explain": "Composer must autoload the new namespace, and the module's provider loads its routes, views and migrations."
+        },
+        {
+          "q": "A solo developer starts a small todo app. Which structure fits best?",
+          "options": ["Modular, to be future-proof", "Laravel's default structure", "Domain-based with 6 domains", "One file for everything"],
+          "answer": 1,
+          "explain": "Start simple. Restructure when navigation or ownership actually becomes painful."
+        },
+        {
+          "q": "How should the Blog area use something from the Billing area?",
+          "options": ["Query Billing's tables directly", "Copy Billing's models into Blog", "Through a small public surface like an action or event", "It never can"],
+          "answer": 2,
+          "explain": "Crossing boundaries through actions or events keeps areas loosely coupled."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

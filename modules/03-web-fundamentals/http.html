@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>How HTTP Works · Laravel Blueprint</title>
+  <meta name="description" content="Learn how HTTP works: methods like GET and POST, status code families, headers, statelessness and cookies.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="03" data-lesson="http">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">HTTP is the simple text-based language a browser uses to ask a server for something, and the server uses to answer.</p>
+    <p class="analogy"><span>✉️</span><span>Think of HTTP as a letter with a strict format. The envelope says what you want and where (method + URL), a few lines on top add details (headers), and the server mails back a reply with a short verdict stamped on it, like “200 OK” or “404 Not Found”.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Laravel is an HTTP machine</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Routes speak HTTP</h3>
+        <p><code>Route::get()</code> and <code>Route::post()</code> are literally HTTP methods. Knowing them makes routing obvious.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🔍</span>
+        <h3>Faster debugging</h3>
+        <p>A 404, a 419 or a 500 each point to a different kind of problem. Read the status code and you already know where to look.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🍪</span>
+        <h3>Logins make sense</h3>
+        <p>HTTP forgets you between requests. Cookies and sessions are how Laravel “remembers” who is logged in.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>One request, one response</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🌐</span><strong>Browser</strong><small>the client</small></div>
+        <div class="flow-node accent"><span class="flow-icon">📨</span><strong>Request</strong><small>method + URL + headers + body</small></div>
+        <div class="flow-node"><span class="flow-icon">🖥️</span><strong>Server</strong><small>runs your Laravel app</small></div>
+        <div class="flow-node"><span class="flow-icon">📬</span><strong>Response</strong><small>status + headers + body</small></div>
+      </div>
+      <figcaption>Every page load, form submit and image is one of these round trips. The client always speaks first.</figcaption>
+    </figure>
+    <p>A few words you'll see everywhere in this lesson:</p>
+    <dl class="terms">
+      <div><dt>Client</dt><dd>The program making the request, usually a browser, but also a mobile app or a tool like <code>curl</code>.</dd></div>
+      <div><dt>Server</dt><dd>The computer (and program) that receives the request and sends back a response. Your Laravel app runs here.</dd></div>
+      <div><dt>Method</dt><dd>A verb that says what the client wants to do: read, create, update or delete.</dd></div>
+      <div><dt>Status code</dt><dd>A three-digit number at the top of every response that summarises how things went.</dd></div>
+      <div><dt>Header</dt><dd>A <code>Name: value</code> line with extra information, like the content type or a cookie.</dd></div>
+    </dl>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Read HTTP like a pro</h2>
+      <p>Each step adds one piece of the puzzle. By the end you'll be able to read a raw HTTP message line by line.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Look at a raw request</h3>
+        <p>HTTP is just text. When you visit <code>https://blog.test/posts/42</code>, your browser sends something like this:</p>
+        <pre><code class="lang-text" data-file="Request">
+          GET /posts/42 HTTP/1.1
+          Host: blog.test
+          User-Agent: Mozilla/5.0 (Windows NT 10.0)
+          Accept: text/html
+          Accept-Language: en-GB
+          Cookie: laravel_session=eyJpdiI6...
+        </code></pre>
+        <p>The first line is the <strong>request line</strong>: method, path and protocol version. Everything after it is a <strong>header</strong>. A <code>GET</code> request has no body.</p>
+      </li>
+
+      <li class="step">
+        <h3>Look at the raw response</h3>
+        <p>The server answers in the same format: a <strong>status line</strong>, headers, a blank line, then the <strong>body</strong> (the actual HTML).</p>
+        <pre><code class="lang-text" data-file="Response" data-hl="1">
+          HTTP/1.1 200 OK
+          Content-Type: text/html; charset=UTF-8
+          Content-Length: 1834
+          Cache-Control: no-cache, private
+          Set-Cookie: laravel_session=eyJpdiI6...; path=/; httponly
+
+          &lt;!doctype html&gt;
+          &lt;html&gt;
+            &lt;head&gt;&lt;title&gt;My first post&lt;/title&gt;&lt;/head&gt;
+            ...
+        </code></pre>
+        <div class="callout tip">
+          <div class="callout-title">💡 See it yourself</div>
+          <p>Open your browser's DevTools (F12), go to the <strong>Network</strong> tab and reload any page. Click a request to see its headers, status and body.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Pick the right method</h3>
+        <p>The <strong>method</strong> tells the server what kind of action you want. Browsers only send <code>GET</code> (links, typing a URL) and <code>POST</code> (forms) on their own. The others are used by JavaScript, APIs and Laravel's form tricks.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Meaning</th><th>Blog example</th><th>Safe to repeat?</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET</code></td><td>Read something</td><td>Show post 42</td><td>Yes, changes nothing</td></tr>
+              <tr><td><code>POST</code></td><td>Create something / submit data</td><td>Publish a new post</td><td>No, may create duplicates</td></tr>
+              <tr><td><code>PUT</code></td><td>Replace something entirely</td><td>Save the full edited post</td><td>Yes, same result each time</td></tr>
+              <tr><td><code>PATCH</code></td><td>Change part of something</td><td>Update just the title</td><td>Usually</td></tr>
+              <tr><td><code>DELETE</code></td><td>Remove something</td><td>Delete post 42</td><td>Yes, gone is gone</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>A request with a body, like a form submission, looks like this:</p>
+        <pre><code class="lang-text" data-file="Request">
+          POST /posts HTTP/1.1
+          Host: blog.test
+          Content-Type: application/x-www-form-urlencoded
+          Content-Length: 41
+
+          title=Hello+HTTP&amp;body=My+first+post&amp;_token=...
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Read the status code family</h3>
+        <p>You don't need to memorise every code. The <strong>first digit</strong> tells you the family, and that alone tells you who to blame.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Family</th><th>Meaning</th><th>Codes you'll meet</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1xx</strong></td><td>Informational: “hold on…”</td><td>Rare in day-to-day work</td></tr>
+              <tr><td><strong>2xx</strong></td><td>Success</td><td><code>200 OK</code>, <code>201 Created</code>, <code>204 No Content</code></td></tr>
+              <tr><td><strong>3xx</strong></td><td>Redirect: “look over there”</td><td><code>301 Moved Permanently</code>, <code>302 Found</code></td></tr>
+              <tr><td><strong>4xx</strong></td><td>Client error: the request was wrong</td><td><code>401</code>, <code>403</code>, <code>404</code>, <code>405</code>, <code>419</code>, <code>422</code>, <code>429</code></td></tr>
+              <tr><td><strong>5xx</strong></td><td>Server error: your code broke</td><td><code>500 Internal Server Error</code>, <code>503 Service Unavailable</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Laravel-flavoured codes</div>
+          <ul>
+            <li><code>419</code>: your form is missing its CSRF token (or the page sat open too long).</li>
+            <li><code>422</code>: validation failed, usually in an API request.</li>
+            <li><code>405</code>: the URL exists, but not for that method (e.g. you sent <code>POST</code> to a <code>GET</code>-only route).</li>
+          </ul>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Use headers for the extra details</h3>
+        <p><strong>Headers</strong> carry metadata. Some describe the request, others describe the response. Here are the ones you'll bump into most:</p>
+        <div class="card-grid">
+          <div class="mini-card"><span class="mini-icon">📦</span><h3>Content-Type</h3><p>What format the body is in: <code>text/html</code>, <code>application/json</code>…</p></div>
+          <div class="mini-card"><span class="mini-icon">🙋</span><h3>Accept</h3><p>What format the client wants back. Laravel returns JSON errors when this is <code>application/json</code>.</p></div>
+          <div class="mini-card"><span class="mini-icon">➡️</span><h3>Location</h3><p>Sent with a 3xx status to say where to go next.</p></div>
+          <div class="mini-card"><span class="mini-icon">🔑</span><h3>Authorization</h3><p>Carries an API token, e.g. <code>Bearer abc123</code>.</p></div>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Remember: HTTP is stateless</h3>
+        <p><strong>Stateless</strong> means every request stands alone. The server doesn't automatically remember that you logged in one request ago. So how do logins work? With <strong>cookies</strong>.</p>
+        <p>The server sends a <code>Set-Cookie</code> header once. From then on, the browser automatically sends that value back in a <code>Cookie</code> header on every request to the same site.</p>
+        <pre><code class="lang-text">
+          ← HTTP/1.1 302 Found
+          ← Set-Cookie: laravel_session=abc123; path=/; httponly
+
+          → GET /dashboard HTTP/1.1
+          → Cookie: laravel_session=abc123
+        </code></pre>
+        <p>Laravel stores your session data on the server and uses that cookie as the key to find it. You'll dig deeper in <a href="../07-authentication/sessions-guards.html">Sessions &amp; Guards</a>.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-html">
+          &lt;a href="/posts/42/delete"&gt;Delete&lt;/a&gt;
+        </code></pre>
+        <p>A link sends <code>GET</code>, and search bots or link previews can “click” it and delete your data.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-blade">
+          &lt;form method="POST" action="/posts/42"&gt;
+              @csrf
+              @method('DELETE')
+              &lt;button&gt;Delete&lt;/button&gt;
+          &lt;/form&gt;
+        </code></pre>
+        <p>Anything that changes data goes through a form with a non-GET method.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-text">
+          GET /login?email=me@blog.test&amp;password=secret
+        </code></pre>
+        <p>Query strings end up in browser history, server logs and shared links.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-text">
+          POST /login
+          (email and password in the body, over HTTPS)
+        </code></pre>
+        <p>Send secrets in a <code>POST</code> body, and always over <strong>HTTPS</strong> so the text is encrypted.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: talk HTTP from the terminal</div>
+      <p><code>curl -i</code> prints the status line and headers along with the body. It's great for checking what a URL really returns.</p>
+      <pre><code class="lang-bash">
+        curl -i https://laravel.com
+      </code></pre>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open DevTools → Network on any site and find the request for the page itself. Note its method and status code.</li>
+        <li>Find a <code>Set-Cookie</code> header in a response, then find the matching <code>Cookie</code> header on the next request.</li>
+        <li>Visit a URL that doesn't exist on that site and check the status code you get.</li>
+        <li>Run <code>curl -i http://github.com</code> and spot the 3xx status and its <code>Location</code> header.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>HTTP is plain text: a request (method, URL, headers, body) and a response (status, headers, body).</li>
+      <li><code>GET</code> reads; <code>POST</code>, <code>PUT</code>, <code>PATCH</code> and <code>DELETE</code> change things.</li>
+      <li>Status families: 2xx success, 3xx redirect, 4xx client's fault, 5xx server's fault.</li>
+      <li>Headers carry metadata such as <code>Content-Type</code>, <code>Location</code> and cookies.</li>
+      <li>HTTP is stateless; cookies (and Laravel sessions) are how the server remembers you.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which HTTP method should a form use to create a new blog post?",
+          "options": ["`GET`", "`POST`", "`DELETE`", "`HEAD`"],
+          "answer": 1,
+          "explain": "`POST` submits data to create something. `GET` should never change data."
+        },
+        {
+          "q": "A response comes back with status `404`. What does that tell you?",
+          "options": ["The server crashed", "You were redirected", "The requested resource wasn't found", "Everything worked"],
+          "answer": 2,
+          "explain": "4xx codes mean the request was wrong, and `404` specifically means nothing exists at that URL."
+        },
+        {
+          "q": "Which status code family means your server-side code broke?",
+          "options": ["5xx", "2xx", "3xx", "4xx"],
+          "answer": 0,
+          "explain": "5xx is the server's fault, such as `500 Internal Server Error` from an uncaught exception."
+        },
+        {
+          "q": "What does it mean that HTTP is **stateless**?",
+          "options": ["It can't send HTML", "Each request is independent, and the server doesn't remember previous ones by itself", "It only works without HTTPS", "Requests have no headers"],
+          "answer": 1,
+          "explain": "Each request stands alone. Cookies carry a session ID so the server can recognise you again."
+        },
+        {
+          "q": "Which header does a server send to store a cookie in the browser?",
+          "options": ["`Cookie`", "`Accept`", "`Location`", "`Set-Cookie`"],
+          "answer": 3,
+          "explain": "The server sends `Set-Cookie`; the browser sends it back in a `Cookie` header on later requests."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Versioning &amp; Error Handling · Laravel Blueprint</title>
+  <meta name="description" content="Version a Laravel API with v1/v2 route prefixes and namespaced folders, and return consistent JSON errors (404, 422 validation) via withExceptions in bootstrap/app.php.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="09" data-lesson="versioning-errors">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">Versioning lets you change your API without breaking existing apps, and consistent JSON errors let every client handle failure the same way.</p>
+    <p class="analogy"><span>🔌</span><span>Think of plug sockets. When a country introduces a new socket type, old appliances still need to work, so both exist side by side for a while (v1 and v2). And when the fuse blows, every house gets the same kind of breaker, not a surprise.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>You can't force users to update</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">📲</span>
+        <h3>Old apps live forever</h3>
+        <p>Some people never update their phone app. Their v1 requests must keep working after you ship v2.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>One error shape</h3>
+        <p>If every error has a <code>message</code> key, the client needs just one piece of error-handling code.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🙈</span>
+        <h3>No leaked internals</h3>
+        <p>Stack traces in production help attackers, not users. Clean JSON errors hide the details.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Two versions, one app</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>📱</span><strong>/api/v1/posts</strong><small>old mobile app → V1\PostController + V1\PostResource</small></div>
+        <div class="layer"><span>💻</span><strong>/api/v2/posts</strong><small>new web app → V2\PostController + V2\PostResource</small></div>
+        <div class="layer"><span>🗄️</span><strong>Shared models &amp; database</strong><small>App\Models\Post is used by both</small></div>
+      </div>
+      <figcaption>Versions differ in their routes, controllers and resources. The models and data underneath stay shared.</figcaption>
+    </figure>
+    <pre class="tree"><span class="dir">app/Http/</span>
+├── <span class="dir">Controllers/Api/</span>
+│   ├── <span class="dir">V1/</span>PostController.php
+│   └── <span class="dir">V2/</span>PostController.php
+└── <span class="dir">Resources/</span>
+    ├── <span class="dir">V1/</span>PostResource.php   <span class="note">← "title", "body"</span>
+    └── <span class="dir">V2/</span>PostResource.php   <span class="note">← "headline", "content", "author"</span></pre>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Version the API, then tidy the errors</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Put the version in the URL</h3>
+        <p>The simplest strategy is a <strong>URL prefix</strong>. Group each version's routes under <code>v1</code> or <code>v2</code>. Combined with the automatic <code>/api</code> prefix, URLs become <code>/api/v1/posts</code>.</p>
+        <pre><code class="lang-php" data-file="routes/api.php">
+          use App\Http\Controllers\Api\V1;
+          use App\Http\Controllers\Api\V2;
+
+          Route::prefix('v1')-&gt;name('v1.')-&gt;group(function () {
+              Route::apiResource('posts', V1\PostController::class);
+          });
+
+          Route::prefix('v2')-&gt;name('v2.')-&gt;group(function () {
+              Route::apiResource('posts', V2\PostController::class);
+          });
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Other strategies exist</div>
+          <p>Some APIs read the version from a header like <code>Accept: application/vnd.blog.v2+json</code>. URL prefixes are easier to see, test with curl and cache, so start there.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Namespace controllers and resources by folder</h3>
+        <p>Generate classes straight into version folders. The folder becomes part of the <strong>namespace</strong>, so two classes can both be called <code>PostController</code>.</p>
+        <pre><code class="lang-bash">
+          php artisan make:controller Api/V2/PostController --api --model=Post
+          php artisan make:resource V2/PostResource
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Resources/V2/PostResource.php" data-hl="3">
+          &lt;?php
+
+          namespace App\Http\Resources\V2;
+
+          class PostResource extends \Illuminate\Http\Resources\Json\JsonResource
+          {
+              public function toArray($request): array
+              {
+                  return [
+                      'id'       =&gt; $this-&gt;id,
+                      'headline' =&gt; $this-&gt;title,     // renamed in v2
+                      'content'  =&gt; $this-&gt;body,
+                      'author'   =&gt; ['id' =&gt; $this-&gt;user_id, 'name' =&gt; $this-&gt;user-&gt;name],
+                  ];
+              }
+          }
+        </code></pre>
+        <p>v1 clients keep getting <code>title</code>; v2 clients get <code>headline</code>. Nobody breaks.</p>
+      </li>
+
+      <li class="step">
+        <h3>Know Laravel's default JSON errors</h3>
+        <p>When a request sends <code>Accept: application/json</code>, Laravel already turns common exceptions into JSON. A missing model becomes a <code>404</code>:</p>
+        <pre><code class="lang-bash">
+          curl -i http://127.0.0.1:8000/api/v1/posts/999 -H "Accept: application/json"
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response · 404 Not Found (debug off)">
+          { "message": "No query results for model [App\\Models\\Post] 999." }
+        </code></pre>
+        <p>That message exposes your model class name, which you will tidy up in step 5. With <code>APP_DEBUG=true</code> you will also see the exception class and stack trace. Make sure it's <code>false</code> in production.</p>
+      </li>
+
+      <li class="step">
+        <h3>Validation errors come back as 422 JSON</h3>
+        <p>When <code>$request-&gt;validate()</code> or a <a href="../06-crud/forms-validation.html">Form Request</a> fails on a JSON request, Laravel responds with <code>422</code>. There's a summary <code>message</code> plus an <code>errors</code> object keyed by field.</p>
+        <pre><code class="lang-bash">
+          curl -X POST http://127.0.0.1:8000/api/v1/posts \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"title":""}'
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response · 422 Unprocessable Content">
+          {
+              "message": "The title field is required. (and 1 more error)",
+              "errors": {
+                  "title": ["The title field is required."],
+                  "body": ["The body field is required."]
+              }
+          }
+        </code></pre>
+        <p>A client can show <code>errors.title[0]</code> right next to the title input.</p>
+      </li>
+
+      <li class="step">
+        <h3>Customise errors in <code>bootstrap/app.php</code></h3>
+        <p>In Laravel 11/12, exception handling is configured with <code>withExceptions</code>. Two useful settings: always render JSON for <code>api/*</code> URLs, and give 404s a friendlier, consistent message.</p>
+        <pre><code class="lang-php" data-file="bootstrap/app.php" data-hl="5-7,9-15">
+          use Illuminate\Http\Request;
+          use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+          -&gt;withExceptions(function (Exceptions $exceptions) {
+              $exceptions-&gt;shouldRenderJsonWhen(
+                  fn (Request $request) =&gt; $request-&gt;is('api/*') || $request-&gt;expectsJson()
+              );
+
+              $exceptions-&gt;render(function (NotFoundHttpException $e, Request $request) {
+                  if ($request-&gt;is('api/*')) {
+                      return response()-&gt;json([
+                          'message' =&gt; 'Resource not found.',
+                      ], 404);
+                  }
+              });
+          })
+        </code></pre>
+        <p>Returning nothing from a <code>render</code> callback (as for web requests here) falls back to Laravel's default handling.</p>
+      </li>
+
+      <li class="step">
+        <h3>Throw meaningful errors yourself</h3>
+        <p>Use <code>abort()</code> for HTTP errors. It goes through the same handler, so the JSON stays consistent.</p>
+        <pre><code class="lang-php">
+          abort_if($post-&gt;is_locked, 409, 'This post is locked for editing.');
+          abort_unless($request-&gt;user()-&gt;can('delete', $post), 403);
+        </code></pre>
+        <pre><code class="lang-json" data-file="Response · 409 Conflict">
+          { "message": "This post is locked for editing." }
+        </code></pre>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // Changed in place, no version bump
+          'headline' =&gt; $this-&gt;title,
+        </code></pre>
+        <p>Renaming a field in a live API silently breaks every client that reads <code>title</code>.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          // V1\PostResource keeps 'title'
+          // V2\PostResource introduces 'headline'
+        </code></pre>
+        <p>Add new fields freely, but put breaking changes in a new version.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          try { /* ... */ } catch (\Exception $e) {
+              return ['error' =&gt; $e-&gt;getMessage()];
+          }
+        </code></pre>
+        <p>A different error shape per endpoint, a <code>200</code> status, and possibly leaked internals.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $exceptions-&gt;render(function (PaymentFailed $e) {
+              return response()-&gt;json(['message' =&gt; 'Payment failed.'], 402);
+          });
+        </code></pre>
+        <p>Let exceptions bubble up and shape them in one place: <code>withExceptions</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: deprecate politely</div>
+      <p>When you plan to retire v1, announce a date, add a <code>Deprecation</code> or <code>Sunset</code> response header to v1 routes via middleware, and watch your logs until traffic drops to zero.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Move your existing posts API into <code>Api/V1</code> and serve it under <code>/api/v1/posts</code>.</li>
+        <li>Create a <code>V2\PostResource</code> that renames <code>title</code> to <code>headline</code> and nests the author.</li>
+        <li>Request <code>/api/v1/posts/999</code> and <code>/api/v2/posts/999</code>; both should return the same 404 JSON.</li>
+        <li>POST an empty body and inspect the <code>422</code> <code>errors</code> object.</li>
+        <li>Add <code>shouldRenderJsonWhen</code> and confirm a request <em>without</em> the Accept header still gets JSON.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Version with URL prefixes (<code>/api/v1</code>, <code>/api/v2</code>) and matching <code>V1</code>/<code>V2</code> folders.</li>
+      <li>Only breaking changes need a new version; adding fields is usually safe.</li>
+      <li>Validation failures return <code>422</code> with <code>message</code> and a per-field <code>errors</code> object.</li>
+      <li>Configure error rendering in <code>bootstrap/app.php</code> with <code>withExceptions</code>, <code>shouldRenderJsonWhen</code> and <code>render</code>.</li>
+      <li>Keep <code>APP_DEBUG=false</code> in production so errors never leak stack traces.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "With `Route::prefix('v1')` inside `routes/api.php`, what is the full URL for posts?",
+          "options": ["`/v1/posts`", "`/api/v1/posts`", "`/posts/v1`", "`/v1/api/posts`"],
+          "answer": 1,
+          "explain": "`api.php` routes already get `/api`; your group adds `/v1` after it."
+        },
+        {
+          "q": "Where do you customise exception rendering in Laravel 11/12?",
+          "options": ["`app/Http/Kernel.php`", "`config/errors.php`", "`withExceptions` in `bootstrap/app.php`", "`routes/api.php`"],
+          "answer": 2,
+          "explain": "The slim skeleton moved exception config into `bootstrap/app.php` via `->withExceptions(...)`."
+        },
+        {
+          "q": "What does a failed validation return on a JSON request?",
+          "options": ["`422` with `message` and an `errors` object", "`302` redirect back", "`500` server error", "`200` with `success: false`"],
+          "answer": 0,
+          "explain": "JSON requests get `422 Unprocessable Content` with errors keyed by field name."
+        },
+        {
+          "q": "Which change requires a new API version?",
+          "options": ["Adding a new optional field", "Fixing a typo in an error message", "Adding a new endpoint", "Renaming `title` to `headline`"],
+          "answer": 3,
+          "explain": "Renaming or removing a field breaks clients that read it. Additions are backwards compatible."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

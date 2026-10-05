@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Repository Pattern · Laravel Blueprint</title>
+  <meta name="description" content="Learn the repository pattern in Laravel: hide data access behind an interface, bind it in the container, and know honestly when Eloquent alone is enough.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="14" data-lesson="repository-pattern">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A repository is a class that hides <em>where</em> and <em>how</em> data is stored behind an interface, so the rest of your app just asks for “published posts” without knowing about SQL or Eloquent.</p>
+    <p class="analogy"><span>📚</span><span>A library desk: you ask the librarian for “books by Ada Lovelace” and get them, without knowing whether they came from the shelf, the basement or another branch. Useful in a huge library system, but overkill if the books are on one shelf right behind you.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>A famous pattern, often misused</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🔌</span>
+        <h3>Swappable data sources</h3>
+        <p>When data might come from Eloquent today and an external API tomorrow, an interface lets you swap the source without touching callers.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎯</span>
+        <h3>One home for complex queries</h3>
+        <p>Big reporting or search queries get a named method (<code>topAuthorsThisMonth()</code>) instead of being copy-pasted.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">⚖️</span>
+        <h3>But it has a cost</h3>
+        <p>Eloquent is <em>already</em> an abstraction over the database. Adding another layer on top is often extra code for little gain.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Where a repository sits</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>🎛️</span><strong>Controller / Service</strong><small>asks for “published posts”</small></div>
+        <div class="layer"><span>📜</span><strong>PostRepository interface</strong><small>the contract: what you can ask for</small></div>
+        <div class="layer"><span>🧱</span><strong>EloquentPostRepository</strong><small>one implementation of the contract</small></div>
+        <div class="layer"><span>🗄️</span><strong>Eloquent &amp; database</strong><small>where the data really lives</small></div>
+      </div>
+      <figcaption>Callers depend on the interface (the contract). The container decides which implementation they get.</figcaption>
+    </figure>
+    <p>This builds on two ideas you already know: <a href="../02-oop/abstraction.html">interfaces</a> and <a href="../10-laravel-core/service-container.html">binding an interface to a class</a> in the service container.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Situation</th><th>Repository?</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Typical CRUD app on one database</td><td>❌ Usually not</td><td>Eloquent, scopes and services already cover it</td></tr>
+          <tr><td>Same query copy-pasted in 5 places</td><td>🤔 Maybe</td><td>A <strong>query scope</strong> or service method is often enough</td></tr>
+          <tr><td>Data from an external API or several sources</td><td>✅ Yes</td><td>The interface hides very different implementations</td></tr>
+          <tr><td>Domain code that must not know about Eloquent</td><td>✅ Yes</td><td>Keeps your core logic framework-free</td></tr>
+          <tr><td>Your team already uses it consistently</td><td>✅ Follow it</td><td>Consistency beats personal taste</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Build a repository (then judge it)</h2>
+      <p>We'll build one properly, so you can recognise it in other codebases and decide when it's worth it.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Start from the “before”</h3>
+        <p>This controller builds a query inline. It's perfectly fine on its own. It becomes a problem only if the same query appears in many places.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function index()
+          {
+              $posts = Post::query()
+                  -&gt;whereNotNull('published_at')
+                  -&gt;where('published_at', '&lt;=', now())
+                  -&gt;with('author')
+                  -&gt;latest('published_at')
+                  -&gt;paginate(10);
+
+              return view('posts.index', compact('posts'));
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Try the lighter fix first: a query scope</h3>
+        <p>A <strong>local scope</strong> names a reusable query piece right on the model. For most apps, this solves the duplication without any new layer.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          use Illuminate\Database\Eloquent\Builder;
+
+          public function scopePublished(Builder $query): void
+          {
+              $query-&gt;whereNotNull('published_at')
+                    -&gt;where('published_at', '&lt;=', now());
+          }
+
+          // Usage: Post::published()-&gt;latest('published_at')-&gt;paginate(10);
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Define the contract</h3>
+        <p>If you really need a repository, start with an <strong>interface</strong>. It lists what callers may ask for, in business words.</p>
+        <pre><code class="lang-php" data-file="app/Repositories/PostRepository.php">
+          &lt;?php
+
+          namespace App\Repositories;
+
+          use App\Models\Post;
+          use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+          interface PostRepository
+          {
+              public function publishedPaginated(int $perPage = 10): LengthAwarePaginator;
+
+              public function findBySlug(string $slug): ?Post;
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Write the Eloquent implementation</h3>
+        <p>The implementation is where Eloquent lives. Callers never see this class directly.</p>
+        <pre><code class="lang-php" data-file="app/Repositories/EloquentPostRepository.php">
+          &lt;?php
+
+          namespace App\Repositories;
+
+          use App\Models\Post;
+          use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+          class EloquentPostRepository implements PostRepository
+          {
+              public function publishedPaginated(int $perPage = 10): LengthAwarePaginator
+              {
+                  return Post::published()-&gt;with('author')
+                      -&gt;latest('published_at')-&gt;paginate($perPage);
+              }
+
+              public function findBySlug(string $slug): ?Post
+              {
+                  return Post::published()-&gt;where('slug', $slug)-&gt;first();
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Bind it in a service provider and inject it</h3>
+        <p>Tell the container: “when someone asks for <code>PostRepository</code>, give them <code>EloquentPostRepository</code>”.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          public function register(): void
+          {
+              $this-&gt;app-&gt;bind(
+                  \App\Repositories\PostRepository::class,
+                  \App\Repositories\EloquentPostRepository::class,
+              );
+          }
+        </code></pre>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          public function __construct(private PostRepository $posts) {}
+
+          public function index()
+          {
+              return view('posts.index', [
+                  'posts' =&gt; $this-&gt;posts-&gt;publishedPaginated(),
+              ]);
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Honestly weigh the result</h3>
+        <p>You now have 3 files instead of 1, and every new query means editing an interface <em>and</em> a class. In return, you can swap the implementation (for example a <code>CachedPostRepository</code> or an <code>ApiPostRepository</code>) by changing one binding.</p>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ “We'll switch databases one day” is rarely true</div>
+          <p>Eloquent already works across MySQL, PostgreSQL, SQLite and SQL Server. And repositories that return Eloquent models (as most Laravel ones do) don't really hide Eloquent anyway. Add the layer for a concrete reason, not “just in case”.</p>
+        </div>
+        <p>For tests, you rarely need a fake repository either: Laravel's <a href="../11-testing/factories-seeders.html">factories</a> plus <code>RefreshDatabase</code> on SQLite make real-database tests fast.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          interface PostRepository {
+              public function all();
+              public function find($id);
+              public function create(array $data);
+              public function update($id, array $data);
+          }
+        </code></pre>
+        <p>A generic CRUD repository just renames Eloquent methods and hides features like eager loading and scopes.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          interface PostRepository {
+              public function publishedPaginated(int $perPage = 10): LengthAwarePaginator;
+              public function trendingThisWeek(int $limit): Collection;
+          }
+        </code></pre>
+        <p>If you build one, give it intention-revealing methods that hold real query knowledge.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // Repository used in one place,
+          // for one query, with one implementation
+          $this-&gt;posts-&gt;latestFive();
+        </code></pre>
+        <p>An interface with a single implementation and a single caller is pure ceremony.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Post::published()-&gt;latest()-&gt;take(5)-&gt;get();
+        </code></pre>
+        <p>Use a scope or plain Eloquent until a real need for abstraction appears.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: the upgrade path is cheap</div>
+      <p>Start with scopes and service classes. If you later need a repository, you can extract one in an afternoon, because your queries are already named and grouped. Adding it too early costs you on every feature; adding it late costs you once.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Add a <code>scopePublished()</code> to your <code>Post</code> model and replace every inline “published” query with it.</li>
+        <li>Create a <code>PostRepository</code> interface and an <code>EloquentPostRepository</code> with <code>publishedPaginated()</code>, and bind them in <code>AppServiceProvider</code>.</li>
+        <li>Write a second implementation, <code>CachedPostRepository</code>, that wraps the Eloquent one with <code>Cache::remember()</code>. Switch the binding and confirm the controller didn't change.</li>
+        <li>Write two sentences on whether <em>your</em> project actually needs the repository. Be honest!</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A repository hides data access behind an interface; callers depend on the contract, not the storage.</li>
+      <li>Bind the interface to an implementation in a service provider with <code>$this-&gt;app-&gt;bind()</code>.</li>
+      <li>Eloquent is already an abstraction, so for typical CRUD apps a repository is usually unnecessary.</li>
+      <li>Reach for scopes and service classes first; they solve most duplication.</li>
+      <li>Repositories earn their keep with multiple data sources, external APIs, or framework-free domain code.</li>
+      <li>If you use one, prefer intention-revealing methods over generic <code>all()/find()/create()</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "What does a repository's interface describe?",
+          "options": ["The database table columns", "What data callers can ask for, without saying how it's fetched", "The HTML views", "The validation rules"],
+          "answer": 1,
+          "explain": "The interface is a contract. Implementations decide how (Eloquent, API, cache) the data is fetched."
+        },
+        {
+          "q": "Where do you tell Laravel which class to use for `PostRepository`?",
+          "options": ["In `routes/web.php`", "In the model", "In a service provider's `register()` with `$this->app->bind()`", "In `.env`"],
+          "answer": 2,
+          "explain": "Binding an interface to a concrete class is a service container job, usually done in `AppServiceProvider`."
+        },
+        {
+          "q": "A small CRUD blog repeats the same \"published\" condition in three controllers. What's the lightest good fix?",
+          "options": ["A local query scope like `scopePublished()`", "A full repository with interface and binding", "Raw SQL", "Copy it into a helper file"],
+          "answer": 0,
+          "explain": "Scopes name and reuse query pieces directly on the model, with no extra layer."
+        },
+        {
+          "q": "When is a repository most clearly worth it?",
+          "options": ["Always, for every model", "When data may come from very different sources, like Eloquent and an external API", "When the app has only one model", "When you want faster queries"],
+          "answer": 1,
+          "explain": "Swappable, very different implementations are where the abstraction pays for itself."
+        },
+        {
+          "q": "What's the main problem with a generic `all()/find()/create()/update()` repository?",
+          "options": ["It's too fast", "It's required by Laravel", "It renames Eloquent methods and hides useful features like eager loading", "It can't be tested"],
+          "answer": 2,
+          "explain": "Generic CRUD repositories add a layer without adding meaning. Prefer named, intention-revealing queries."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

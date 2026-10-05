@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Service Providers · Laravel Blueprint</title>
+  <meta name="description" content="Learn Laravel service providers: register vs boot, AppServiceProvider, bootstrap/providers.php in Laravel 11+ and php artisan make:provider.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="10" data-lesson="service-providers">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A service provider is a class that runs while Laravel starts up, so you can register bindings in the container and configure services before any request is handled.</p>
+    <p class="analogy"><span>🎪</span><span>Picture a stage crew before a concert. First, every crew member unloads and lists their gear (register). Only once everything is on stage do they plug it all together and run the sound check (boot). Then the doors open.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Where your app gets set up</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🧰</span>
+        <h3>Home for bindings</h3>
+        <p>The <a href="service-container.html">container</a> bindings you learned about need a place to live. That place is a provider.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🏗️</span>
+        <h3>Laravel is built on them</h3>
+        <p>Cache, database, mail, queues and sessions are each wired up by a framework provider. Packages ship their own, too.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🎛️</span>
+        <h3>App-wide settings</h3>
+        <p>Gates, model rules, rate limiters and view composers all get configured in a provider's <code>boot()</code> method.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Two passes: register everything, then boot everything</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">📜</span><strong>Load provider list</strong><small>framework + packages + <code>bootstrap/providers.php</code></small></div>
+        <div class="flow-node accent"><span class="flow-icon">📝</span><strong>register()</strong><small>called on <em>every</em> provider: bind things only</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🚀</span><strong>boot()</strong><small>called on <em>every</em> provider: everything is available</small></div>
+        <div class="flow-node"><span class="flow-icon">📨</span><strong>Handle request</strong><small>router, middleware, controller</small></div>
+      </div>
+      <figcaption>Laravel finishes <strong>all</strong> <code>register()</code> calls before it starts <strong>any</strong> <code>boot()</code> call. That ordering is the whole reason two methods exist.</figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th><code>register()</code></th><th><code>boot()</code></th></tr></thead>
+        <tbody>
+          <tr><td>Runs</td><td>First, on all providers</td><td>After every provider has registered</td></tr>
+          <tr><td>Purpose</td><td>Tell the container how to build things</td><td>Use services to configure the app</td></tr>
+          <tr><td>Safe to use other services?</td><td>❌ No, they may not be registered yet</td><td>✅ Yes</td></tr>
+          <tr><td>Typical code</td><td><code>bind()</code>, <code>singleton()</code>, <code>scoped()</code></td><td><code>Gate::define()</code>, <code>RateLimiter::for()</code>, <code>View::composer()</code>, <code>Model::preventLazyLoading()</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Working with providers</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Meet <code>AppServiceProvider</code></h3>
+        <p>A fresh Laravel 11+ app ships with exactly one provider of your own: <code>app/Providers/AppServiceProvider.php</code>. For small and medium apps, it's often the only one you need.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          &lt;?php
+
+          namespace App\Providers;
+
+          use Illuminate\Support\ServiceProvider;
+
+          class AppServiceProvider extends ServiceProvider
+          {
+              public function register(): void
+              {
+                  //
+              }
+
+              public function boot(): void
+              {
+                  //
+              }
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Put bindings in <code>register()</code></h3>
+        <p>Inside a provider, <code>$this-&gt;app</code> is the container. <code>register()</code> should only <strong>describe</strong> how to build things. Don't resolve other services here, because their providers may not have run yet.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="3-6">
+          public function register(): void
+          {
+              $this-&gt;app-&gt;bind(Notifier::class, MailNotifier::class);
+              $this-&gt;app-&gt;singleton(StripeClient::class, fn () =&gt;
+                  new StripeClient(config('services.stripe.secret'))
+              );
+          }
+        </code></pre>
+        <p>For simple class-to-class bindings, providers also offer shortcut properties:</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          public $bindings = [
+              Notifier::class =&gt; MailNotifier::class,
+          ];
+
+          public $singletons = [
+              PaymentGateway::class =&gt; StripeGateway::class,
+          ];
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Configure the app in <code>boot()</code></h3>
+        <p>By the time <code>boot()</code> runs, every service is registered, so you can use facades, models and other services freely. You can even type-hint dependencies in <code>boot()</code>'s signature and the container injects them.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php">
+          use Illuminate\Cache\RateLimiting\Limit;
+          use Illuminate\Database\Eloquent\Model;
+          use Illuminate\Support\Facades\Gate;
+          use Illuminate\Support\Facades\RateLimiter;
+
+          public function boot(): void
+          {
+              // Catch N+1 queries while developing
+              Model::preventLazyLoading(! app()-&gt;isProduction());
+
+              Gate::define('publish-post', fn (User $user) =&gt; $user-&gt;is_editor);
+
+              RateLimiter::for('comments', fn (Request $request) =&gt;
+                  Limit::perMinute(5)-&gt;by($request-&gt;user()?-&gt;id ?: $request-&gt;ip())
+              );
+          }
+        </code></pre>
+        <p>You'll recognise these from <a href="../08-authorization/gates.html">Gates</a>, <a href="../12-security/rate-limiting.html">Rate Limiting</a> and <a href="../13-performance/eager-loading.html">Eager Loading</a>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Where providers are listed: <code>bootstrap/providers.php</code></h3>
+        <p>In Laravel 11 and later, your app's providers are listed in a tiny file. (Older versions kept a long <code>providers</code> array in <code>config/app.php</code>; you'll still see that in older tutorials.)</p>
+        <pre><code class="lang-php" data-file="bootstrap/providers.php">
+          &lt;?php
+
+          return [
+              App\Providers\AppServiceProvider::class,
+          ];
+        </code></pre>
+        <p>The framework's own providers (cache, database, mail…) are loaded for you, and package providers are found automatically through <strong>package discovery</strong>: each package declares its provider in its <code>composer.json</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Create your own with <code>make:provider</code></h3>
+        <p>When <code>AppServiceProvider</code> gets crowded, split related setup into its own provider, such as one for billing:</p>
+        <pre><code class="lang-bash">
+          php artisan make:provider BillingServiceProvider
+        </code></pre>
+        <p>This creates <code>app/Providers/BillingServiceProvider.php</code> <strong>and</strong> adds it to <code>bootstrap/providers.php</code> automatically. If you create a provider file by hand, remember to add it to that list yourself.</p>
+        <pre><code class="lang-php" data-file="app/Providers/BillingServiceProvider.php">
+          class BillingServiceProvider extends ServiceProvider
+          {
+              public function register(): void
+              {
+                  $this-&gt;app-&gt;singleton(PaymentGateway::class, StripeGateway::class);
+              }
+
+              public function boot(): void
+              {
+                  Gate::define('view-invoices', fn (User $user) =&gt; $user-&gt;is_admin);
+              }
+          }
+        </code></pre>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Deferred providers</div>
+          <p>A provider that <em>only</em> registers bindings can implement <code>Illuminate\Contracts\Support\DeferrableProvider</code> and list its services in a <code>provides()</code> method. Laravel then loads it only when one of those services is actually requested.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function register(): void
+          {
+              Gate::define('publish-post', ...);
+              View::share('categories', Category::all());
+          }
+        </code></pre>
+        <p>Using services in <code>register()</code> can fail because the services you're calling may not be registered yet.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          public function boot(): void
+          {
+              Gate::define('publish-post', ...);
+              View::composer('layouts.app', CategoryComposer::class);
+          }
+        </code></pre>
+        <p>Bind in <code>register()</code>, use and configure in <code>boot()</code>.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          public function boot(): void
+          {
+              $this-&gt;settings = Setting::all(); // runs on EVERY request
+          }
+        </code></pre>
+        <p><code>boot()</code> runs on every request and every Artisan command, even <code>migrate</code> on an empty database.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          $this-&gt;app-&gt;singleton(Settings::class, fn () =&gt;
+              new Settings(Setting::pluck('value', 'key'))
+          );
+        </code></pre>
+        <p>Make heavy work lazy: wrap it in a binding so it runs only when something actually needs it.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: keep providers thin</div>
+      <p>A provider should <em>wire</em> things together, not contain business logic. If a closure in a provider grows past a few lines, move that logic into a dedicated class (see <a href="../14-architecture/service-classes.html">Service Classes</a>).</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Open <code>bootstrap/providers.php</code> in a fresh project and check which providers are listed.</li>
+        <li>Run <code>php artisan make:provider BlogServiceProvider</code> and confirm it was added to that file.</li>
+        <li>In its <code>register()</code>, bind a <code>Notifier</code> interface to a <code>LogNotifier</code> class.</li>
+        <li>In its <code>boot()</code>, call <code>Model::preventLazyLoading(! app()-&gt;isProduction())</code>, then trigger an N+1 query and watch the exception appear.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Service providers are the startup scripts that configure Laravel and your app.</li>
+      <li><code>register()</code> runs first on <strong>all</strong> providers; only bind things there.</li>
+      <li><code>boot()</code> runs after everything is registered; use services and configure the app there.</li>
+      <li>Laravel 11+ lists your providers in <code>bootstrap/providers.php</code>.</li>
+      <li><code>php artisan make:provider</code> creates a provider and registers it for you.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which method should contain `$this->app->bind(...)` calls?",
+          "options": ["`register()`", "`boot()`", "`handle()`", "`__construct()`"],
+          "answer": 0,
+          "explain": "`register()` is for describing bindings. It runs before any provider boots."
+        },
+        {
+          "q": "Why is calling `Gate::define()` inside `register()` risky?",
+          "options": ["Gates are deprecated", "`register()` only runs in production", "The service behind the facade may not be registered yet", "`register()` can't contain closures"],
+          "answer": 2,
+          "explain": "During the register pass, other providers may not have run. `boot()` is guaranteed to see every registered service."
+        },
+        {
+          "q": "In Laravel 11+, where is `AppServiceProvider` listed?",
+          "options": ["`config/app.php`", "`app/Http/Kernel.php`", "`routes/web.php`", "`bootstrap/providers.php`"],
+          "answer": 3,
+          "explain": "Laravel 11 moved the app's provider list into the small `bootstrap/providers.php` file."
+        },
+        {
+          "q": "What does `php artisan make:provider BillingServiceProvider` do besides creating the class?",
+          "options": ["Adds it to `bootstrap/providers.php`", "Creates a migration", "Publishes a config file", "Nothing else"],
+          "answer": 0,
+          "explain": "The command registers the new provider for you. Hand-made providers must be added to the list manually."
+        },
+        {
+          "q": "How often does a non-deferred provider's `boot()` method run?",
+          "options": ["Once, when you deploy", "Only when its service is used", "On every request and Artisan command", "Only during `php artisan optimize`"],
+          "answer": 2,
+          "explain": "Providers boot every time the app starts, so keep `boot()` fast and make heavy work lazy."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>

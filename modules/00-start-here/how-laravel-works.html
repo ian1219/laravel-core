@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>How Laravel Works: The Story · Laravel Blueprint</title>
+  <meta name="description" content="Follow one click through Laravel like a pizza order: the front door, the bouncer, the host, the waiter, the chef and the delivery, then see the same story in real code.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="00" data-lesson="how-laravel-works">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. Opening chat -->
+  <section class="section">
+    <div class="chat">
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">I typed a URL, hit Enter, and a page appeared. What did Laravel actually <i>do</i> in between?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">Quite a lot, in about 50 milliseconds. The easiest way to picture it is a <b>pizza shop</b>. Your click is an order walking in the door.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">So who's in this pizza shop?</div></div>
+      <div class="msg me"><span class="avatar">💡</span><div class="bubble">A door, a bouncer, a host, a waiter, a chef with a fridge, someone who plates the food, and a delivery driver. Each one is a real part of Laravel, and each one lives in a real file.</div></div>
+      <div class="msg"><span class="avatar">🙋</span><div class="bubble">Okay, I'm hungry now. Show me.</div></div>
+    </div>
+  </section>
+
+  <!-- 2. The journey -->
+  <section class="section">
+    <div class="topic-banner" id="journey" style="--tc1:#f97316;--tc2:#ef4444">
+      <span class="tb-icon">🍕</span>
+      <div><h2>One order, start to finish</h2><p>Press play and watch a single request walk through the shop.</p></div>
+    </div>
+
+    <p>Imagine someone opens <code>https://myblog.test/posts</code>. To Laravel, that's an order: “one list of blog posts, please”. Here is every stop it makes on the way. Press <b>▶ Send a request</b> to animate it, or <b>⏭ Step</b> to go one stop at a time.</p>
+
+    <div class="demo" data-demo="journey" data-title="Follow one pizza order 🍕">
+      <div class="j-step" id="pizza-click"><span class="j-icon">🖱️</span><div class="j-text"><strong>1. The customer places an order</strong><small>The browser sends <code>GET /posts</code> to your server. That's the order slip.</small></div><span class="j-code">GET /posts</span></div>
+      <div class="j-step" id="pizza-door"><span class="j-icon">🚪</span><div class="j-text"><strong>2. The order walks through the shop door</strong><small>Every single request enters through one door: <code>public/index.php</code>. There is no back entrance.</small></div><span class="j-code">public/index.php</span></div>
+      <div class="j-step" id="pizza-lights"><span class="j-icon">💡</span><div class="j-text"><strong>3. Lights on, staff arrive</strong><small><code>bootstrap/app.php</code> builds the app. Service providers (the opening crew) set up the database, cache, mail and more.</small></div><span class="j-code">bootstrap/app.php</span></div>
+      <div class="j-step" id="pizza-bouncer"><span class="j-icon">🛡️</span><div class="j-text"><strong>4. The bouncer checks you out</strong><small>Middleware runs: starts your session, checks the CSRF token, maybe asks “are you logged in?”. It can send you away right here.</small></div><span class="j-code">middleware</span></div>
+      <div class="j-step" id="pizza-host"><span class="j-icon">🧭</span><div class="j-text"><strong>5. The host reads your order</strong><small>The router looks at <code>GET /posts</code>, finds the matching line in <code>routes/web.php</code>, and walks you to the right table.</small></div><span class="j-code">routes/web.php</span></div>
+      <div class="j-step" id="pizza-waiter"><span class="j-icon">🤵</span><div class="j-text"><strong>6. The waiter takes over</strong><small>The controller method runs. The waiter doesn't cook. They ask the kitchen for food and decide how to serve it.</small></div><span class="j-code">PostController@index</span></div>
+      <div class="j-step" id="pizza-chef"><span class="j-icon">🍳</span><div class="j-text"><strong>7. The chef raids the fridge</strong><small>The <code>Post</code> model (the chef) asks the database (the fridge) for the latest posts. Eloquent writes the SQL for you.</small></div><span class="j-code">App\Models\Post</span></div>
+      <div class="j-step" id="pizza-plate"><span class="j-icon">🍽️</span><div class="j-text"><strong>8. Plate it nicely</strong><small>A Blade view turns raw data into good-looking HTML. Same pizza, now with garnish.</small></div><span class="j-code">posts/index.blade.php</span></div>
+      <div class="j-step" id="pizza-box"><span class="j-icon">📦</span><div class="j-text"><strong>9. Box it up</strong><small>Laravel wraps the HTML in a response with a status code (<code>200 OK</code>) and headers. On the way out, middleware gets one last look.</small></div><span class="j-code">200 OK</span></div>
+      <div class="j-step" id="pizza-delivery"><span class="j-icon">🛵</span><div class="j-text"><strong>10. Delivered!</strong><small>The response travels back to the browser, which draws the page. The whole trip usually takes a blink.</small></div><span class="j-code">Illuminate\Http\Response</span></div>
+    </div>
+
+    <div class="memory"><div class="memory-title">Remember it like this</div><p><b>Door → Lights → Bouncer → Host → Waiter → Chef → Plate → Delivery.</b> Every Laravel page you'll ever build takes this same trip. Only the waiter, chef and plate change from page to page.</p></div>
+  </section>
+
+  <!-- 3. Real life vs code -->
+  <section class="section">
+    <div class="topic-banner" id="cast" style="--tc1:#a855f7;--tc2:#22d3ee">
+      <span class="tb-icon">🎭</span>
+      <div><h2>Meet the cast</h2><p>Four characters do most of the work you'll write yourself.</p></div>
+    </div>
+
+    <p>You never touch the door or the lights. Laravel handles those. The parts <b>you</b> write are the host's list, the waiter, the chef and the plating. Here's the host in both worlds:</p>
+
+    <div class="real-code">
+      <div class="side real"><span class="side-tag">🏠 Real life</span><div class="big-emoji">🧭</div><p>The host has a seating chart: “Party asking for the posts list? Table 4, Sam is your waiter.”</p></div>
+      <span class="equals">=</span>
+      <div class="side code"><span class="side-tag">💻 In code</span><pre><code class="lang-php" data-file="routes/web.php">
+        Route::get('/posts', [PostController::class, 'index']);
+      </code></pre></div>
+    </div>
+
+    <p>One line, three ideas: the <b>method</b> (<code>GET</code>, meaning “show me”), the <b>URL</b> (<code>/posts</code>), and <b>who handles it</b> (the <code>index</code> method on <code>PostController</code>). Why you care: when a page is broken, this file is the first place to look.</p>
+  </section>
+
+  <!-- 4. Same story in real code -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The same story in real code</span>
+      <h2>Build the <code>/posts</code> page in four small files</h2>
+    </div>
+    <p>Here is the exact code behind our pizza order. Each step links back to its stop in the journey above, so you can match the character to the file.</p>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>🧭 The host: a route</h3>
+        <p>Matches <a href="#pizza-host">stop 5</a>. The route says “for <code>GET /posts</code>, call <code>PostController@index</code>”.</p>
+        <pre><code class="lang-php" data-file="routes/web.php">
+          &lt;?php
+
+          use App\Http\Controllers\PostController;
+          use Illuminate\Support\Facades\Route;
+
+          Route::get('/posts', [PostController::class, 'index'])-&gt;name('posts.index');
+        </code></pre>
+      </li>
+      <li class="step">
+        <h3>🤵 The waiter: a controller</h3>
+        <p>Matches <a href="#pizza-waiter">stop 6</a>. The waiter asks the chef for posts and hands them to the plating station. Notice it's only three lines of real work.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="9-12">
+          &lt;?php
+
+          namespace App\Http\Controllers;
+
+          use App\Models\Post;
+
+          class PostController extends Controller
+          {
+              public function index()
+              {
+                  $posts = Post::latest()-&gt;take(10)-&gt;get();
+
+                  return view('posts.index', ['posts' =&gt; $posts]);
+              }
+          }
+        </code></pre>
+      </li>
+      <li class="step">
+        <h3>🍳 The chef: a model</h3>
+        <p>Matches <a href="#pizza-chef">stop 7</a>. This tiny class knows its way around the <code>posts</code> table (the shelf in the fridge). Eloquent gives it methods like <code>latest()</code> and <code>get()</code> for free.</p>
+        <pre><code class="lang-php" data-file="app/Models/Post.php">
+          &lt;?php
+
+          namespace App\Models;
+
+          use Illuminate\Database\Eloquent\Model;
+
+          class Post extends Model
+          {
+              protected $fillable = ['title', 'body'];
+          }
+        </code></pre>
+        <p>Behind the scenes, <code>Post::latest()-&gt;take(10)-&gt;get()</code> becomes this SQL. You never had to write it:</p>
+        <pre><code class="lang-sql">
+          select * from posts order by created_at desc limit 10
+        </code></pre>
+      </li>
+      <li class="step">
+        <h3>🍽️ The plating: a Blade view</h3>
+        <p>Matches <a href="#pizza-plate">stop 8</a>. Blade is HTML with blanks. <code>{{ }}</code> fills a blank (and safely escapes it), and <code>@foreach</code> repeats a chunk for every post.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/index.blade.php">
+          &lt;h1&gt;Latest posts&lt;/h1&gt;
+
+          &lt;ul&gt;
+              @foreach ($posts as $post)
+                  &lt;li&gt;{{ $post-&gt;title }}&lt;/li&gt;
+              @endforeach
+          &lt;/ul&gt;
+        </code></pre>
+      </li>
+      <li class="step">
+        <h3>🛵 The delivery: what the browser gets</h3>
+        <p>Matches <a href="#pizza-delivery">stop 10</a>. Laravel turns the view into a full response. The browser receives plain HTML. It never sees your PHP.</p>
+        <pre><code class="lang-text">
+          HTTP/1.1 200 OK
+          Content-Type: text/html; charset=UTF-8
+
+          &lt;h1&gt;Latest posts&lt;/h1&gt;
+          &lt;ul&gt;&lt;li&gt;Hello Laravel&lt;/li&gt;&lt;li&gt;My first post&lt;/li&gt;&lt;/ul&gt;
+        </code></pre>
+      </li>
+    </ol>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ Where did the bouncer go?</div>
+      <p>You didn't write any middleware, but it still ran (<a href="#pizza-bouncer">stop 4</a>). Every route in <code>routes/web.php</code> automatically gets the <b>web</b> group: sessions, cookies and CSRF protection. You add extra checks when you need them, like <code>-&gt;middleware('auth')</code> for “members only”.</p>
+    </div>
+  </section>
+
+  <!-- 5. Folder map -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The shop floor plan</span>
+      <h2>Which folder is which room?</h2>
+    </div>
+    <figure class="diagram">
+      <div class="layers">
+        <div class="layer"><span>🚪</span><strong>public/</strong><small>The shop door: <code>index.php</code> plus your images, CSS and JS</small></div>
+        <div class="layer"><span>💡</span><strong>bootstrap/</strong><small>Lights and staff: <code>app.php</code> wires up middleware, routing and error handling</small></div>
+        <div class="layer"><span>🧭</span><strong>routes/</strong><small>The host's seating chart: <code>web.php</code> for pages, <code>api.php</code> for JSON</small></div>
+        <div class="layer"><span>🤵</span><strong>app/Http/Controllers/</strong><small>The waiters</small></div>
+        <div class="layer"><span>🍳</span><strong>app/Models/</strong><small>The chefs, one per table in the fridge</small></div>
+        <div class="layer"><span>🧊</span><strong>database/</strong><small>Fridge blueprints: migrations, seeders and factories</small></div>
+        <div class="layer"><span>🍽️</span><strong>resources/views/</strong><small>The plating station: your Blade templates</small></div>
+      </div>
+      <figcaption>Top to bottom is roughly the order a request touches them. You'll spend most of your days in the middle four.</figcaption>
+    </figure>
+    <p>Want the full tour of every folder? See <a href="../04-laravel-basics/directory-structure.html">Directory Structure</a>.</p>
+  </section>
+
+  <!-- 6. Common mix-ups -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mix-up</span>
+      <h2>Don't make the waiter cook</h2>
+    </div>
+    <div class="compare">
+      <div class="compare-card bad">
+        <span class="compare-label">❌ Avoid</span>
+        <pre><code class="lang-php">
+          Route::get('/posts', function () {
+              $rows = DB::select('select * from posts');
+              $html = '&lt;ul&gt;';
+              foreach ($rows as $r) { $html .= "&lt;li&gt;{$r-&gt;title}&lt;/li&gt;"; }
+              return $html . '&lt;/ul&gt;';
+          });
+        </code></pre>
+        <p>The host is cooking, plating and serving at once, and the title isn't escaped. It works, but it gets messy (and unsafe) fast.</p>
+      </div>
+      <div class="compare-card good">
+        <span class="compare-label">✅ Do</span>
+        <pre><code class="lang-php">
+          Route::get('/posts', [PostController::class, 'index']);
+
+          // PostController@index
+          return view('posts.index', [
+              'posts' =&gt; Post::latest()-&gt;get(),
+          ]);
+        </code></pre>
+        <p>Each character does one job: the route points, the controller coordinates, the model fetches and the view plates.</p>
+      </div>
+    </div>
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip</div>
+      <p>Lost in a project? Run <code>php artisan route:list</code>. It prints the host's whole seating chart: every URL and the controller that answers it.</p>
+    </div>
+  </section>
+
+  <!-- 7. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Play the pizza journey again and say each stop out loud with its real file name. No peeking at the small text.</li>
+        <li>In a fresh Laravel app, add the <code>/posts</code> route from above and visit it. Read the error Laravel shows, then fix it by creating the controller with <code>php artisan make:controller PostController</code>.</li>
+        <li>Create the model and its table with <code>php artisan make:model Post -m</code>, then run <code>php artisan migrate</code>.</li>
+        <li>Add a second page, <code>/about</code>, that skips the chef entirely: a route that returns <code>view('about')</code>. Which journey stops did it skip?</li>
+        <li>Add <code>-&gt;middleware('auth')</code> to the <code>/posts</code> route and visit it logged out. Which character stopped you?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 8. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Key takeaways</span>
+      <h2>The story in five lines</h2>
+    </div>
+    <ul class="takeaways">
+      <li>Every request enters through <code>public/index.php</code> and is set up by <code>bootstrap/app.php</code>.</li>
+      <li><b>Middleware</b> is the bouncer: it checks requests on the way in and responses on the way out.</li>
+      <li>The <b>router</b> matches the method + URL to a controller using <code>routes/web.php</code>.</li>
+      <li>The <b>controller</b> coordinates, the <b>model</b> talks to the database and the <b>Blade view</b> builds the HTML.</li>
+      <li>Everything ends as a <b>response</b>: HTML (or JSON) plus a status code like <code>200</code>.</li>
+    </ul>
+    <p>Ready for the grown-up version? Read <a href="../10-laravel-core/request-lifecycle.html">The Request Lifecycle</a> for every detail, or <a href="../03-web-fundamentals/mvc.html">The MVC Pattern</a> to see why the waiter, chef and plate are kept apart.</p>
+  </section>
+
+  <!-- 9. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Mini quiz</span>
+      <h2>Did the pizza arrive?</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Which file is the shop door that every request walks through first?",
+          "options": ["`routes/web.php`", "`public/index.php`", "`app/Models/Post.php`", "`resources/views/welcome.blade.php`"],
+          "answer": 1,
+          "explain": "`public/index.php` is the single entry point. Your web server sends every request there."
+        },
+        {
+          "q": "In the pizza story, who is the **bouncer** that can turn a request away before it reaches the controller?",
+          "options": ["The model", "The Blade view", "Middleware", "The router"],
+          "answer": 2,
+          "explain": "Middleware checks things like login status and CSRF tokens, and can stop the request early."
+        },
+        {
+          "q": "What is the router's job?",
+          "options": ["Match the method + URL to the code that should handle it", "Fetch rows from the database", "Turn data into HTML", "Hash passwords"],
+          "answer": 0,
+          "explain": "The router is the host with the seating chart: `GET /posts` goes to `PostController@index`."
+        },
+        {
+          "q": "In `Post::latest()->get()`, who is doing the work?",
+          "options": ["The controller, writing raw SQL", "Middleware", "The Blade view", "The `Post` model, using Eloquent to talk to the database"],
+          "answer": 3,
+          "explain": "The model is the chef. Eloquent turns that PHP into SQL and brings the rows back from the fridge (database)."
+        },
+        {
+          "q": "What does the browser actually receive at the end?",
+          "options": ["Your PHP source code", "A response with HTML (or JSON) and a status code", "The `Post` model object", "A copy of `routes/web.php`"],
+          "answer": 1,
+          "explain": "Laravel sends back a response, such as `200 OK` plus HTML. Your PHP never leaves the server."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+<script src="../../assets/js/demos.js"></script>
+</body>
+</html>

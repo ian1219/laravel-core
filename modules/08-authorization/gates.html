@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gates · Laravel Blueprint</title>
+  <meta name="description" content="Define simple yes/no permission checks with Laravel gates: Gate::define, allows, denies, authorize, @can in Blade and Gate::before for super-admins.">
+  <script src="../../assets/js/theme.js"></script>
+  <link rel="icon" href="../../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="../../assets/img/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="../../site.webmanifest">
+  <meta name="theme-color" content="#07051a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Laravel Blueprint">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="../../assets/css/tokens.css">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body data-root="../../" data-module="08" data-lesson="gates">
+
+<main class="content">
+  <div data-hero></div>
+
+  <!-- 1. In one sentence -->
+  <div class="one-liner">
+    <span class="one-liner-label">In one sentence</span>
+    <p class="big">A gate is a named yes/no rule, like “can this user edit this post?”, that you define once and check anywhere.</p>
+    <p class="analogy"><span>🎫</span><span>Think of the ticket gates at a train station. Each gate has one simple rule: “valid ticket for this zone?” It answers yes or no, and every passenger is checked by the same rule.</span></p>
+  </div>
+
+  <!-- 2. Why it matters -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Why it matters</span>
+      <h2>Logged in doesn't mean allowed</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why">
+        <span class="why-icon">🚫</span>
+        <h3>Stop the classic bug</h3>
+        <p>Without checks, any logged-in user can edit <em>anyone's</em> post just by changing the ID in the URL.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">📍</span>
+        <h3>One source of truth</h3>
+        <p>The rule lives in one place. Change it once, and every controller and view follows.</p>
+      </div>
+      <div class="why">
+        <span class="why-icon">🧩</span>
+        <h3>Works everywhere</h3>
+        <p>The same gate can be checked from controllers, Blade, routes and tests.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Visual explainer -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2>Define once, check everywhere</h2>
+    </div>
+    <figure class="diagram">
+      <div class="flow">
+        <div class="flow-node"><span class="flow-icon">🙋</span><strong>User + post</strong><small>Ada wants to edit post #7</small></div>
+        <div class="flow-node accent"><span class="flow-icon">🎫</span><strong>Gate “update-post”</strong><small>$user-&gt;id === $post-&gt;user_id ?</small></div>
+        <div class="flow-node"><span class="flow-icon">✅</span><strong>true</strong><small>carry on</small></div>
+        <div class="flow-node"><span class="flow-icon">⛔</span><strong>false</strong><small>hide button / 403 Forbidden</small></div>
+      </div>
+      <figcaption>A gate is just a closure that receives the current user (plus any extra arguments) and returns true or false.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Returns</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td><code>Gate::allows('x', $post)</code></td><td><code>true</code> / <code>false</code></td><td>You want to branch with <code>if</code></td></tr>
+          <tr><td><code>Gate::denies('x', $post)</code></td><td>The opposite of <code>allows</code></td><td>Early-return style checks</td></tr>
+          <tr><td><code>Gate::authorize('x', $post)</code></td><td>Nothing, or throws a <strong>403</strong></td><td>Controllers: “stop here if not allowed”</td></tr>
+          <tr><td><code>@can('x', $post)</code></td><td>Shows or hides Blade</td><td>Buttons and links in views</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Step by step -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Step by step</span>
+      <h2>Your first gates</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <h3>Define a gate in <code>AppServiceProvider</code></h3>
+        <p>Gates are registered in the <code>boot()</code> method of <code>app/Providers/AppServiceProvider.php</code>. The first argument is always the logged-in user, and Laravel passes it in for you.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="14-16,18-20">
+          &lt;?php
+
+          namespace App\Providers;
+
+          use App\Models\Post;
+          use App\Models\User;
+          use Illuminate\Support\Facades\Gate;
+          use Illuminate\Support\ServiceProvider;
+
+          class AppServiceProvider extends ServiceProvider
+          {
+              public function boot(): void
+              {
+                  Gate::define('update-post', function (User $user, Post $post) {
+                      return $user-&gt;id === $post-&gt;user_id;
+                  });
+
+                  Gate::define('view-admin', function (User $user) {
+                      return $user-&gt;is_admin;
+                  });
+              }
+          }
+        </code></pre>
+        <p>Guests (not logged in) automatically fail every gate, so you don't have to handle <code>null</code> users yourself.</p>
+      </li>
+
+      <li class="step">
+        <h3>Check it with <code>allows</code> / <code>denies</code></h3>
+        <p>Use these when you want to decide what to do yourself.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php">
+          use Illuminate\Support\Facades\Gate;
+
+          public function edit(Post $post)
+          {
+              if (Gate::denies('update-post', $post)) {
+                  abort(403, 'This is not your post.');
+              }
+
+              return view('posts.edit', compact('post'));
+          }
+        </code></pre>
+      </li>
+
+      <li class="step">
+        <h3>Shorter: <code>Gate::authorize</code></h3>
+        <p><code>authorize</code> does the check <em>and</em> throws a 403 if it fails, all in one line. This is the style you'll use most in controllers.</p>
+        <pre><code class="lang-php" data-file="app/Http/Controllers/PostController.php" data-hl="3">
+          public function update(Request $request, Post $post)
+          {
+              Gate::authorize('update-post', $post);
+
+              $post-&gt;update($request-&gt;validate([
+                  'title' =&gt; ['required', 'max:255'],
+                  'body'  =&gt; ['required'],
+              ]));
+
+              return redirect()-&gt;route('posts.show', $post);
+          }
+        </code></pre>
+        <p>You can also ask the user model directly: <code>$request-&gt;user()-&gt;can('update-post', $post)</code> and <code>-&gt;cannot(...)</code>.</p>
+      </li>
+
+      <li class="step">
+        <h3>Hide buttons with <code>@can</code></h3>
+        <p>Don't show people buttons they can't use. <code>@can</code> calls the same gate.</p>
+        <pre><code class="lang-blade" data-file="resources/views/posts/show.blade.php">
+          &lt;h1&gt;{{ $post-&gt;title }}&lt;/h1&gt;
+
+          @can('update-post', $post)
+              &lt;a href="{{ route('posts.edit', $post) }}"&gt;Edit&lt;/a&gt;
+          @endcan
+
+          @cannot('view-admin')
+              &lt;p&gt;Want to become an editor? Contact us.&lt;/p&gt;
+          @endcannot
+        </code></pre>
+        <div class="callout warn">
+          <div class="callout-title">⚠️ Check in both places</div>
+          <p><code>@can</code> hides the button, but someone can still send the request by hand. Always <code>authorize</code> in the controller too.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <h3>Let super-admins through with <code>Gate::before</code></h3>
+        <p>A <code>before</code> callback runs before <em>every</em> gate. Return <code>true</code> to allow straight away, or <code>null</code> to fall through to the normal rule.</p>
+        <pre><code class="lang-php" data-file="app/Providers/AppServiceProvider.php" data-hl="3-8">
+          public function boot(): void
+          {
+              Gate::before(function (User $user, string $ability) {
+                  if ($user-&gt;is_admin) {
+                      return true;   // admins can do anything
+                  }
+                  // return nothing (null) → normal gate decides
+              });
+
+              Gate::define('update-post', fn (User $user, Post $post) =&gt; $user-&gt;id === $post-&gt;user_id);
+          }
+        </code></pre>
+        <p>Watch out: returning <code>false</code> here would block <em>everyone else</em> from everything. Return <code>true</code> or nothing at all.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 5. Avoid / Do -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Common mistakes</span>
+      <h2>Avoid this, do that</h2>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          // in edit(), update() and destroy()…
+          if (auth()-&gt;id() !== $post-&gt;user_id) {
+              abort(403);
+          }
+        </code></pre>
+        <p>The same rule is copied into many places. When it changes, you'll miss one.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Gate::authorize('update-post', $post);
+        </code></pre>
+        <p>The rule is defined once in a gate and checked by name everywhere.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Avoid</div>
+        <pre><code class="lang-php">
+          Gate::before(fn (User $user) =&gt; $user-&gt;is_admin);
+        </code></pre>
+        <p>For non-admins this returns <code>false</code>, which <strong>denies every ability</strong> before any gate runs.</p>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Do</div>
+        <pre><code class="lang-php">
+          Gate::before(fn (User $user) =&gt; $user-&gt;is_admin ? true : null);
+        </code></pre>
+        <p>Return <code>null</code> for everyone else so the normal rules still apply.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-title">💡 Pro tip: when gates get crowded</div>
+      <p>Gates are perfect for a handful of app-wide rules, like “view admin panel”. Once you have several rules about the <em>same model</em> (view, update, delete a post…), move them into a <a href="policies.html">policy</a>.</p>
+    </div>
+  </section>
+
+  <!-- 6. Try it -->
+  <section class="section">
+    <div class="callout try challenge">
+      <div class="callout-title">🏋️ Try it yourself</div>
+      <ol>
+        <li>Define an <code>update-post</code> gate that only lets the author edit a post.</li>
+        <li>Use <code>Gate::authorize</code> in <code>PostController@edit</code> and <code>@update</code>.</li>
+        <li>Log in as a different user and visit <code>/posts/1/edit</code>. Do you see a 403 page?</li>
+        <li>Wrap the Edit button in <code>@can</code> and confirm it disappears for non-authors.</li>
+        <li>Add an <code>is_admin</code> boolean column, and a <code>Gate::before</code> that lets admins edit everything.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Takeaways -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Recap</span>
+      <h2>Key takeaways</h2>
+    </div>
+    <ul class="takeaways">
+      <li>A <strong>gate</strong> is a named closure that returns true/false for the current user.</li>
+      <li>Define gates with <code>Gate::define()</code> in <code>AppServiceProvider::boot()</code>.</li>
+      <li><code>allows</code>/<code>denies</code> return booleans, and <code>authorize</code> throws a 403.</li>
+      <li><code>@can</code>/<code>@cannot</code> hide UI, but always check on the server too.</li>
+      <li><code>Gate::before</code> should return <code>true</code> or <code>null</code>, never a blanket <code>false</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 8. Quiz -->
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Check yourself</span>
+      <h2>Mini quiz</h2>
+    </div>
+    <script type="application/json" class="quiz-data">
+    {
+      "questions": [
+        {
+          "q": "Where are gates usually defined?",
+          "options": ["`routes/web.php`", "`config/auth.php`", "The `boot()` method of `AppServiceProvider`", "The `User` model"],
+          "answer": 2,
+          "explain": "`Gate::define()` calls go in `AppServiceProvider::boot()`, so they're registered on every request."
+        },
+        {
+          "q": "What does `Gate::authorize('update-post', $post)` do when the check fails?",
+          "options": ["Throws an exception that becomes a 403 response", "Returns `false`", "Logs the user out", "Redirects to `/login`"],
+          "answer": 0,
+          "explain": "`authorize` stops the request with a 403 Forbidden. Use `allows`/`denies` if you want a boolean."
+        },
+        {
+          "q": "You wrapped the Edit button in `@can`. Is the edit action now secure?",
+          "options": ["Yes, Blade blocks the route", "Yes, as long as you also use `@csrf`", "Only for guests", "No, the controller must check too"],
+          "answer": 3,
+          "explain": "Hiding a button doesn't stop a hand-crafted request. Always authorize on the server."
+        },
+        {
+          "q": "In `Gate::before`, what should you return for users who aren't super-admins?",
+          "options": ["`false`", "`null` (nothing), so the normal gate decides", "`true`", "An empty array"],
+          "answer": 1,
+          "explain": "Returning `false` would deny every ability. `null` means “no opinion, keep checking”."
+        }
+      ]
+    }
+    </script>
+  </section>
+
+  <div data-pager></div>
+</main>
+
+<script src="../../assets/js/curriculum.js"></script>
+<script src="../../assets/js/layout.js"></script>
+<script src="../../assets/js/highlight.js"></script>
+<script src="../../assets/js/quiz.js"></script>
+</body>
+</html>
